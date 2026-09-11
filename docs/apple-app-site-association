@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "6S8Z64V9JP.game.slop.slop",
-        "paths": ["/play/*", "/r/*", "/g/*"]
+        "paths": ["/play/*", "/r/*", "/g/*", "/invite/*"]
       }
     ]
   }

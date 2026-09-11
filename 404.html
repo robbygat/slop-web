@@ -17,11 +17,13 @@
   var path = location.pathname.replace(/^\/+|\/+$/g, '');
   var parts = path ? path.split('/') : [];
   // top-level names that are real files/folders, not usernames
-  var reserved = { play:1, open:1, studio:1, index:1, profile:1, legacy:1, NewSite:1, js:1, css:1, assets:1,
+  var reserved = { invite:1, play:1, open:1, studio:1, index:1, profile:1, legacy:1, NewSite:1, js:1, css:1, assets:1,
                    games:1, scripts:1, supabase:1, '.well-known':1, 'apple-app-site-association':1,
                    'favicon.ico':1, 'robots.txt':1, 'sitemap.xml':1 };
   var search = location.search || '';
-  if (parts[0] === 'play' && parts[1]) {
+  if (parts.length === 2 && parts[0] === 'invite' && /^[a-f0-9]{8}$/i.test(parts[1]) && !search) {
+    location.replace('/invite/?code=' + parts[1].toUpperCase());
+  } else if (parts[0] === 'play' && parts[1]) {
     var target = new URL('/open/', location.origin);
     var slug = '';
     try { slug = decodeURIComponent(parts[1]); } catch (_) {}

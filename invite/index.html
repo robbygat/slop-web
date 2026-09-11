@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#261b30">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; connect-src 'self' https://esm.sh https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="A friend invited you to Slop. Play together, collect Slop Coins, and unlock the SLOP Code skin.">
+  <meta property="og:title" content="Your friend invited you to Slop">
+  <meta property="og:description" content="Good games. Better with friends. Open your invite and come play.">
+  <meta property="og:image" content="https://slop.game/invite/skin.png">
+  <title>You’re invited · Slop</title>
+  <link rel="stylesheet" href="/invite/style.css">
+  <script src="/invite/app.js" defer></script>
+</head>
+<body>
+  <header><a href="/" aria-label="Slop home">slop<span>.</span></a></header>
+  <main>
+    <div class="hero"><img src="/invite/skin.png" width="420" height="420" alt="SLOP Code, an emerald Slop filled with glowing SLOP letters"><span class="tag">A LITTLE CODE. A LOT OF SLOP.</span></div>
+    <section>
+      <p class="eyebrow">YOUR FRIEND SAVED YOU A SPOT</p>
+      <h1>Good games.<br>Better with friends.</h1>
+      <p class="intro">Use your friend’s code in Slop.<br>You both get <strong>50 Slop Coins.</strong></p>
+      <a id="open-app" class="button primary" hidden>Open invite in Slop ↗</a>
+      <button id="copy-code" class="button secondary" hidden>Copy invite code</button>
+      <p id="status" role="status" aria-live="polite"></p>
+      <details id="web-invite"><summary>Use this invite on the web</summary>
+        <p id="account-status" role="status">Checking your Slop account…</p>
+        <form id="sign-in" hidden>
+          <label>Email<input id="email" type="email" autocomplete="email" required></label>
+          <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+          <button class="button secondary" type="submit">Sign in</button>
+          <p>New here? <a href="/studio.html" target="_blank" rel="noopener">Create a free Slop account</a>, then return to this invite.</p>
+        </form>
+        <button id="accept-code" class="button primary" hidden>Use this invite code</button>
+        <p id="reward-status" role="status" aria-live="polite"></p>
+      </details>
+      <details><summary>New to Slop?</summary><p>Get the app, then come back to this link. You can also enter your code under <strong>Profile → Settings → Invite friends</strong>.</p><a class="store" href="https://apps.apple.com/us/app/slop-game/id6783292057">Download for iPhone and iPad ↗</a><p>Already using the Android app? The Open invite button works there too. Google Play is coming soon.</p></details>
+      <p class="fine">Use one invite during your first 7 days. Invite 3 new players who return after 24 hours and finish a public game by another creator to unlock the SLOP Code skin. Each friend counts once. No purchase needed.</p>
+      <noscript><p>Enable JavaScript to open your invite, or copy the 8-character code from this page’s address into Slop.</p></noscript>
+    </section>
+  </main>
+  <footer><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="mailto:support@slop.game">Need a hand?</a></footer>
+</body>
+</html>
