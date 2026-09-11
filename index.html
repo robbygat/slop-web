@@ -241,6 +241,7 @@
     @media(max-width:900px){.agent-layout{grid-template-columns:1fr;gap:34px}.maker-intro{text-align:center}.maker-intro p{margin-left:auto;margin-right:auto}.agent-shell{height:650px}}
     @media(max-width:560px){.maker-section{padding-inline:12px}.maker-intro{padding-inline:12px}.agent-shell{height:590px}.agent-callout{top:0}.agent-buddy{bottom:-18px;width:104%}.agent-mouth{inset:6px;padding:46px 14px 24px;border-radius:32px;box-shadow:inset 0 24px 70px #000c,inset 0 -26px 60px #69244742,0 0 0 7px color-mix(in srgb,var(--slop-shade) 62%,transparent),0 20px 60px #0008}.agent-mouth:before{inset:8px;border-radius:24px}.mouth-toolbar{padding:0 7px;gap:6px}.mouth-tool{padding:10px 11px;font-size:10px}.mouth-close{right:17px;top:18px;width:40px;height:40px}.mouth-field{padding:0 7px}.agent-mouth textarea{padding:16px}.tongue-build{font-size:16px;padding:15px}.agent-status{font-size:8px}.agent-shell.is-open,.agent-shell.is-closing{border-radius:32px}.agent-shell.is-open .agent-buddy{transform:translateX(-50%) translateY(-12px) scale(2.7)}}
     @media(prefers-reduced-motion:reduce){.tap-pulse,.agent-callout:after{animation:none}.agent-mouth,.agent-buddy,.mouth-tongue{transition:none}}
+      .maker-intro .maker-connection-note{margin-top:18px;font-size:13px;line-height:1.5}.maker-intro a{text-decoration:underline;text-underline-offset:3px}.agent-mouth .agent-status{font:600 12px/1.45 Nunito;min-height:35px}
   </style>
   <script>document.documentElement.classList.add('js')</script>
 </head>
@@ -352,17 +353,17 @@
 
     <section class="maker-section" id="maker">
       <div class="agent-layout">
-      <div class="maker-intro rv"><div class="kicker">03 / Slop Agent</div><h2>Your game idea goes straight into Slop.</h2><p>Tap Slop, describe what you want to play, and watch it shape your idea into a game.</p></div>
+      <div class="maker-intro rv"><div class="kicker">03 / Interactive preview</div><h2>Meet Slop.</h2><p>Explore the interface. Build and publish real games in the <a href="https://apps.apple.com/us/app/slop-game/id6783292057" target="_blank" rel="noreferrer">Slop app</a>.</p><p class="maker-connection-note">Codex publishing via MCP is coming soon.</p></div>
       <div class="agent-shell rv" id="agentShell">
-        <div class="agent-callout" aria-hidden="true">Tap to make a game</div>
-        <button class="agent-buddy" id="agentBuddy" data-slop-toon="agent" type="button" aria-expanded="false" aria-controls="agentMouth" aria-label="Tap the animated Slop to open its mouth"><span class="tap-pulse" aria-hidden="true"></span><canvas id="agentToonCanvas" aria-hidden="true"></canvas></button>
+        <div class="agent-callout" aria-hidden="true">Try the interface</div>
+        <button class="agent-buddy" id="agentBuddy" data-slop-toon="agent" type="button" aria-expanded="false" aria-controls="agentMouth" aria-label="Open the Slop Agent interface preview"><span class="tap-pulse" aria-hidden="true"></span><canvas id="agentToonCanvas" aria-hidden="true"></canvas></button>
         <div class="agent-mouth" id="agentMouth" aria-hidden="true" inert>
           <span class="mouth-tongue" aria-hidden="true"></span>
           <div class="mouth-toolbar"><button class="mouth-tool" type="button" data-agent-tool="brainstorm">♧ Brainstorm</button><button class="mouth-tool" type="button" data-agent-tool="toolbox">▣ Toolbox</button></div>
           <button class="mouth-close" id="agentClose" type="button" aria-label="Close Slop's mouth">×</button>
-          <label class="mouth-field" for="makerPrompt"><textarea id="makerPrompt" placeholder="Describe your game…&#10;Rules, controls, mood — write as much as you like."></textarea></label>
-          <button class="tongue-build" id="makerGenerate" type="button">Build game</button>
-          <p class="agent-status" id="makerStatus" aria-live="polite">Your idea is safe with Slop.</p>
+          <label class="mouth-field" for="makerPrompt"><textarea id="makerPrompt" aria-label="Game idea for the interface demo" placeholder="Describe your game…&#10;Rules, controls, mood — write as much as you like."></textarea></label>
+          <button class="tongue-build" id="makerGenerate" type="button">Preview animation</button>
+          <p class="agent-status" id="makerStatus" aria-live="polite">Interface demo. Your text stays in this browser.</p>
         </div>
       </div>
       </div>
@@ -379,8 +380,8 @@
     let agentOpenTimer,agentReadyTimer,agentCloseTimer;
     const setAgentOpen=open=>{clearTimeout(agentOpenTimer);clearTimeout(agentReadyTimer);clearTimeout(agentCloseTimer);agentBuddy.setAttribute('aria-expanded',String(open));agentBuddy.dataset.mouth=open?'open':'closed';if(open){agentShell.classList.remove('is-mouth-ready','is-closing');agentShell.classList.add('is-opening');agentOpenTimer=setTimeout(()=>{agentShell.classList.add('is-open')},170);agentReadyTimer=setTimeout(()=>{agentShell.classList.remove('is-opening');agentShell.classList.add('is-mouth-ready');agentMouth.setAttribute('aria-hidden','false');agentMouth.inert=false;prompt.focus()},980)}else{agentShell.classList.add('is-closing');agentShell.classList.remove('is-opening','is-open','is-mouth-ready','is-building');agentMouth.setAttribute('aria-hidden','true');agentMouth.inert=true;agentCloseTimer=setTimeout(()=>agentShell.classList.remove('is-closing'),950)}};
     agentBuddy.addEventListener('click',()=>setAgentOpen(true));agentClose.addEventListener('click',()=>setAgentOpen(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(agentShell.classList.contains('is-open')||agentShell.classList.contains('is-opening')))setAgentOpen(false)});
-    document.querySelectorAll('[data-agent-tool]').forEach(tool=>tool.addEventListener('click',()=>{if(tool.dataset.agentTool==='brainstorm'){prompt.placeholder='Try: A tiny rooftop racer where every jump changes the music…';status.textContent='Slop has a weird idea ready for you.'}else{status.textContent='Toolbox: characters, worlds, sounds, and effects from your collection.'}prompt.focus()}));
-    generate.addEventListener('click',()=>{if(!prompt.value.trim()){prompt.focus();status.textContent='Tell Slop what you want to play.';return}generate.disabled=true;generate.textContent='Building…';status.textContent='Slop is shaping and playtesting your idea…';agentShell.classList.add('is-building');setTimeout(()=>{agentShell.classList.remove('is-building');generate.disabled=false;generate.textContent='Build game';status.textContent='Playable preview ready in the Slop app.'},1500)});
+    document.querySelectorAll('[data-agent-tool]').forEach(tool=>tool.addEventListener('click',()=>{if(tool.dataset.agentTool==='brainstorm'){prompt.placeholder='Try: A tiny rooftop racer where every jump changes the music…';status.textContent='Example idea — edit it to make it yours.'}else{status.textContent='Find characters, sounds and effects in the Slop app.'}prompt.focus()}));
+    generate.addEventListener('click',()=>{if(!prompt.value.trim()){prompt.focus();status.textContent='Tell Slop what you want to play.';return}generate.disabled=true;generate.textContent='Playing demo…';status.textContent='Previewing the interface animation…';agentShell.classList.add('is-building');setTimeout(()=>{agentShell.classList.remove('is-building');generate.disabled=false;generate.textContent='Preview animation';status.textContent='Demo complete. Build and publish in the Slop app.'},1500)});
     const heroVideo=document.querySelector('.hero-video');
     function playHero(){if(!heroVideo)return;heroVideo.muted=true;const p=heroVideo.play();if(p&&p.catch)p.catch(()=>{})}
     if(heroVideo){playHero();heroVideo.addEventListener('loadeddata',playHero,{once:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden)playHero()});window.addEventListener('pageshow',playHero)}
@@ -551,7 +552,19 @@
         setTimeout(typeTick,dir>0?(ci>s.length?90:42):18);
       })();
     }
-    const mailForm=document.getElementById('mailForm'),mailStatus=document.getElementById('mailStatus');mailForm.addEventListener('submit',e=>{e.preventDefault();const email=document.getElementById('mailEmail');mailStatus.textContent=`You're on the list — launch news will go to ${email.value}.`;mailForm.reset()});
+    const mailForm=document.getElementById('mailForm'),mailStatus=document.getElementById('mailStatus');
+    mailForm.addEventListener('submit',async e=>{
+      e.preventDefault();const email=document.getElementById('mailEmail'),button=mailForm.querySelector('button');
+      if(button.disabled||!mailForm.reportValidity())return;
+      button.disabled=true;mailForm.setAttribute('aria-busy','true');mailStatus.textContent='Joining…';
+      try{
+        const response=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.value.trim()}),signal:AbortSignal.timeout(12000)});
+        const result=response.headers.get('content-type')?.includes('application/json')?await response.json():null;
+        if(!response.ok||result?.ok!==true)throw new Error('join_not_confirmed');
+        mailStatus.textContent="You're on the list. We'll email you with updates.";mailForm.reset();
+      }catch{mailStatus.textContent="We couldn't confirm your signup. Please try again later."}
+      finally{button.disabled=false;mailForm.removeAttribute('aria-busy')}
+    });
   </script>
   <script src="/NewSite/slop-toon.js"></script>
 </body>
