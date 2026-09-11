@@ -9,3 +9,10 @@
 /apple-app-site-association
   Content-Type: application/json
   Cache-Control: public, max-age=300
+
+/web-player/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; base-uri https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js; style-src 'self' 'unsafe-inline' https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; img-src 'self' data: blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; font-src 'self' data: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; media-src 'self' data: blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; connect-src 'self' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; frame-src 'self' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; worker-src 'self' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; manifest-src 'self' https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co
+  Cache-Control: public, max-age=300
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer

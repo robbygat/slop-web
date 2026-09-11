@@ -8,7 +8,7 @@
 <!--
   GitHub Pages serves this file for any path it can't find on disk. We use it as
   a tiny client-side router so the pretty URLs work on the static site:
-    /play/{slug}  → the dedicated app-opening page
+    /play/{slug}  → the browser player; room invites keep their native doorway
     /{username}   → the profile page (profile.html)
   Real files (js/, css/, games/, *.html …) are served directly and never hit this.
 -->
@@ -24,12 +24,13 @@
   if (parts.length === 2 && parts[0] === 'invite' && /^[a-f0-9]{8}$/i.test(parts[1]) && !search) {
     location.replace('/invite/?code=' + parts[1].toUpperCase());
   } else if (parts[0] === 'play' && parts[1]) {
-    var target = new URL('/open/', location.origin);
+    var incoming = new URLSearchParams(search);
+    var roomInvite = incoming.has('room');
+    var target = new URL(roomInvite ? '/open/' : '/web-player/', location.origin);
     var slug = '';
     try { slug = decodeURIComponent(parts[1]); } catch (_) {}
     if (parts.length === 2 && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(slug)) {
-      target.searchParams.set('game', slug);
-      var incoming = new URLSearchParams(search);
+      target.searchParams.set(roomInvite ? 'game' : 'g', slug);
       ['beat', 'by', 'room'].forEach(function (key) {
         incoming.getAll(key).forEach(function (value) {
           target.searchParams.append(key, value);
@@ -45,5 +46,5 @@
 })();
 </script>
 </head>
-<body></body>
+<body data-slop-play-router="v1"></body>
 </html>

@@ -11,6 +11,7 @@ p { color: #cbbbd6; line-height: 1.6; font-size: 15px; }
 .button { min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 15px; border-radius: 17px; font-size: 16px; font-weight: 750; text-decoration: none; }
 .primary { background: #ffc04a; color: #25152a; box-shadow: 0 6px 28px #ffc04a18; }
 .secondary { background: #24172e; border: 1px solid #5d466a; color: #fff; }
+.button + .button { margin-top: 10px; }
 .button:hover { filter: brightness(1.1); }
 .button:focus-visible { outline: 3px solid #abeddd; outline-offset: 5px; }
 .download { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ffffff12; }

@@ -23,6 +23,18 @@
     document.getElementById('description').textContent = 'We couldn’t read this game link.';
     return;
   }
+  if (room === null) {
+    var browser = new URL('https://slop.game/web-player/');
+    browser.searchParams.set('g', game);
+    if (beat !== null) browser.searchParams.set('beat', beat);
+    if (by !== null) browser.searchParams.set('by', by);
+    var play = document.getElementById('play-browser');
+    play.href = browser.href;
+    play.hidden = false;
+  } else {
+    document.getElementById('description').textContent =
+      'This room invitation opens in the Slop app. Browser play is not available for rooms yet.';
+  }
   var app = new URL('io.slop.game://play');
   app.searchParams.set('game', game);
   if (room !== null) app.searchParams.set('room', room);

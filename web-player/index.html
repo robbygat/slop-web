@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js; style-src 'unsafe-inline' https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; img-src data: blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; media-src data: blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; font-src data: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; connect-src blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; worker-src blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; frame-src 'self' blob: https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; object-src 'none'; base-uri https://api.slop.game https://yqlolbebqfsodqgjlbeh.supabase.co; form-action 'none'; frame-ancestors 'none'">
+  <title>Loading Slop game…</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right))
+        max(22px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+      background: #090b16;
+      color: #f7f8ff;
+      font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+    }
+    main { width: min(360px, 100%); }
+    strong { display: block; font-size: 28px; letter-spacing: -.03em; }
+    strong i { color: #73efd2; font-style: normal; }
+    p { color: rgba(235, 239, 255, .72); }
+    a { color: #73efd2; font-weight: 800; }
+    .spin {
+      width: 34px;
+      height: 34px;
+      margin: 24px auto 0;
+      border: 3px solid rgba(225, 231, 255, .14);
+      border-top-color: #73efd2;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    body.is-error .spin { display: none; }
+    #home { display: none; }
+    body.is-error #home { display: inline; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spin { animation-duration: 1.6s; }
+    }
+  </style>
+</head>
+<body data-slop-static-player="v1"
+  data-player-source-sha256="a7f7f8361004af5d96bb8b8b32b9818712850cdda587f711c824b6492382d8f2">
+  <main>
+    <strong>slop<i>.game</i></strong>
+    <p id="status" role="status" aria-live="polite">Checking the game player…</p>
+    <div class="spin" aria-hidden="true"></div>
+    <a id="home" href="https://slop.game/">Back to Slop</a>
+  </main>
+  <script>
+    (function () {
+      'use strict';
+
+      var PLAYER_SOURCE =
+        'https://yqlolbebqfsodqgjlbeh.supabase.co/storage/v1/object/public/games/play/1.0.0/index.html';
+      var PLAYER_SHA256 =
+        'a7f7f8361004af5d96bb8b8b32b9818712850cdda587f711c824b6492382d8f2';
+      var MAX_PLAYER_BYTES = 131072;
+      var FETCH_TIMEOUT_MS = 8000;
+      var q = new URLSearchParams(location.search);
+      var slug = (q.get('g') || '').trim();
+      var version = (q.get('v') || '1.0.0').trim();
+
+      if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(slug) ||
+          !/^\d+(?:\.\d+){0,3}$/.test(version)) {
+        fail('This game link is not valid.');
+        return;
+      }
+      if (!globalThis.crypto || !crypto.subtle || typeof TextDecoder === 'undefined') {
+        fail('This browser cannot verify the game player safely.');
+        return;
+      }
+
+      var controller = new AbortController();
+      var timeout = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
+      fetch(PLAYER_SOURCE, {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'omit',
+        redirect: 'error',
+        referrerPolicy: 'no-referrer',
+        signal: controller.signal,
+      }).then(function (response) {
+        if (!response.ok || response.url !== PLAYER_SOURCE) {
+          throw new Error('unexpected player response');
+        }
+        var declared = Number(response.headers.get('content-length'));
+        if (Number.isFinite(declared) && declared > MAX_PLAYER_BYTES) {
+          throw new Error('player is too large');
+        }
+        if (!response.body || typeof response.body.getReader !== 'function') {
+          throw new Error('player response is not streamable');
+        }
+        var reader = response.body.getReader();
+        var chunks = [];
+        var total = 0;
+        function readNext() {
+          return reader.read().then(function (part) {
+            if (part.done) {
+              var bytes = new Uint8Array(total);
+              var offset = 0;
+              chunks.forEach(function (chunk) {
+                bytes.set(chunk, offset);
+                offset += chunk.byteLength;
+              });
+              return bytes;
+            }
+            total += part.value.byteLength;
+            if (total > MAX_PLAYER_BYTES) {
+              return reader.cancel().catch(function () {}).then(function () {
+                throw new Error('player is too large');
+              });
+            }
+            chunks.push(part.value);
+            return readNext();
+          });
+        }
+        return readNext();
+      }).then(function (buffer) {
+        if (!buffer.byteLength || buffer.byteLength > MAX_PLAYER_BYTES) {
+          throw new Error('invalid player size');
+        }
+        return Promise.all([
+          crypto.subtle.digest('SHA-256', buffer),
+          Promise.resolve(buffer),
+        ]);
+      }).then(function (parts) {
+        var actual = Array.from(new Uint8Array(parts[0]), function (byte) {
+          return byte.toString(16).padStart(2, '0');
+        }).join('');
+        if (actual !== PLAYER_SHA256) {
+          throw new Error('player integrity mismatch');
+        }
+        var html = new TextDecoder('utf-8', { fatal: true }).decode(parts[1]);
+        if (!/^<!DOCTYPE html>/i.test(html) ||
+            html.indexOf('sandbox="allow-scripts"') < 0 ||
+            html.indexOf('allow-same-origin') >= 0 ||
+            html.indexOf('/rest/v1/rpc/resolve_game_play_link') < 0) {
+          throw new Error('player contract mismatch');
+        }
+        clearTimeout(timeout);
+        document.open();
+        document.write(html);
+        document.close();
+      }).catch(function () {
+        clearTimeout(timeout);
+        fail('The verified player is unavailable right now. Please try again shortly.');
+      });
+
+      function fail(message) {
+        document.body.classList.add('is-error');
+        document.getElementById('status').textContent = message;
+      }
+    })();
+  </script>
+</body>
+</html>
