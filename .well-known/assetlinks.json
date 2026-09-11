@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "game.slop",
       "sha256_cert_fingerprints": [
-        "52:F5:B2:EB:00:A4:34:D2:5D:6F:D0:15:A0:FB:DE:DE:72:55:6B:2C:3E:FF:D1:90:39:E0:5D:A8:93:BA:99:EE"
+        "52:F5:B2:EB:00:A4:34:D2:5D:6F:D0:15:A0:FB:DE:DE:72:55:6B:2C:3E:FF:D1:90:39:E0:5D:A8:93:BA:99:EE",
+        "D5:D4:1E:86:E1:46:B1:7C:76:4B:2E:02:07:83:6B:63:6C:2C:B2:0D:D6:36:CD:C2:0C:09:F3:55:FC:FE:A4:15"
       ]
     }
   }
