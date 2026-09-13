@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import { LocalCredentials, SlopBridge } from "./client.mjs";
+import { pairingResult } from "./pairing-display.mjs";
+
+const bridge = new SlopBridge({
+  base: process.env.SLOP_MCP_URL ??
+    "https://api.slop.game/functions/v1/slop-mcp",
+  credentials: new LocalCredentials(
+    process.env.SLOP_MCP_CREDENTIALS ??
+      join(homedir(), ".config", "slop", "mcp.json"),
+  ),
+});
+const server = new McpServer({ name: "slop", version: "0.1.0" });
+function result(data) {
+  return { content: [{ type: "text", text: JSON.stringify(data) }] };
+}
+function tool(name, description, inputSchema, action, annotations = {}) {
+  server.registerTool(name, {
+    description,
+    inputSchema,
+    annotations: {
+      destructiveHint: false,
+      openWorldHint: true,
+      ...annotations,
+    },
+  }, async (args) => {
+    try {
+      const data = await action(args);
+      return name === "slop_pair" ? await pairingResult(data) : result(data);
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: error.message }],
+      };
+    }
+  });
+}
+tool(
+  "slop_pair",
+  "Display a real QR image on the computer for Slop's in-app phone scanner. Start a ten-minute pairing request; the user must explicitly approve draft access in the signed-in phone app. No connection exists until approval. Show the returned image to the user.",
+  { client_name: z.string().min(1).max(60).default("My coding agent") },
+  (args) => bridge.pair(args.client_name),
+);
+tool(
+  "slop_connection_status",
+  "Check real server approval, expiry and revocation for this local Slop connection.",
+  {},
+  () => bridge.status(),
+  { readOnlyHint: true },
+);
+tool(
+  "slop_send_draft",
+  "Send a private text game bundle for phone confirmation and validation. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this initial bridge.",
+  {
+    project_id: z.string().uuid(),
+    request_id: z.string().uuid(),
+    revision: z.number().int().min(1).max(1_000_000),
+    name: z.string().min(1).max(80),
+    description: z.string().max(240).optional(),
+    files: z.record(z.string()),
+  },
+  (args) => bridge.authorized("/agent/drafts", args),
+  { idempotentHint: true },
+);
+tool(
+  "slop_draft_status",
+  "List this connection’s private draft revisions and whether the phone has confirmed a validated preview. Preview capabilities are delivered only to the phone.",
+  {},
+  () => bridge.authorized("/agent/drafts"),
+  { readOnlyHint: true },
+);
+tool(
+  "slop_disconnect",
+  "Revoke this Slop connection. Further uploads stop immediately; existing private games stay in the account.",
+  {},
+  () => bridge.authorized("/agent/revoke", {}),
+  { destructiveHint: true, idempotentHint: true },
+);
+await server.connect(new StdioServerTransport());

@@ -1,0 +1,4 @@
+# Merge this ONE function entry into the deployment project's config.
+# The handler validates Supabase JWTs and hashed opaque MCP tokens itself.
+[functions.slop-mcp]
+verify_jwt = false

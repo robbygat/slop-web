@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<title>Pair with Slop</title>
+<style>
+  :root{color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:32px 24px;min-height:100svh;display:grid;place-items:center;background:#f9f5f0;color:#342d43;font:17px/1.5 system-ui,sans-serif}main{max-width:420px}.wordmark{font-size:28px;font-weight:850;letter-spacing:-1px}h1{font-size:38px;line-height:1.12;letter-spacing:-1.3px;margin:48px 0 16px}p{color:#625b6d}button{font:inherit;font-weight:700;border:0;border-radius:18px;background:#ddcff6;color:#392958;min-height:52px;padding:14px 22px;width:100%;margin-top:16px}button:disabled{opacity:.5}small{display:block;margin-top:16px;color:#625b6d}.status{min-height:26px}
+</style>
+<main><div class="wordmark">slop</div><h1>A little bridge.<br>A big idea.</h1>
+<p>Open this pairing link in the Slop app to review your computer’s request. If the app did not open, copy the link and paste it into Build → Connect an agent.</p>
+<button id="copy" disabled>Copy pairing link</button><p id="status" class="status" role="status"></p>
+<small>Opening this page does not connect an agent. Only your explicit approval in the signed-in app grants access. Pairing requests expire after ten minutes.</small></main>
+<script>
+  const fields=new URLSearchParams(location.hash.slice(1));
+  const id=fields.get('id'),code=fields.get('code');
+  const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id??'')&&/^[0-9a-f]{32}$/.test(code??'')&&[...fields.keys()].sort().join(',')==='code,id'&&!location.search;
+  const button=document.getElementById('copy'),status=document.getElementById('status');
+  button.disabled=!valid;
+  if(!valid)status.textContent='This pairing link is incomplete. Ask your agent for a new one.';
+  button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(`https://slop.game/mcp/pair#id=${id}&code=${code}`);status.textContent='Copied. Open Slop to review the request.';}catch{status.textContent='Copy this page’s address and open Slop to review it.';}});
+</script>
+</html>

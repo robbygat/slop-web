@@ -12,7 +12,7 @@ const AASA = `{
     "details": [
       {
         "appID": "6S8Z64V9JP.game.slop.slop",
-        "paths": ["/play/*", "/r/*", "/g/*", "/invite/*"]
+        "paths": ["/play/*", "/r/*", "/g/*", "/invite/*", "/mcp/pair"]
       }
     ]
   }
