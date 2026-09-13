@@ -1,6 +1,6 @@
 # Slop MCP bridge
 
-Implemented in this branch; **not deployed or connected to a real account yet**.
+Implemented and narrowly deployed; **not connected to a real account yet**.
 This is a local MCP STDIO server plus one Supabase Edge REST service. It lets an
 agent pair with an authenticated Slop account, send a private game revision, and
 wait for the user to confirm a validated preview on their phone. It does not
@@ -16,6 +16,42 @@ npm ci
 npm test
 node cli.mjs
 ```
+
+### Install from the public repository
+
+There is no published npm launcher yet. `@slop-game/mcp-bridge` is currently a
+private package in this public repository, without a `bin` entry. Use the
+reviewed source checkout; do not configure a nonexistent `npx` package or point
+an MCP client directly at the REST bridge URL.
+
+```sh
+git clone https://github.com/robbygat/slop-web.git "$HOME/slop-mcp"
+git -C "$HOME/slop-mcp" checkout --detach 0c7aef1d4c9b916e2278b265e7558428ea6e68ed
+npm --prefix "$HOME/slop-mcp/mcp" ci --omit=dev
+```
+
+This pins the reviewed adapter rather than silently pulling later changes.
+Choose a different new checkout directory if `~/slop-mcp` already exists.
+
+**Codex** ([official MCP setup](https://developers.openai.com/codex/mcp/)):
+
+```sh
+codex mcp add slop --env SLOP_MCP_URL=https://api.slop.game/functions/v1/slop-mcp -- node "$HOME/slop-mcp/mcp/cli.mjs"
+```
+
+**Claude Code** ([official MCP setup](https://code.claude.com/docs/en/mcp)):
+
+```sh
+claude mcp add --transport stdio --scope user slop --env SLOP_MCP_URL=https://api.slop.game/functions/v1/slop-mcp -- node "$HOME/slop-mcp/mcp/cli.mjs"
+```
+
+**Cursor** uses the JSON below in `~/.cursor/mcp.json` (global) or
+`.cursor/mcp.json` (project), as described in its
+[official MCP setup](https://cursor.com/docs/mcp). Replace the argument with
+the checkout's actual absolute path, for example
+`/Users/yourname/slop-mcp/mcp/cli.mjs`; a JSON string does not expand `$HOME`.
+If a desktop client cannot find Node, use the absolute path reported by
+`command -v node` as its `command` value.
 
 `node cli.mjs` speaks MCP on stdin/stdout; a blank terminal is expected. Configure
 your agent's local MCP launcher with command `node` and the **absolute** path to
@@ -69,7 +105,7 @@ Deployment has three separately reviewable artifacts:
    linked schema. **Do not run a bulk `supabase db push`: repository histories
    diverge.** Record this exact version through the established narrow process.
 2. **One Edge function**: `supabase/functions/slop-mcp`. Its injected Supabase
-   URL, anon key and service-role key remain server-only. It needs
+   URL and named API keys remain server-only. It needs
    `verify_jwt = false` because opaque agent tokens are distinct from user JWTs;
    its handler explicitly verifies phone JWTs and uses private SQL grant hashes
    for agents. Review `supabase/slop-mcp.config.toml`. Proposed command after
@@ -87,6 +123,62 @@ existing `game-bundle` preview action. The latter checks the full exact manifest
 and mints an immutable fifteen-minute snapshot. Only then does a private
 service-only RPC record readiness. A direct phone RPC cannot mark a game ready.
 No borrowed user identity or service-role-as-user context is constructed.
+
+### Narrow deployment commands
+
+Keep `SLOP_MCP_ENABLED` off in released mobile builds during these steps. They
+are deployment instructions, not a statement that deployment has happened.
+
+1. From this repository, emit the rollback-only preflight:
+
+   ```sh
+   node mcp/deployment-preflight.mjs > /tmp/slop-mcp-deployment-preflight.sql
+   ```
+
+   From the already linked mobile checkout, run:
+
+   ```sh
+   supabase db query --linked --file /tmp/slop-mcp-deployment-preflight.sql --output json
+   ```
+
+   This substitutes the migration's final `COMMIT` with real role/RLS/grant,
+   missing identity, nonexistent account, pending pairing, wrong poll secret,
+   and unapproved connection assertions, then `ROLLBACK`. It creates no Auth
+   accounts, approved connections, games, or uploads. Its last row must contain
+   three nulls (`rolled_back_table`, `rolled_back_service`, `rolled_back_phone`).
+   The generator itself is tested against PostgreSQL through PGlite.
+2. Review and apply the one migration file using the linked checkout's
+   `supabase db query --linked --file /absolute/path/to/slop-web/supabase/migrations/20260914170000_slop_mcp_bridge.sql --output json`.
+   Record only version `20260914170000` through the project's established narrow
+   migration-history process. Never push or repair unrelated versions.
+3. From this repository, deploy exactly this Edge function:
+
+   ```sh
+   supabase functions deploy slop-mcp --project-ref yqlolbebqfsodqgjlbeh --no-verify-jwt --use-api
+   ```
+
+   The platform injects `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEYS`, and
+   `SUPABASE_SECRET_KEYS`. The two key variables are JSON dictionaries; this
+   function reads each `default` key. It falls back to legacy
+   `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` only when the corresponding
+   dictionary is absent. New `sb_secret_` keys go in `apikey` only; phone
+   requests still use the actual user's JWT in `Authorization`. See
+   [Supabase's key migration guide](https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys).
+   No additional provider secret or OAuth client registration is needed.
+   Never copy these values into agent
+   setup, QR codes, or mobile configuration. `--use-api` bundles the three source
+   modules without requiring local Docker. No `--prune` and no other functions.
+4. Read `/functions/v1/slop-mcp/health` on `https://api.slop.game`: expect version1,
+   `stdio-bridge`, and deployed true. A credential-free `/connections` must return
+   401; an invalid opaque agent grant must fail. These checks prove deployment
+   and denial behavior, not account pairing or playable delivery.
+
+Before the real-device trial, the `game-drafts` bucket must remain private and
+the existing `game-bundle` preview action must be deployed. Use a signed-in,
+nonanonymous Slop account without a deletion intent. The phone sends its own
+current session JWT; the desktop starts without account credentials. For the
+trial build only, set `--dart-define=SLOP_MCP_ENABLED=true`, then perform the
+consented end-to-end flow below. Enable general release only after it passes.
 
 Before enabling production, exercise one real consenting test account end to
 end: pair; scan + explicit approval; send a harmless text bundle; phone confirm;
@@ -123,7 +215,7 @@ pending grant. This run has not performed those live account operations.
 
 ## Verified evidence
 
-`npm test`: nineteen behavioral tests covering actual SDK STDIO handshakes,
+`npm test`: twenty-one behavioral tests covering actual SDK STDIO handshakes,
 HTTP handler boundaries, and the real migration/functions in isolated PGlite
 PostgreSQL. SQL tests exercise ownership, grants, anonymous/deleted-account
 denial, expiry, request replay/conflict, stale revisions, leases, revocation and
@@ -133,10 +225,35 @@ The actual Edge fetch adapter is also exercised with injected upstream responses
 QR tests decode the generated PNG and verify the exact intended challenge URL.
 `npx --yes deno check supabase/functions/slop-mcp/index.ts` passes.
 
-Read-only linked-schema preflight on 2026-09-14 confirms the MCP objects do not
-exist yet, the current private-bundle columns and eligibility helpers exist,
+Initial read-only linked-schema preflight on 2026-09-14 found no MCP objects
+before deployment. The current private-bundle columns and eligibility helpers exist,
 and owner draft insertion + private draft Storage writes have compatible live
 policies. The old web `api.publishGame` uses a direct-public insert; this bridge
 deliberately avoids that obsolete path. No account data, claims or credentials
 were changed during verification. Live PostgREST/Edge limits and full installed
 Simulator-to-service delivery still require the deployment check above.
+
+A fresh 2026-09-14 readiness check confirms origin/main is
+`0c7aef1d4c9b916e2278b265e7558428ea6e68ed` and the repository is public. The
+production `/mcp/pair` fallback matches this repository byte for byte, and AASA
+already includes `/mcp/pair` for `6S8Z64V9JP.game.slop.slop`. The root deployment
+then applied and recorded only migration `20260914170000`, and deployed only
+`slop-mcp`. Health returned 200 and a credential-free connection request 401.
+The first live unapproved SDK pairing exposed a legacy Edge credential mismatch:
+`slop_pair` returned `authentication_required` before a challenge was created.
+The named-key compatibility fix is covered by both current and legacy Edge
+adapter tests, and the same single function was then redeployed. A fresh real
+SDK STDIO smoke against `api.slop.game` verified all five tools, successful
+pending pairing, the actual 640×640 PNG decoding to its exact challenge URI,
+0600 temporary credentials, and a second server poll still reporting pending.
+A wrong poll secret returned 403 `invalid_pairing`; the unapproved agent token
+returned 403 `invalid_connection`, and draft listing was denied. Temporary
+local credentials were removed without logging tokens, codes, or the QR.
+Only one ownerless ten-minute challenge was created. No account was approved,
+read, or given a game upload; no private preview was minted.
+
+The real phone scan → explicit approval → draft delivery → validated private
+preview → retry/new revision → revoke trial is still outstanding. The Mac was
+locked before that UI trial, and the mobile deployment gate remains false.
+General enablement must wait for that trial. Health and a pending QR alone
+never mean Connected or prove private draft delivery.

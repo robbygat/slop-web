@@ -2,8 +2,30 @@ import { BridgeError, mime, requireValue, VERSION } from "./contract.mjs";
 import { createHandler } from "./handler.mjs";
 
 const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
-const anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+function platformKey(mapName: string, legacyName: string): string {
+  const raw = Deno.env.get(mapName);
+  if (raw) {
+    // Hosted projects inject the current named keys. Legacy reserved variables
+    // can retain retired credentials after a key migration. Never log either.
+    let named: unknown;
+    try {
+      named = JSON.parse(raw);
+    } catch {
+      throw new Error(`Invalid ${mapName} configuration`);
+    }
+    const value = (named as Record<string, unknown> | null)?.default;
+    if (typeof value !== "string" || !value) {
+      throw new Error(`Missing default ${mapName} key`);
+    }
+    return value;
+  }
+  return Deno.env.get(legacyName) ?? "";
+}
+const anon = platformKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_ANON_KEY");
+const service = platformKey(
+  "SUPABASE_SECRET_KEYS",
+  "SUPABASE_SERVICE_ROLE_KEY",
+);
 const knownCodes = new Set([
   "invalid_pairing",
   "pairing_expired",
@@ -23,16 +45,17 @@ const knownCodes = new Set([
 ]);
 async function request(
   path: string,
-  token: string,
+  token: string | null,
   method = "GET",
   body?: unknown,
   extra: Record<string, string> = {},
+  apiKey = anon,
 ) {
   const response = await fetch(`${base}${path}`, {
     method,
     headers: {
-      apikey: anon,
-      Authorization: `Bearer ${token}`,
+      apikey: apiKey,
+      ...(token === null ? {} : { Authorization: `Bearer ${token}` }),
       ...extra,
       ...(body == null ? {} : { "content-type": "application/json" }),
     },
@@ -63,10 +86,16 @@ async function request(
 }
 const deps = {
   service: (action: string, input: unknown) =>
-    request("/rest/v1/rpc/mcp_service", service, "POST", {
-      p_action: action,
-      p: input,
-    }),
+    // New secret API keys are not JWTs. Supabase authenticates them through
+    // apikey; putting sb_secret in Bearer causes an Invalid JWT rejection.
+    request(
+      "/rest/v1/rpc/mcp_service",
+      service.startsWith("sb_secret_") ? null : service,
+      "POST",
+      { p_action: action, p: input },
+      {},
+      service,
+    ),
   phone: (token: string, action: string, input: unknown) =>
     request("/rest/v1/rpc/mcp_phone", token, "POST", {
       p_action: action,
