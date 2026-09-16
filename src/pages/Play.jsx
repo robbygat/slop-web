@@ -4,6 +4,7 @@ import {trustedMedia} from '../lib/contracts.js';
 import {Button,Empty,Notice,SectionHeading,Slop,useAsync} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import Hero from '../components/Hero.jsx';
+import AppDownloadBar from '../components/AppDownloadBar.jsx';
 import {GameShelf} from '../components/GameShelf.jsx';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
 import {gameFormat} from '../lib/game-format.js';
@@ -17,7 +18,7 @@ export default function Play({params,search,term,setSearch}){
  useEffect(()=>{pageEpoch.current++;pagePending.current=false;setExtra([]);setHasMore(true);setMore(false);setMoreError(null);return()=>{pageEpoch.current++;};},[search,platform]);
  useEffect(()=>{let alive=true;const slug=params.get('game');if(slug)loadGame(slug).then(g=>{if(alive)setSelected(g);}).catch(e=>{if(alive)setMoreError(e);});return()=>{alive=false;};},[params.get('game')]);
  async function loadMore(){if(pagePending.current)return;const epoch=pageEpoch.current;pagePending.current=true;setMore(true);setMoreError(null);try{const rows=await loadGames({search,platform,offset:(feed.data?.length||0)+extra.length});if(epoch!==pageEpoch.current)return;setExtra(old=>[...old,...rows.filter(row=>!old.some(item=>item.id===row.id))]);setHasMore(rows.length===24);}catch(e){if(epoch===pageEpoch.current)setMoreError(e);}finally{if(epoch===pageEpoch.current){pagePending.current=false;setMore(false);}}}
- return <div><Hero/><div className="home-platforms" aria-label="Game platforms">{GAME_PLATFORMS.map(([id,label])=><button key={id} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div>
+ return <div><Hero/><AppDownloadBar/><div className="home-platforms" aria-label="Game platforms">{GAME_PLATFORMS.map(([id,label])=><button key={id} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div>
  {!search&&(popular.loading||popular.error||popular.data?.length>0)&&<section className="popular-section"><SectionHeading title="Popular games" action={<a className="inline-link" href="#/feed">Keep playing <Icon name="arrow" size={18}/></a>}></SectionHeading>{popular.loading?<div className="game-grid skeleton-grid" role="status" aria-label="Loading popular games">{[0,1,2,3].map(i=><div className="skeleton-card" key={i}/>)}</div>:popular.error?<Notice error={popular.error} onRetry={popular.refresh}/>:<GameShelf label="Popular games" resetKey={platform}>{popular.data?.map(game=><GameCard key={game.id} game={game} onOpen={setSelected}/>)}</GameShelf>}</section>}
 
  <div className="discovery-top" id="discover"><SectionHeading title={search?`Games for “${search}”`:'New games'}></SectionHeading><div className="search-field mobile-search"><Icon name="search"/><input aria-label="Search games" value={term} onChange={e=>setSearch(e.target.value)} placeholder="Search games"/></div></div>

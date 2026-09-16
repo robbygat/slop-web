@@ -76,7 +76,6 @@ export default function Hero() {
         </div>
         <div className="arcade-create"><HeroComposer/></div>
         {error && <p className="arcade-error" role="alert">{error}</p>}
-        <button className="arcade-motion" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play gameplay preview' : 'Pause gameplay preview'}>{paused ? '▷' : 'Ⅱ'}</button>
       </>}
     </div>
     <div className="arcade-footer">
