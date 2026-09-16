@@ -8,8 +8,8 @@ function AppleMark(){return <svg viewBox="0 0 24 24" aria-hidden="true"><path d=
 function AndroidMark(){return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7.2 6.8-1.5-2.5m11.1 2.5 1.5-2.5M5.4 9.2h13.2M7 7h10a2 2 0 0 1 2 2v7.4a1.6 1.6 0 0 1-1.6 1.6H6.6A1.6 1.6 0 0 1 5 16.4V9a2 2 0 0 1 2-2Zm1.1 11v3m7.8-3v3M5 11H2.8v5.5M19 11h2.2v5.5"/><circle cx="8.5" cy="10.3" r=".7" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10.3" r=".7" fill="currentColor" stroke="none"/></svg>}
 
 export default function AppDownloadBar(){return <section className="home-app-download" aria-label="Download the Slop app">
- <img src="/assets/mobile/slop.png" alt="Slop app icon"/>
- <div className="home-app-copy"><strong>Take Slop with you.</strong><span>Same games. Same account.</span></div>
+ <span className="home-app-icon" aria-hidden="true"><img src="/assets/mobile/app-icon.png" alt=""/></span>
+ <div className="home-app-copy"><strong>Slop for iPhone &amp; Android.</strong><span>Your games and account come with you.</span></div>
  <div className="home-app-actions">
   <a href={appStore} target="_blank" rel="noreferrer" aria-label="Download Slop on the App Store"><AppleMark/><span><small>Download on the</small>App Store</span></a>
   <a href={android} download="Slop-3.7.5-build-2051-universal.apk" aria-label="Download Slop APK for Android"><AndroidMark/><span><small>Download for</small>Android</span></a>
