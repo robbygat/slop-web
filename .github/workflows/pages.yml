@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # GitHub Pages has no dynamic rewrites. Refresh public game-name pages so
+    # a newly published permanent link receives HTTP 200 within five minutes.
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: read
