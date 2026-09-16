@@ -1,6 +1,8 @@
 import React,{useEffect,useImperativeHandle,useRef,useState} from 'react';
 import {loadDocument,acceptPlayerEvent} from '../lib/player.js';
 import {gameFormat} from '../lib/game-format.js';
+import {gamePlatform} from '../lib/game-platforms.js';
+import {canonicalGameUrl} from '../lib/game-links.js';
 import {scoreRun} from '../lib/leaderboard.js';
 import {validRunScore} from '../lib/score-contracts.js';
 import {createRestartGate} from '../lib/player-restart.js';
@@ -16,11 +18,16 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false);
+ const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
+ const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
  const state=useRef({});state.current={muted,finished,board,paused,expanded};const format=gameFormat(game),controls=legacyControlSpec(url);
  const send=message=>frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');
  useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send}));
+ useEffect(()=>{const query=matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
+ useEffect(()=>{if(desktopRequired&&expanded)exitExpanded();},[desktopRequired,expanded]);
  useEffect(()=>{
   restartGate.current.cancel();
+  if(desktopRequired){run.current=null;setDoc(null);setReady(false);setError(null);return;}
   const controller=new AbortController();const current={score:0,ended:false,interacted:!requireInteraction||replayIntent.current,save:game&&!preview?scoreRun(game.slug):null};run.current=current;replayIntent.current=false;
   setDoc(null);setError(null);setReady(false);setFinished(null);setSave(null);setBoard(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
@@ -28,7 +35,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
   else loadDocument(url,{signal:controller.signal,preview}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
   return()=>{restartGate.current.cancel();controller.abort();run.current=null;};
- },[url,restart,preview,game?.slug,requireInteraction]);
+ },[url,restart,preview,game?.slug,requireInteraction,desktopRequired]);
  useEffect(()=>{
   const onMessage=e=>{
    const event=acceptPlayerEvent(e.source,frame.current?.contentWindow,e.data);if(!event)return;
@@ -85,6 +92,12 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   }});
   if(request)send({type:'restart',request});
  }
+ if(desktopRequired)return <div ref={container} className="game-player desktop-required">
+  <svg width="44" height="44" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="3" y="4" width="26" height="18" rx="3"/><path d="M16 22v6m-6 0h12"/></svg>
+  <h2>This is a desktop game.</h2><p>Open {title} on your computer to play.</p>
+  <input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
+  <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button>
+ </div>;
  return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${format.orientation}`} style={{'--game-aspect':format.playerAspect}}>
   <div className="player-surface"><div className="player-frame">
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}

@@ -21,6 +21,79 @@
       "preview_url": "voxel-drift-ace-9s5l/1.0.0/published-previews/a443a1ba9a934d0bebf70607bc2cb4126920d4a94d3fe97533adef7cd0ae498e/06a0c812-e3f2-4e6c-9868-0cc51c0accf8/r4-a443a1ba9a934d0bebf70607bc2cb412-c3-8fea6ad079d9d4445e87502bfe8cb2ad/preview.gif",
       "preview_status": "ready",
       "file": "night-drift"
+    },
+    {
+      "slug": "flappy-duck-7prm",
+      "name": "Flappy Duck",
+      "creator": "rob",
+      "file": "flappy-duck",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/flappy-duck-7prm/1.0.0/index.html",
+      "source_game_sha256": "b5364652d4145842a8f62a00eac0c3f8b7c6ae676961a63d4cc93efb3a8657a4",
+      "source_sdk_sha256": "7a3545644833a4abd30bc528a7db2504c42f161d01169bb6c87da840fd07c813",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "public mobile bundle in an isolated browser canvas",
+        "logical_width": 432,
+        "logical_height": 936,
+        "width": 1080,
+        "height": 2340,
+        "fps": 30,
+        "seconds": 14,
+        "bytes": 2281375,
+        "poster_bytes": 102813,
+        "codec": "H.264",
+        "gameplay": "Real tap-controlled flight through pipes; successful take reached score 13 without a game-over screen.",
+        "render_adjustment": "Canvas pixel ratio 2.5; original logical viewport and gameplay rules preserved. Read-only telemetry chose ordinary pointer taps; no world or score writes."
+      }
+    },
+    {
+      "slug": "shear-stack-85048e702bb293254ebb9bd0f4926638",
+      "name": "Stax",
+      "file": "stax",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/releases/caba3d7eaca11c16b7815af06445744ffc92e3fd85756c4cbe297d7d9248118d/shear-stack-85048e702bb293254ebb9bd0f4926638/1.0.0/index.html",
+      "source_game_sha256": "1e6ec3beaf516ecd4a0397a2d2cbc50a02a4dc3ad7d7d6c00e09359a319ee1e2",
+      "source_sdk_sha256": "14fa3140ce2fa0ea0e65bb865e1c543f2035a4df67b7159293424a3441c14b6a",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "Published mobile bundle in an isolated browser canvas",
+        "logical_width": 432,
+        "logical_height": 936,
+        "width": 1080,
+        "height": 2340,
+        "fps": 30,
+        "seconds": 13.8,
+        "bytes": 4904194,
+        "poster_bytes": 135347,
+        "codec": "H.264",
+        "sha256": "778449627a3822fe4788cd965e5351fd2d18d7ed115aba53a7cff56412155732",
+        "gameplay": "Ordinary touch taps stack glass panes, trim edges and build 17 layers. The original game reached score 680 without game over.",
+        "render_adjustment": "WebGL backing pixel ratio 2.5 with unchanged logical viewport and game rules. Read-only telemetry chooses ordinary pointer taps; no world or score writes. The transparent WebGL canvas is composited over its exact authored CSS gradient at identical native dimensions. Separate DOM score HUD is omitted."
+      }
+    },
+    {
+      "slug": "surfy-sub-d6zs",
+      "name": "Surfy Sub",
+      "creator": "rob",
+      "file": "surfy-sub",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/surfy-sub-d6zs/1.0.0/index.html",
+      "source_game_sha256": "61d3384884374756bd4fe8bf6de552d5634d1fdda42c4634590321d466cae0aa",
+      "source_sdk_sha256": "3c4680f423063f8f4ab575d8a7945712a509cbee1fb1cc114279abf02ca4ebf6",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "Live published mobile bundle in an isolated browser canvas",
+        "logical_width": 432,
+        "logical_height": 936,
+        "width": 1080,
+        "height": 2340,
+        "fps": 30,
+        "seconds": 14.2,
+        "bytes": 6502439,
+        "poster_bytes": 188489,
+        "codec": "H.264",
+        "sha256": "f974f51bcfd73faf9afc9c055247a2e5a0263e0e4cedec3ecbd4bc17246377b2",
+        "gameplay": "Original 3D lane runner with ordinary swipes, coin collection and obstacle avoidance; the run reached score 279 at 20.1 seconds without game over.",
+        "render_adjustment": "WebGL pixel ratio 2.5 and preserveDrawingBuffer; unchanged original geometry, camera and rules. Read-only telemetry chooses ordinary pointer swipes, without state or score writes. Separate DOM score and instructions are omitted."
+      }
     }
   ]
 }

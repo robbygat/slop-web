@@ -59,8 +59,8 @@ export function GameplayReel({items, running, onSelect, selected, onChoose}) {
     {slots.map((index, slot) => index == null ? null : <video
       key={slot} ref={element => {players.current[slot] = element;}}
       className={`arcade-film ${slot === active ? 'is-current' : ''}`}
-      src={film(items[index])} muted playsInline preload="auto"
-      poster={`/assets/${items[index].folder}/${items[index].file}.jpg`}
+      src={film(items[index])} muted playsInline preload={running ? 'auto' : 'metadata'}
+      poster={items[index].poster || `/assets/${items[index].folder}/${items[index].file}.jpg`}
       aria-label={`Recorded ${items[index].name} gameplay`} aria-hidden={slot !== active}
       onTimeUpdate={event => progress(event, slot)} onEnded={() => ended(slot)}
       onCanPlay={activate}

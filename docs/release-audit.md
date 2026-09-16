@@ -121,20 +121,32 @@ protection remain intact. Background contract tests check inventory and receipt
 validation. Final authenticated visual/equip QA is recorded by the release owner.
 
 The native Flutter For You promotion retains its existing non-game entry after
-every ten real games. Its final design uses two full-bleed illustrated halves
-from the native Build artwork, with the same authored desktop-monitor geometry,
-the native morphing Slop, and actual June Run Infinite Hard/Skater gameplay.
-The bundled 400×300 preview preserves the recording's speed: 171 frames over
-17.1 seconds, with an exact source-poster fallback. It stops offscreen, in the
-background, and for reduced motion. The native release agent subsequently
+every ten real games. Its design uses two full-bleed illustrated halves
+from the native Build artwork, with the same authored desktop-monitor geometry
+and native morphing Slop. The first motion revision used an optimized
+400×300 Run Infinite Hard/Skater recording. The final source replaces that
+preview with the verified 15-second, 1280×800 three-game desktop video reel
+described below. Playback stops offscreen, in the background, and for reduced
+motion. The native release agent subsequently
 reported 69 passing focused tests covering Play, promo/layout/themes, native
 mobile-platform filtering and catalog behavior, with clean analysis of four
 production files. Version 3.7.3 build 2050 was installed and visible on the
 dedicated Slop iPhone 17 Pro / iOS 26.5 simulator, and the lowercase Play text was
 observed. An earlier full-bleed promo was observed; the latest generic desktop
 promo revision is source-tested but still awaits direct observation after the
-final reinstall. The final iOS rebuild and APK 4050 were still pending when this
-status was recorded. Signing configuration exists; this is not yet an APK result.
+final reinstall. The native release agent later verified APK 4050 from source
+`66313b2d4b17bc1ad80e1f458dffb7d964cbe26c`: the strict release build passed, the
+signing certificate stayed the same, and Android 36 upgraded in place from 4049
+to 4050, then replaced the earlier 4050 artifact with the final reel revision.
+Bytes pulled from the installed app matched the final 71,244,205-byte download
+at `public/downloads/slop-game-3.7.3-4050-arm64.apk`, SHA-256
+`bcabba16ba5f171d9bf1445394ce06799723f61bd522e642b56c88870b1088d6`.
+Cold launch produced no fatal or unhandled Flutter error. The latest promo had
+24 focused checks and analysis, with 11 release/link checks; these overlap earlier
+suites and are not an additional combined test count. The exact 15-second
+1280×800, 30 fps desktop reel was verified inside both the APK and installed iOS
+2050 app. Final promo observation
+remains separate from verified installation and build success.
 
 ## HD desktop gameplay captures
 
@@ -177,3 +189,96 @@ Deno's billing client and handler suite passed **9/9**, and all four billing
 Edge Functions passed `deno check`. `actionlint` and `git diff --check` passed.
 These checks use local fixtures and do not activate payments, deploy functions,
 publish a game or mutate production records.
+
+
+## Additional originals: publication and complete stage fit
+
+The release owner published Dungeon Panic, Slopcraft and Umbral Red through the
+existing authorized finalizers under `@slop.game`. These join Run Infinite,
+SlopKart and Sloppy Zombies, making six recovered June originals. The three
+additional releases use the final reviewed manifests and eight immutable public
+objects each; their source/runtime hashes, roots and receipts are recorded in
+`desktop-release-receipts.json`. The added games are explicitly desktop games.
+No existing player's game name, ownership or source was replaced.
+
+The additional restoration checker passed 24 focused checks; the original
+three-game checker retained its 27 passing checks. All use the canonical
+Slop.js runtime in an opaque sandbox. Dungeon Panic retains its single-player
+rooms/combat and reports its original score at game over. Slopcraft and Umbral
+Red retain their open-ended play without an invented ranked ending. Unsupported
+legacy multiplayer entry points were removed. Slopcraft's pointer-lock rejection
+fallback uses real drag-to-look plus its original movement, mining and placement
+handlers; actual play verified movement, jumping, mining and a placed glowstone
+block.
+
+All three additional games were measured inside opaque iframes at both desktop
+sizes. These are rendered stage bounds, with original logical world dimensions
+preserved:
+
+| Game | 1280×800 host | 900×500 host |
+| --- | --- | --- |
+| Dungeon Panic | 1066.664×799.992, centered | 666.664×499.992, centered |
+| Umbral Red | 1066.664×799.992, centered | 666.664×499.992, centered |
+| Slopcraft | 1280×720, centered | 888.883×499.992, centered |
+
+None overflowed or cropped. Removing the standalone decorative Slopcraft stage
+border preserved the exact 16:9 canvas fit. Dungeon and Umbral keep their
+original 800×600 canvas. Publication covers are 1280×720 and previews are
+640×360 with 30 frames, letterboxed where needed. Additional cover/GIF byte
+receipts respectively are Dungeon 51,531/938,512; Slopcraft 62,456/333,765;
+Umbral 43,265/360,430. These pass the finalizer's image limits.
+
+## Complete gameplay media receipts
+
+The six desktop hero MP4s were decoded with `ffprobe`, hashed, and checked for
+fast-start metadata. Complete file and poster hashes are in
+`desktop-hero-media-receipts.json`.
+
+| Game | Actual rendered pixels | Duration | MP4 bytes |
+| --- | --- | --- | --- |
+| Run Infinite | 1600×1200 | 16.500 s | 21,166,581 |
+| SlopKart | 1920×1200 | 16.467 s | 5,725,564 |
+| Sloppy Zombies | 1600×1200 | 16.467 s | 1,005,585 |
+| Dungeon Panic | 1600×1200 | 16.467 s | 1,263,328 |
+| Slopcraft | 1920×1080 | 22.033 s | 3,117,112 |
+| Umbral Red | 1600×1200 | 16.467 s | 992,210 |
+
+These render the actual restored games at high backing resolution with unchanged
+logical geometry. Ordinary keyboard/mouse actions drive their original rules.
+Zombies shows movement and shooting; Dungeon shows room traversal and combat;
+Slopcraft shows building/mining; Umbral shows exploration, battle and victory.
+The Dungeon selected segment ends before the later natural death. Slopcraft's
+canvas footage excludes its separate DOM hotbar/crosshair. Slopcraft retains
+variable recording frame timing (approximately 29.3 fps); the other five encode
+at 30 fps. No AI frames, motion interpolation or enlarged low-resolution source
+was used. The mobile app's bundled reel remains unchanged by these web exports.
+
+The mobile hero also has new Flappy Duck and Stax captures from their exact
+published mobile bundles. Both preserve a logical 432×936 phone viewport and
+render at 1080×2340, with ordinary pointer taps chosen through read-only
+telemetry. Flappy's successful take reached score 13; Stax reached 17 layers and
+score 680. Selected clips contain active play without a game-over screen.
+Flappy's H.264 file is 14.0 seconds/2,281,375 bytes; Stax is 13.8 seconds/4,904,194
+bytes, both 30 fps and fast-start. Stax composites the authored CSS gradient
+behind its transparent WebGL canvas at the same native resolution; its separate
+DOM score HUD is omitted. Stax's first, middle and final frames were inspected,
+and encoded browser playback advanced at 1080×2340 without a media error.
+Actual source URLs, hashes and capture adjustments are recorded in
+`public/assets/gameplay/sources.json`.
+
+
+The final additional mobile clip is **Surfy Sub** by `@rob`, verified against the
+live published catalog (`surfy-sub-d6zs`). Its original three-lane runner uses
+ordinary pointer swipes for lane changes, coin collection and obstacle avoidance.
+The unmodified simulation reached score 279 at 20.1 seconds without game over.
+The selected 14.2-second H.264 clip is rendered at native 1080×2340, 30 fps,
+6,502,439 bytes, with an actual-frame 188,489-byte JPG poster. Decoded first,
+middle and final frames contain active play; fast-start metadata and dimensions
+were verified. Original camera, world geometry and rules are preserved, with
+only high-resolution WebGL backing and read-only input telemetry in the capture
+fixture. Separate DOM score and instructions are omitted from canvas footage.
+Source and file hashes are included in `public/assets/gameplay/sources.json`.
+
+Flappy Duck's authored body is 40×32 logical pixels in the 432×936 recording
+viewport (about 9.3% of the width and 3.4% of the height). Its small bird is native
+composition, separate from the hero's phone-fill cropping.

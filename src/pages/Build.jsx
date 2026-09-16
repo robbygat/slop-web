@@ -11,13 +11,19 @@ import {Icon} from '../components/Icon.jsx';
 import './build.css';
 import SlopMotion from '../components/SlopMotion.jsx';
 import {GamePlayer} from '../components/GamePlayer.jsx';
+import {buildIdeaRoute,clearBuildIdea,readBuildIdea,saveBuildIdea} from '../lib/build-draft.js';
 const samples=['A tiny frog hopping between floating islands','Drift a toy car through a midnight city','A cozy puzzle about sorting little planets'];
 const modelNames={'gpt-5.6-sol':'Sol','gpt-6-astra':'Astra'};
 export default function Build({params}){
- const{user,requireAuth}=useAuth();const[prompt,setPrompt]=useState(''),[model,setModel]=useState('gpt-5.6-sol'),[dimension,setDimension]=useState('auto'),[project,setProject]=useState(null),[run,setRun]=useState(null),[revision,setRevision]=useState(null),[details,setDetails]=useState(null),[error,setError]=useState(null),[busy,setBusy]=useState(false),[pending,setPending]=useState(null),[preview,setPreview]=useState(null),[failures,setFailures]=useState(0),[message,setMessage]=useState('');
+ const{user,requireAuth}=useAuth();
+ const[initialIdea]=useState(()=>params.has('idea')?readBuildIdea({ownerId:user?.id||null,id:params.get('idea')}):null);
+ const ideaId=useRef(initialIdea?.id||null);
+ const[prompt,setPrompt]=useState(initialIdea?.prompt||''),[model,setModel]=useState('gpt-5.6-sol'),[dimension,setDimension]=useState('auto'),[project,setProject]=useState(null),[run,setRun]=useState(null),[revision,setRevision]=useState(null),[details,setDetails]=useState(null),[error,setError]=useState(null),[busy,setBusy]=useState(false),[pending,setPending]=useState(null),[preview,setPreview]=useState(null),[failures,setFailures]=useState(0),[message,setMessage]=useState('');
  const[lookBrief,setLookBrief]=useState(''),[controlBrief,setControlBrief]=useState('');
  const routeEpoch=useRef(0);const stateRef=useRef({});stateRef.current={project,run,revision};
  const remix=UUID.test(params.get('remix'))?params.get('remix'):null;
+ useEffect(()=>{if(!project&&ideaId.current)saveBuildIdea(prompt,{ownerId:user?.id||null,id:ideaId.current,remixId:remix});},[prompt,project,user?.id,remix]);
+ useEffect(()=>{if(initialIdea)document.getElementById('game-idea')?.focus();},[]);
  const history=useAsync(async()=>user?(await creator('/projects')).projects:[],[user?.id]);
  const capabilityScope=[user?.id,project?.id,project?.head_revision_id,remix].join(':');
  const capabilities=useAsync(async()=>user?{...await creator('/capabilities'+(project?`?project_id=${project.id}`:remix?`?source_game_id=${remix}`:'')),context:capabilityScope}:null,[capabilityScope]);
@@ -37,10 +43,16 @@ export default function Build({params}){
   if(next.state==='ready')setMessage('Your game is ready to playtest or publish.');
   history.refresh();
  }
- async function submit(e,retry=false){e?.preventDefault();if(!requireAuth())return;if(!retry&&!prompt.trim())return;setBusy(true);setError(null);setMessage('');const epoch=routeEpoch.current;
+ async function submit(e,retry=false){e?.preventDefault();if(!retry&&!prompt.trim())return;
+  if(!user){
+   const idea=saveBuildIdea(prompt,{id:ideaId.current||undefined,remixId:remix,awaitingAuth:true});
+   if(!idea){setError(new Error('Your browser couldn’t save your idea before sign-in. Enable tab storage and try again.'));return;}
+   ideaId.current=idea.id;location.hash=buildIdeaRoute(idea);requireAuth();return;
+  }
+  if(!requireAuth())return;setBusy(true);setError(null);setMessage('');const epoch=routeEpoch.current;
   const body=retry?pending:{request_id:crypto.randomUUID(),prompt:project?prompt.trim():[prompt.trim(),lookBrief.trim()&&`Visual style: ${lookBrief.trim()}`,controlBrief.trim()&&`Controls: ${controlBrief.trim()}`].filter(Boolean).join('\n\n'),model,dimension,...(project?{project_id:project.id,...(project.head_revision_id?{base_revision_id:project.head_revision_id}:{})}:remix?{source_game_id:remix}:{})};
   if(!body){setBusy(false);return;}if(body.prompt.length>12000){setError(new Error('Shorten your idea or details to fit 12,000 characters.'));setBusy(false);return;}setPending(body);sessionStorage.setItem(`slop.pending-build.${user.id}`,JSON.stringify({owner:user.id,body}));
-  try{const data=await creator('/runs',body);if(epoch!==routeEpoch.current)return;setPending(null);sessionStorage.removeItem(`slop.pending-build.${user.id}`);setPrompt('');setFailures(0);await acceptRun(data.run);capabilities.refresh();}
+  try{const data=await creator('/runs',body);if(epoch!==routeEpoch.current)return;setPending(null);sessionStorage.removeItem(`slop.pending-build.${user.id}`);clearBuildIdea({ownerId:user.id,id:ideaId.current});ideaId.current=null;setPrompt('');setFailures(0);await acceptRun(data.run);capabilities.refresh();}
   catch(e){if(epoch===routeEpoch.current){setError(e);if(e.status>=400&&e.status<500&&!['request_conflict','run_busy'].includes(e.code)){setPending(null);sessionStorage.removeItem(`slop.pending-build.${user.id}`);}}}
   finally{if(epoch===routeEpoch.current)setBusy(false);}
  }

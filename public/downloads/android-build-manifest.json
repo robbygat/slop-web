@@ -1,29 +1,34 @@
 {
-  "file": "slop-game-3.7.3-4049-arm64.apk",
+  "file": "slop-game-3.7.3-4050-arm64.apk",
   "version": "3.7.3",
-  "versionCode": 4049,
-  "sourceBuildNumber": 2049,
+  "versionCode": 4050,
+  "sourceBuildNumber": 2050,
   "package": "game.slop",
   "abi": "arm64-v8a",
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 66097203,
-  "sha256": "6184b5a8112c337cc23e8a5113e773e6072c863dd2f9f5d926b23f1100fb2148",
+  "bytes": 71244205,
+  "sha256": "bcabba16ba5f171d9bf1445394ce06799723f61bd522e642b56c88870b1088d6",
   "certificateSha256": "48:66:DC:90:3F:E0:41:F8:E0:BE:E3:C2:40:AE:13:40:EC:4E:BC:FD:D5:A4:E3:40:19:F4:FC:8E:B5:97:B8:AB",
-  "builtAt": "2026-09-16T10:52:16.678124+00:00",
-  "sourceRevision": "6c965890a609b68474f59e705cd8e6f4bd389922",
+  "builtAt": "2026-09-16T12:59:56.712020+00:00",
+  "sourceRevision": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
   "sourceBaseRevision": "e2538ff05461130ca4dbf5bd70073e7cc1861068",
   "flutterVersion": "3.47.4",
   "mcpEnabled": true,
   "billingEnabled": false,
   "creatorBackendVersion": 9,
   "verification": {
-    "releaseBuild": "passed with dependency locking and checksum verification",
-    "signature": "APK v2 release certificate verified; same direct-download certificate as build 4048",
-    "android36Install": "passed in-place update from build 4048; pulled installed APK SHA-256 equals download",
-    "coldLaunch": "passed on Android 36; no fatal or unhandled Flutter error markers in release process",
+    "releaseBuild": "passed with strict dependency locking and checksum verification; locked declared Media3 runtime dependencies for native video playback",
+    "signature": "APK v2 release certificate verified; same direct-download certificate as build 4049",
+    "android36Install": "passed in-place replacement of the earlier build 4050 revision; installed APK pulled back and SHA-256 equals this download. The preceding revision also passed update from 4049.",
+    "coldLaunch": "passed on Android 36; live app process has no fatal or unhandled Flutter error markers",
     "gameOverLayout": "56 result/Crown tests passed: stable panel, leaderboard and replay bounds across loading, empty, unavailable and ranked states; light/dark renders inspected",
-    "creatorBackend": "v9 source verified byte-for-byte after deployment; signed-in capabilities available with two models; unauthenticated request rejected"
+    "creatorBackend": "v9 source verified byte-for-byte after deployment; signed-in capabilities available with two models; unauthenticated request rejected",
+    "nativeDiscovery": "69 focused Play/promo/layout/theme/platform/catalog tests passed; 66 published mobile rows returned by the live native filter, zero desktop-only originals",
+    "appLinksAndRelease": "11 app-link/release checks passed, including /play, /g, /r and synchronized release identity",
+    "nativeVideoPromo": "24 focused native promo/launch tests and analyzer passed in the implementing task; exact committed 15-second, 1280x800, 30fps three-game reel verified inside APK and installed iOS bundle. Lazy initialization, muted loop and visibility/reduced-motion handling retained.",
+    "iosSimulator": "latest source 66313b2 build 2050 installed and launched on dedicated iPhone 17 Pro simulator running iOS 26.5; exact committed reel bytes verified in installed bundle, Play word observed",
+    "bundledReelSha256": "64c9d44f901ed7c354eb0a7687dbdffecdf2bf64f37f6204c07383185629e30c"
   },
   "previousFunctionalVerification": {
     "sourceRevision": "b85e1b53425c670980a325fea792e2193ef29760",
@@ -40,7 +45,8 @@
   },
   "limitations": [
     "Physical camera QR scanning was not exercised.",
-    "MCP sign-in/pairing/delivery/playback passed on build 4048; that end-to-end UI flow was not repeated for this layout-only native update.",
+    "MCP sign-in/pairing/delivery/playback passed on build 4048; that end-to-end UI flow was not repeated for this native discovery/video update.",
+    "The latest video promo is covered by source tests and its MP4 is present in the installed iOS bundle; this release did not visually reach that promo through the simulator automation.",
     "No new provider generation was purchased or invoked for the prompt-only backend deployment."
   ]
 }

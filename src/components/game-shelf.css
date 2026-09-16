@@ -1,0 +1,17 @@
+.game-shelf{--shelf-height:310px;min-width:0}
+.game-shelf-track{display:flex;gap:22px;align-items:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:2px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding:6px 2px 14px}
+.game-shelf-track>.game-card{flex:0 0 calc(var(--shelf-height) * var(--game-aspect));width:calc(var(--shelf-height) * var(--game-aspect));min-width:0;max-width:none;text-align:left;scroll-snap-align:start;background:transparent}
+.game-shelf-track .game-cover{height:var(--shelf-height);width:100%;aspect-ratio:auto;border-radius:23px}
+.game-shelf-track .game-cover>img:not(.slop){object-fit:cover}
+.game-shelf-track .game-card-info{padding:13px 1px;align-items:center}
+.game-shelf-track .game-card-info>div{min-width:0;flex:1}
+.game-shelf-track .game-card-info h3{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:15px}
+.game-shelf-track .game-card-info p{font-size:11px}
+.game-shelf-track .game-card-info>.slop{width:30px;height:30px}
+.game-shelf-track .game-card-info>svg{display:none}
+.game-shelf-controls{display:flex;justify-content:flex-end;gap:8px;padding-top:6px}
+.game-shelf-controls>button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.game-shelf-controls>button:first-child>svg{transform:rotate(180deg)}
+.game-shelf-controls>button:disabled{opacity:.3}
+@media(min-width:1600px){.game-shelf{--shelf-height:345px}}
+@media(max-width:700px){.game-shelf{--shelf-height:235px}.game-shelf-track{gap:14px}.game-shelf-track .game-cover{border-radius:19px}.game-shelf-track .game-card-info{gap:7px}.game-shelf-track .game-card-info>.slop{height:26px;width:26px}.game-shelf-track .game-card-info h3{font-size:13px}.game-shelf-track .game-card-info p{font-size:10px}.game-shelf-controls{padding-top:2px}}

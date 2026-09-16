@@ -16,14 +16,14 @@ The user accepted Social as a reference and rejected the old homepage repeatedly
 - Only explicit preview dimensions change game shape. Portrait games keep their phone viewport on desktop; square and landscape captures preserve their orientation.
 - Replay now retains one mounted player's previously validated document; no shared cache or cross-account/source reuse. Error retry deliberately refetches the document.
 - Source and game-over checks for all three recovered June desktop originals:27 pass. These are separate from browser play evidence and publication status.
-- Web contract tests:61 pass including acknowledged same-frame replay. Production build passes.
+- Web contract tests:86 pass including acknowledged same-frame replay. Production build passes.
 - Native promo tests:31 pass across ten-game cadence, small screens, larger text, light/dark, inactive/background/reduced-motion states. Native Play text and semantic-selection tests are separate.
 
 ## Remaining release gates
 
-- Final three-clip HD hero rotation and current signed Android download.
-- Exact temporary-account cleanup; no public QA game or review notification.
-- Authorized website push, GitHub Pages run and live-route/download verification.
+- Google OAuth provider configuration and live handoff are recorded in docs/secondary-pages-qa-2026-09-16.md.
+- Temporary-account cleanup completed: the QA auth user, eight private games, two grants and eleven scores were removed; official published games were preserved.
+- First website release deployed with successful Pages runs35098184362 and35098770517. The follow-up is gated by the same verified workflow.
 
 ## Follow-up evidence
 
@@ -33,5 +33,16 @@ The user accepted Social as a reference and rejected the old homepage repeatedly
 - PocketHop version2 mouse jump, obstacle clearance and score1 were verified in the second browser; Space/replay and actual feedback capture followed. Evidence is in /tmp/slop-web-redesign/secondary-pages. No public QA game was submitted.
 
 - PocketHop v2 reached READY as “Pocket Hop — Gentler First Five.” Real Play again kept iframe generation0, closed game-over without loading/remount, then actual input reached score1. The12-frame publication preview encoded and enabled Submit; Submit was not clicked.
-- HD hero: Run Infinite visibly decoded at1600×1200 and SlopKart at1920×1200. Automatic transition changed the actual clip, title and matching Play action. Manual selection while paused showed the chosen first frame without starting playback; Resume restarted it. Third-game completion is tracked separately until final capture.
+- HD hero: Run Infinite visibly decoded at1600×1200 and SlopKart at1920×1200. Automatic transition changed the actual clip, title and matching Play action. Manual selection while paused showed the chosen first frame without starting playback; Resume restarted it. All six desktop recordings are now complete; their independently probed receipts are in docs/desktop-hero-media-receipts.json.
 - Desktop For You at1280×900: inherited880px max-width caused the original left offset. After correction, page/card centerlines both632.5px in the1265px scrollable viewport. Landscape game stage900px and metadata600px also center at632.5px; Sloppy Zombies visibly loaded and played.
+
+## Final follow-up checks
+
+- Published Dungeon Panic, Slopcraft and Umbral Red through the existing review/storage authorities; 24 additional objects were anonymously hash-verified. Desktop catalog shows all six originals under @slop.game.
+- At900×500, expanded Run Infinite uses a centered592×444 complete4:3 playfield; restart visibly returns to the game. Expanding no longer inherits the feed’s normal-width override. Short landscape result layouts keep replay and leaderboard beside each other.
+- Resizing that running player to390×844 removes the iframe and expansion, and shows “This is a desktop game” with a copyable canonical link. No horizontal overflow.
+- Equal-height horizontal shelves at1280 use310px covers: landscape551px wide, portrait174px wide. Arrow navigation moves the shelf; body width remains constrained.
+- Hero prompt bar centered at390×844 and320×700. No horizontal overflow at either actual CSS viewport. A real typed idea arrived unchanged in Build through an opaque idea-ID route; clicking Build as a guest opened sign-in without starting generation. Microphone lifecycle/permissions are covered by focused tests; physical microphone capture was not exercised.
+- Mobile rotation includes actual1080×2340 Flappy Duck and Stax. The selected Stax clip decoded at native dimensions, with only the current video running. Portrait preview footage fills the hero after the user requested a closer crop.
+- Shop’s stale deleted-account token is authoritatively rejected before entitlement sync. Final regression tests protect account switching and distinguish network failures; the actual5173 Shop reload displayed its catalog without the raw database error.
+- Final APK4050 from mobile66313b2 is71,244,205bytes, signature/update/cold-launch tested and reflected in both download manifests. The matching iOS2050 app is installed on the requested iPhone17Pro iOS26.5 simulator.

@@ -1,0 +1,84 @@
+{
+  "source_commit": "0c7aef1",
+  "captured_on": "2026-09-16",
+  "games": [
+    {
+      "name": "run-infinite-desktop",
+      "width": 1600,
+      "height": 1200,
+      "fps": "30/1",
+      "seconds": "16.500000",
+      "bytes": 21166581,
+      "sha256": "c462c53e05250d5fe749a63c97a7f86faa644fefa63741bfce51bf280945b181",
+      "poster": "run-infinite-desktop.jpg",
+      "poster_bytes": 367332,
+      "poster_sha256": "7c81d754034b488a9371e9beab9b0d09a4a674dbaee0e71aa72c85fb5987aad9",
+      "faststart": true
+    },
+    {
+      "name": "slopkart-desktop",
+      "width": 1920,
+      "height": 1200,
+      "fps": "30/1",
+      "seconds": "16.466667",
+      "bytes": 5725564,
+      "sha256": "da14c344eaa707df5ac16a9cf21233ef33c22010125758b0c9032679166fba89",
+      "poster": "slopkart-desktop.jpg",
+      "poster_bytes": 109906,
+      "poster_sha256": "e71ecd65dc0fdc01926dbb84c822c246e53b8a76de9958b5c546b7a03cc7c082",
+      "faststart": true
+    },
+    {
+      "name": "sloppy-zombies-desktop",
+      "width": 1600,
+      "height": 1200,
+      "fps": "30/1",
+      "seconds": "16.466667",
+      "bytes": 1005585,
+      "sha256": "1a235da7ec8a094fd8b1cf332fcf170fd89a1ced9acbce9c610bf1d9e833bf97",
+      "poster": "sloppy-zombies-desktop.jpg",
+      "poster_bytes": 81786,
+      "poster_sha256": "fe01c079cbc12e93440290ff9f4b13e60e2b7864768f083b712663739523c432",
+      "faststart": true
+    },
+    {
+      "name": "dungeon-panic-desktop",
+      "width": 1600,
+      "height": 1200,
+      "fps": "30/1",
+      "seconds": "16.466667",
+      "bytes": 1263328,
+      "sha256": "2a644f8626feb970d80b4b8820305a7cdcfdb0067e490fbaf9a6dedc2da91f57",
+      "poster": "dungeon-panic-desktop.jpg",
+      "poster_bytes": 97344,
+      "poster_sha256": "e8ecac30b1a6b1e54a74afc8ea35370b06c728d011d98a3273c91754c3cd18d9",
+      "faststart": true
+    },
+    {
+      "name": "slopcraft-desktop",
+      "width": 1920,
+      "height": 1080,
+      "fps": "19380/661",
+      "seconds": "22.033333",
+      "bytes": 3117112,
+      "sha256": "132a92fe57988d58e9e30ca3258de5516fe75696f1ec66dfe2c950ee1eed084e",
+      "poster": "slopcraft-desktop-poster.webp",
+      "poster_bytes": 55342,
+      "poster_sha256": "ce315b6a312cca249faaa5a22ffda7ccd24cbd3dd4d38cf291215042a8da70a1",
+      "faststart": true
+    },
+    {
+      "name": "umbral-red-desktop",
+      "width": 1600,
+      "height": 1200,
+      "fps": "30/1",
+      "seconds": "16.466667",
+      "bytes": 992210,
+      "sha256": "532f8cf15a392b53b0a0eb254b210257673783b0590c7874883f8cb123239b16",
+      "poster": "umbral-red-desktop.jpg",
+      "poster_bytes": 79294,
+      "poster_sha256": "1ee6e3cdbc811bfafb0cc49743d0b4034b12b544889af6af50e19a7cc09de801",
+      "faststart": true
+    }
+  ]
+}

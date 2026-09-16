@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Dungeon Panic",
+    "slug": "dungeon-panic-desktop",
+    "id": "3ec1c4f1-98dd-472c-9921-6a213556672c",
+    "owner": "@slop.game",
+    "source_commit": "0c7aef1",
+    "source_game_sha256": "25f26c8fa0119d4613ee27c2e3a31fc7b9e6a2c145779c862a03ccace7dd0414",
+    "runtime_sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f",
+    "release_root": "releases/254e48e8d07abe84c48ed124f414c5b16e1ca03a99590049034f96cf8c376ed0/dungeon-panic-desktop",
+    "digest": "7d0f63b18d07a8c605c11870f7f9682f7a017c3e17e93d0074be6aa68a5b8056",
+    "verified_public_objects": 8,
+    "supported_platforms": [
+      "desktop"
+    ]
+  },
+  {
+    "name": "Slopcraft",
+    "slug": "slopcraft-desktop",
+    "id": "67b96c1b-df5a-431e-9fcc-ac5db1239bbe",
+    "owner": "@slop.game",
+    "source_commit": "0c7aef1",
+    "source_game_sha256": "b898e4237f55600b49a7ae5fcf122c693715aafd6aa5538f5556561759f57072",
+    "runtime_sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f",
+    "release_root": "releases/85916f9d9b3f4c1cc46428de52a703ba6f9987dce543b7e2a11d768817ffa4d6/slopcraft-desktop",
+    "digest": "1bfe583182ba4b1239bb6d535888af1fa102a3b310d24a69ad972a68d30a21dc",
+    "verified_public_objects": 8,
+    "supported_platforms": [
+      "desktop"
+    ]
+  },
+  {
+    "name": "Umbral Red",
+    "slug": "umbral-red-desktop",
+    "id": "44c038ba-19b4-425d-a093-9c03c294328d",
+    "owner": "@slop.game",
+    "source_commit": "0c7aef1",
+    "source_game_sha256": "efe32c913bf27d58b35bee5a74146a054eddfeca3002f4ed9ae88ef1d420a3f8",
+    "runtime_sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f",
+    "release_root": "releases/6165deb934dadc47a30f3fe6abd3744d1fc10c5e24f8a0bc714fc65661af6686/umbral-red-desktop",
+    "digest": "72fde6e1b70d9f215bec70ed45e4b33df623085cd1454cabfeead3002e6561d7",
+    "verified_public_objects": 8,
+    "supported_platforms": [
+      "desktop"
+    ]
+  }
+]
