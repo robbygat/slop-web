@@ -32,7 +32,9 @@ test('creator project list and detail return the owner-bound permanent public na
     return null;
    end $creator$;
   `);
-  await db.exec(await readFile(new URL('../../migrations/20260917034500_creator_project_public_game_urls.sql',import.meta.url),'utf8'));
+  const migration=await readFile(new URL('../../migrations/20260917034500_creator_project_public_game_urls.sql',import.meta.url),'utf8');
+  await db.exec(migration);
+  await db.exec(migration);
   await db.query("insert into public.slop_creator_projects(id,owner_id,game_slug,title)values($1,$2,'internal-game-42','Night Drift')",[project,owner]);
   await db.query("insert into public.game_url_claims(name,game_slug,owner_id)values('night-drift','internal-game-42',$1)",[owner]);
   const list=(await db.query("select public.slop_creator_service('projects',$1,'{}') result",[owner])).rows[0].result;
