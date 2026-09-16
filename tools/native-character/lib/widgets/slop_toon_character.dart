@@ -1171,6 +1171,7 @@ class SlopToonCharacter extends StatefulWidget {
     this.expression,
     this.animated = true,
     this.talking = false,
+    this.playfulMouth = false,
     this.gaze = Offset.zero,
     this.round = 0,
     this.faceAnchor = 0.44,
@@ -1183,6 +1184,10 @@ class SlopToonCharacter extends StatefulWidget {
     this.phaseOverride,
     this.facePhaseOverride,
     this.orientationAngle,
+    this.allowAutonomousFullTurns = true,
+    this.autonomousShallowTurnScale = .42,
+    this.rareAutonomousFullTurnDelay,
+    this.rareAutonomousFullTurnTimeScale = .5,
     this.personalitySeed,
     this.reducedMotion,
     this.interactive = true,
@@ -1208,6 +1213,11 @@ class SlopToonCharacter extends StatefulWidget {
   final SlopToonExpression? expression;
   final bool animated;
   final bool talking;
+
+  /// Allows a sparse seeded mouth-open beat while the Slop is idle. The saved
+  /// mouth is never replaced; compatible mouths briefly reveal their existing
+  /// tongue anatomy through the normal smooth talk morph.
+  final bool playfulMouth;
   final Offset gaze;
   final double round;
   final double faceAnchor;
@@ -1235,6 +1245,24 @@ class SlopToonCharacter extends StatefulWidget {
   /// mouth morph can front-lock their value with
   /// [slopToonFrontLockAngleFor] before passing it here.
   final double? orientationAngle;
+
+  /// Whether idle personality may complete a full 360-degree turn.
+  ///
+  /// Feed ribbons disable this so a newly revealed creator always arrives
+  /// face-first and then explores only a shallow three-quarter pose. Profile
+  /// and Workshop stages keep the complete authored turn by default.
+  final bool allowAutonomousFullTurns;
+
+  /// Strength of the small front-facing cheek turn used when full automatic
+  /// rotation is disabled. Feed cards can show a little more 3D depth without
+  /// revealing a back-facing character as soon as the card arrives.
+  final double autonomousShallowTurnScale;
+
+  /// Opt-in delayed full turns for surfaces that normally stay face-first.
+  /// The delay protects swipe arrival; [rareAutonomousFullTurnTimeScale]
+  /// stretches the seeded schedule so the complete turn stays exceptional.
+  final Duration? rareAutonomousFullTurnDelay;
+  final double rareAutonomousFullTurnTimeScale;
 
   /// Stable seed for this Slop's temperament. Supplying an account-derived
   /// seed keeps personality unchanged while the user changes clothes. When
@@ -1465,9 +1493,12 @@ class _SlopToonCharacterState extends State<SlopToonCharacter>
             reducedMotion: _reduceMotion,
           ).orientationAngle
         : 0.0;
+    final automaticOrientation =
+        widget.orientationAngle ??
+        (widget.allowAutonomousFullTurns ? autonomous : 0.0);
     callback(
       slopToonNormalizeOrientation(
-        (widget.orientationAngle ?? autonomous) + _manualOrientationOffset,
+        automaticOrientation + _manualOrientationOffset,
       ),
     );
   }
@@ -1510,8 +1541,37 @@ class _SlopToonCharacterState extends State<SlopToonCharacter>
               )
             : null;
         final phase = widget.phaseOverride ?? autonomous!.phase;
+        final arrival = Curves.easeOutCubic.transform(
+          (_personalityClock.value / .8).clamp(0.0, 1.0),
+        );
+        final delayedTurn = widget.rareAutonomousFullTurnDelay == null
+            ? null
+            : slopToonOrientationFrameFor(
+                elapsedSeconds:
+                    math.max(
+                      0,
+                      _personalityClock.value -
+                          widget.rareAutonomousFullTurnDelay!.inMilliseconds /
+                              1000,
+                    ) *
+                    widget.rareAutonomousFullTurnTimeScale.clamp(0.1, 1.0),
+                seed:
+                    widget.personalitySeed ?? slopToonPersonalitySeedFor(look),
+                reducedMotion: _reduceMotion,
+              );
+        final shallowOrientation =
+            (autonomous?.frame.turn ?? 0) *
+            widget.autonomousShallowTurnScale.clamp(0.0, 0.8) *
+            arrival;
         final automaticOrientation =
-            widget.orientationAngle ?? autonomous?.orientationAngle;
+            widget.orientationAngle ??
+            (widget.allowAutonomousFullTurns
+                ? autonomous?.orientationAngle
+                : delayedTurn?.active == true
+                ? delayedTurn!.angle
+                : autonomous == null
+                ? null
+                : shallowOrientation);
         final orientationAngle =
             automaticOrientation == null &&
                 _manualOrientationOffset.abs() < 0.000001
@@ -1528,6 +1588,19 @@ class _SlopToonCharacterState extends State<SlopToonCharacter>
               talking: widget.talking,
               reducedMotion: _reduceMotion,
             );
+        final personalitySeed =
+            widget.personalitySeed ?? slopToonPersonalitySeedFor(look);
+        final playfulMouthBeat =
+            widget.playfulMouth &&
+            !_reduceMotion &&
+            autonomous != null &&
+            _personalityBits(personalitySeed, autonomous.beatIndex, 73) % 9 ==
+                0;
+        final playfulTalk = playfulMouthBeat
+            ? math
+                  .pow(math.sin(autonomous.beatProgress * math.pi), 4)
+                  .toDouble()
+            : 0.0;
         final automaticExpression =
             widget.expression ??
             (_dragging
@@ -1553,6 +1626,7 @@ class _SlopToonCharacterState extends State<SlopToonCharacter>
                 orientationAngle: orientationAngle,
                 externalGaze: widget.gaze,
                 talking: widget.talking,
+                playfulTalk: playfulTalk,
                 round: widget.round,
                 faceAnchor: widget.faceAnchor,
                 faceScale: widget.faceScale,
@@ -1691,6 +1765,7 @@ class _SlopToonPainter extends CustomPainter {
     required this.externalGaze,
     required this.smirk,
     required this.talking,
+    required this.playfulTalk,
     required this.round,
     required this.faceAnchor,
     required this.faceScale,
@@ -1712,6 +1787,7 @@ class _SlopToonPainter extends CustomPainter {
   final Offset externalGaze;
   final double smirk;
   final bool talking;
+  final double playfulTalk;
   final double round;
   final double faceAnchor;
   final double faceScale;
@@ -1740,7 +1816,10 @@ class _SlopToonPainter extends CustomPainter {
       centerFaceHorizontally: facePhase != null,
       gaze: externalGaze,
       smirk: smirk,
-      talk: talking ? (0.32 + math.sin(phase * math.pi * 14).abs() * 0.68) : 0,
+      talk: math.max(
+        playfulTalk,
+        talking ? (0.32 + math.sin(phase * math.pi * 14).abs() * 0.68) : 0,
+      ),
       faceAnchor: faceAnchor,
       faceScale: faceScale,
       shift: shift,
@@ -1769,6 +1848,7 @@ class _SlopToonPainter extends CustomPainter {
       oldDelegate.externalGaze != externalGaze ||
       oldDelegate.smirk != smirk ||
       oldDelegate.talking != talking ||
+      oldDelegate.playfulTalk != playfulTalk ||
       oldDelegate.round != round ||
       oldDelegate.faceAnchor != faceAnchor ||
       oldDelegate.faceScale != faceScale ||

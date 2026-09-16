@@ -18,9 +18,20 @@ void main() {
             '/tmp/slop-native-eye-portraits',
       )..createSync(recursive: true);
       final input = File('../../public/assets/mobile/portraits/catalog.json');
-      final catalog = (jsonDecode(await input.readAsString()) as List)
+      var catalog = (jsonDecode(await input.readAsString()) as List)
           .cast<Map<String, dynamic>>();
-      catalog.addAll([
+      final finishes = (Platform.environment['SLOP_EYE_FINISHES'] ?? '')
+          .split(',')
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toSet();
+      if (finishes.isNotEmpty) {
+        catalog = catalog.where((entry) {
+          final look = entry['look'];
+          return look is Map && finishes.contains(look['finish']);
+        }).toList();
+      } else {
+        catalog.addAll([
         {
           'id': 'intro-heart',
           'look': {'body': 'heart', 'palette': 'bubblegum'},
@@ -33,7 +44,8 @@ void main() {
           'id': 'intro-star',
           'look': {'body': 'star', 'palette': 'mint'},
         },
-      ]);
+        ]);
+      }
       const fields = [
         'body',
         'palette',

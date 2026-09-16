@@ -1144,6 +1144,14 @@ abstract final class SlopFormRenderer {
         Paint()..color = const Color(0xFFFFFEFB),
       );
     }
+    if (showBody && look.pattern == SlopPattern.itCouldBeWorseRobot) {
+      SlopRenderer._paintItCouldBeWorseRobotAntennas(
+        canvas,
+        bodyRect,
+        unit,
+        math.sin(phase * math.pi * 2),
+      );
+    }
     if (hat && look.hat != SlopHat.none) {
       final crownRect = Rect.fromCenter(
         center: bodyRect.center,
@@ -1277,6 +1285,85 @@ abstract final class SlopFormRenderer {
     final blink = 1 - SlopRenderer._blink(phase);
     final mouth = center.translate(0, unit * 22);
     final sockets = slopFaceEyeSocketsFor(eye, center, unit);
+    if (look.pattern == SlopPattern.itCouldBeWorseRobot) {
+      // Match the source robot's two vertical temple seams. They belong to the
+      // turning face plane, outside the sockets—not across the mouth as a
+      // horizontal jaw divider.
+      final seamPaint = Paint()
+        ..color = const Color(0xFF6B3032).withValues(alpha: .82)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = unit * 1.25
+        ..strokeCap = StrokeCap.round;
+      for (final direction in [-1.0, 1.0]) {
+        final x = center.dx + direction * unit * 29.2;
+        canvas.drawPath(
+          Path()
+            ..moveTo(x, center.dy - unit * 10.2)
+            ..quadraticBezierTo(
+              x + direction * unit * .9,
+              center.dy,
+              x,
+              center.dy + unit * 10.4,
+            ),
+          seamPaint,
+        );
+      }
+      for (final direction in [-1.0, 1.0]) {
+        final c = center.translate(
+          direction * unit * 15,
+          gaze.dy.clamp(-1.0, 1.0) * unit * .6,
+        );
+        final socket = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: c, width: unit * 22, height: unit * 18),
+          Radius.circular(unit * 4.5),
+        );
+        canvas.drawRRect(socket, Paint()..color = const Color(0xFF321F24));
+        if (blink < .16) {
+          canvas.drawLine(
+            c.translate(-unit * 4.2, 0),
+            c.translate(unit * 4.2, 0),
+            Paint()
+              ..color = const Color(0xFFFF6A42)
+              ..strokeWidth = unit * 1.7
+              ..strokeCap = StrokeCap.round,
+          );
+        } else {
+          final glow = Rect.fromCircle(center: c, radius: unit * 3.4);
+          canvas.drawCircle(
+            c,
+            unit * 2.9,
+            Paint()
+              ..shader = const RadialGradient(
+                colors: [
+                  Color(0xFFFFE0A0),
+                  Color(0xFFFF6A42),
+                  Color(0xFF8E2330),
+                ],
+                stops: [0, .46, 1],
+              ).createShader(glow),
+          );
+          canvas.drawCircle(
+            c.translate(-unit * .9, -unit * 1.0),
+            unit * .75,
+            white,
+          );
+        }
+      }
+      if (showMouth && mouthOpacity > 0) {
+        SlopRenderer._paintMouth(
+          canvas,
+          center: mouth,
+          unit: unit * .8,
+          look: look,
+          emotion: emotion,
+          talk: talk,
+          smirk: smirk,
+          reaction: reaction,
+          facialLineColor: ink,
+        );
+      }
+      return;
+    }
     if (eye == SlopEyes.visor) paintSlopBubbleVisor(canvas, center, unit);
     for (var i = 0; i < sockets.length; i++) {
       final c = sockets[i].center;

@@ -8,6 +8,7 @@ import {Icon} from '../components/Icon.jsx';
 import {PUBLIC_PROFILE_COLUMNS, profileBackdrop} from '../lib/profile-banners.js';
 import NativeEyePortrait from '../components/NativeEyePortrait.jsx';
 import {GameCard, GameDetail} from './Play.jsx';
+import {chatInbox,chatMessages,createDirectChat,markChatRead,sendChatMessage} from '../lib/chat.js';
 import './social.css';
 
 const palettes = {
@@ -48,6 +49,7 @@ export default function Social() {
   const [error, setError] = useState(null);
   const [person, setPerson] = useState(null);
   const [transitionId, setTransitionId] = useState(null);
+  const [messageTarget,setMessageTarget]=useState(undefined);
   const [visiblePeople,setVisiblePeople]=useState(24);
   const peopleSentinel=useRef(null);
   const pending = useRef(false);
@@ -109,6 +111,7 @@ export default function Social() {
           <input aria-label="Search people" placeholder="Search usernames" value={term} onChange={event => setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>
           {term && <button type="button" aria-label="Clear people search" onClick={() => setTerm('')}><Icon name="close" size={18}/></button>}
         </label>
+        <Button className="circle-messages-button" icon="social" onClick={()=>{if(requireAuth())setMessageTarget(null);}}>Messages</Button>
       </div>
       <div className="circle-residents" aria-hidden="true">
         <NativeEyePortrait body="heart" color="bubblegum" className="circle-resident resident-heart" alt=""/>
@@ -133,7 +136,8 @@ export default function Social() {
       </div>}
     {!people.error&&visiblePeople<(people.data?.length||0)&&<div ref={peopleSentinel} className="circle-people-sentinel"><span className="loader"/><span>More people</span></div>}
     {person && <PersonProfile person={person} own={person.id === user?.id} following={following.has(person.id)} busy={busy}
-      onFollow={() => follow(person.id)} onClose={() => setPerson(null)} transition={transitionId === person.id}/>}
+      onFollow={() => follow(person.id)} onMessage={()=>{setPerson(null);setMessageTarget(person);}} onClose={() => setPerson(null)} transition={transitionId === person.id}/>}
+    {messageTarget!==undefined&&<ChatModal key={messageTarget?.id||'inbox'} startPerson={messageTarget} currentUser={user} onClose={()=>setMessageTarget(undefined)}/>}
   </div>;
 }
 
@@ -142,12 +146,12 @@ function PersonRibbon({person, index, following, busy, own, onFollow, onOpen, tr
   return <article className="slop-person-ribbon" style={{...personPalette(person), '--ribbon-order': index % 4, viewTransitionName: transition ? 'slop-person-profile' : 'none'}}>
     <svg className="person-ribbon-surface" viewBox="0 0 260 330" preserveAspectRatio="none" aria-hidden="true">
       <defs><linearGradient id={paintId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ribbon-light)"/><stop offset=".32" stopColor="var(--ribbon-mid)"/><stop offset="1" stopColor="var(--ribbon-shade)"/></linearGradient></defs>
-      <path fill={`url(#${paintId})`} d="M28 104 C10 104 5 120 8 144 C13 178 3 240 9 286 C12 314 30 326 58 326 L202 326 C230 326 248 314 251 286 C257 240 247 178 252 144 C255 120 250 104 232 104 L181 104 C164 104 161 90 156 75 C148 51 112 51 104 75 C99 90 96 104 79 104 Z"/>
+      <path fill={`url(#${paintId})`} d="M29 104 C13 104 7 116 8 137 C10 175 4 240 9 286 C12 314 30 326 58 326 L202 326 C230 326 248 314 251 286 C256 240 250 175 252 137 C253 116 247 104 231 104 Z"/>
     </svg>
     <button className="person-ribbon-open" onClick={onOpen} aria-label={`Open ${personName(person)}, ${handle(person)}`}>
       <NativeEyePortrait look={person.slop_look} avatar={person.avatar_url} className="person-ribbon-slop" alt="" loading="lazy"/>
       <span className="person-ribbon-identity"><span className="person-ribbon-name">{personName(person)}</span><span className="person-ribbon-handle">{handle(person)}</span></span>
-      {person.bio && <span className="person-ribbon-bio">{person.bio}</span>}
+      {person.bio && <span className="person-ribbon-bio" title={person.bio}>{person.bio}</span>}
       <span className="person-ribbon-enter"><span>View profile</span><Icon name="arrow" size={18}/></span>
     </button>
     <div className="person-ribbon-actions">
@@ -168,7 +172,7 @@ async function profileStats(id) {
   return rows.map(row => row.error ? null : row.count);
 }
 
-function PersonProfile({person, following, busy, own, onFollow, onClose, transition}) {
+function PersonProfile({person, following, busy, own, onFollow, onMessage, onClose, transition}) {
   const details = useAsync(() => result(supabase.from('profiles').select(PUBLIC_PROFILE_COLUMNS).eq('id', person.id).single()), [person.id]);
   const games = useAsync(() => loadGames({owner: person.id}), [person.id]);
   const stats = useAsync(() => profileStats(person.id), [person.id, following]);
@@ -183,7 +187,7 @@ function PersonProfile({person, following, busy, own, onFollow, onClose, transit
       </div>
       <div className="circle-profile-identity">
         <div><h2>{personName(profile)}</h2><p>{handle(profile)}</p></div>
-        {own ? <a className="button secondary small" href="#/you" onClick={onClose}>Your profile<Icon name="arrow" size={17}/></a> : <Button icon={following ? 'check' : 'plus'} variant={following ? 'secondary' : ''} disabled={!!busy} onClick={onFollow}>{busy === person.id ? 'Saving…' : following ? 'Following' : 'Follow'}</Button>}
+        {own ? <a className="button secondary small" href="#/you" onClick={onClose}>Your profile<Icon name="arrow" size={17}/></a> : <div className="circle-profile-actions"><Button icon="social" variant="secondary" onClick={onMessage}>Message</Button><Button icon={following ? 'check' : 'plus'} variant={following ? 'secondary' : ''} disabled={!!busy} onClick={onFollow}>{busy === person.id ? 'Saving…' : following ? 'Following' : 'Follow'}</Button></div>}
       </div>
       {profile.bio && <p className="circle-profile-bio">{profile.bio}</p>}
       <dl className="circle-profile-stats">{['Games', 'Followers', 'Following'].map((label, index) => <div key={label}><dt>{label}</dt><dd>{stats.data?.[index] == null ? '—' : new Intl.NumberFormat().format(stats.data[index])}</dd></div>)}</dl>
@@ -193,4 +197,21 @@ function PersonProfile({person, following, busy, own, onFollow, onClose, transit
     </section>
     {selected && <GameDetail game={selected} onClose={() => setSelected(null)}/>}
   </Modal>;
+}
+
+function conversationName(thread){return thread?.title||thread?.people?.map(personName).join(', ')||'Conversation';}
+function conversationHandle(thread){return thread?.people?.map(handle).join(', ')||'';}
+
+function ChatModal({startPerson,currentUser,onClose}){
+ const[threads,setThreads]=useState([]),[room,setRoom]=useState(null),[messages,setMessages]=useState([]),[loading,setLoading]=useState(true),[roomLoading,setRoomLoading]=useState(false),[error,setError]=useState(null),[draft,setDraft]=useState(''),[sending,setSending]=useState(false);
+ const bottom=useRef(null);
+ async function refreshMessages(id){const rows=await chatMessages(id);setMessages(rows);await markChatRead(id).catch(()=>{});}
+ useEffect(()=>{let alive=true;(async()=>{setLoading(true);setError(null);try{let preferred=null;if(startPerson)preferred=await createDirectChat(startPerson.id);const rows=await chatInbox();if(!alive)return;setThreads(rows);setRoom(rows.find(row=>row.id===preferred)||rows[0]||(preferred?{id:preferred,title:'',people:[startPerson],unread:0}:null));}catch(e){if(alive)setError(e);}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[startPerson?.id]);
+ useEffect(()=>{if(!room?.id){setMessages([]);return;}let alive=true;const load=async quiet=>{try{const rows=await chatMessages(room.id);if(alive){setMessages(rows);await markChatRead(room.id).catch(()=>{});}}catch(e){if(alive&&!quiet)setError(e);}finally{if(alive)setRoomLoading(false);}};setRoomLoading(true);load(false);const timer=setInterval(()=>load(true),4000);return()=>{alive=false;clearInterval(timer);};},[room?.id]);
+ useEffect(()=>{bottom.current?.scrollIntoView({block:'nearest'});},[messages.length,room?.id]);
+ async function send(event){event.preventDefault();const body=draft.trim();if(!body||sending||!room?.id)return;setSending(true);setError(null);try{await sendChatMessage(room.id,body);setDraft('');await refreshMessages(room.id);setThreads(await chatInbox());}catch(e){setError(e);}finally{setSending(false);}}
+ return <Modal title="Messages" onClose={onClose} className="circle-chat-modal"><div className="circle-chat-shell">
+  <aside className={`circle-chat-inbox ${room?'has-room':''}`}><div className="circle-chat-title"><h2>Messages</h2><span>{threads.reduce((total,item)=>total+Number(item.unread||0),0)||''}</span></div>{loading?<Loading label="Opening messages…"/>:threads.length?<div className="circle-chat-list">{threads.map(thread=><button key={thread.id} className={thread.id===room?.id?'active':''} onClick={()=>setRoom(thread)}><NativeEyePortrait look={thread.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><span><strong>{conversationName(thread)}</strong><small>{thread.last_message||conversationHandle(thread)}</small></span>{Number(thread.unread)>0&&<b>{thread.unread}</b>}</button>)}</div>:<div className="circle-chat-empty"><Icon name="social" size={25}/><p>Your conversations will appear here.</p></div>}</aside>
+  <section className={`circle-chat-room ${room?'is-open':''}`}>{room?<><header><button className="circle-chat-back" type="button" aria-label="Back to messages" onClick={()=>setRoom(null)}><Icon name="chevron" size={18}/></button><NativeEyePortrait look={room.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><div><strong>{conversationName(room)}</strong><small>{conversationHandle(room)}</small></div></header><div className="circle-chat-messages">{roomLoading&&!messages.length?<Loading label="Loading conversation…"/>:messages.length?messages.map(message=><article key={message.id} className={message.sender?.id===currentUser?.id?'mine':''}><NativeEyePortrait look={message.sender?.slop_look} className="circle-chat-message-avatar" alt=""/><div><small>{message.sender?.id===currentUser?.id?'You':personName(message.sender)}</small><p>{message.body}</p></div></article>):<div className="circle-chat-empty"><p>Say hello.</p></div>}<div ref={bottom}/></div><form className="circle-chat-compose" onSubmit={send}><input aria-label={`Message ${conversationName(room)}`} maxLength="2000" value={draft} onChange={event=>setDraft(event.target.value)} placeholder="Write a message…"/><button type="submit" disabled={sending||!draft.trim()} aria-label="Send message"><Icon name="arrow" size={18}/></button></form></>:<div className="circle-chat-empty room"><Icon name="social" size={30}/><h3>Your messages</h3><p>Pick a conversation.</p></div>}</section>
+ </div><Notice error={error}/></Modal>;
 }

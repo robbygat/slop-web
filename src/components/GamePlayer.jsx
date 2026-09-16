@@ -18,10 +18,10 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),heldKeys=useRef(new Set());callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
- const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false);
+ const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
  const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
- const state=useRef({});state.current={muted,finished,board,paused,expanded};const format=gameFormat(game),controls=legacyControlSpec(url);
+ const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart};const format=gameFormat(game),controls=legacyControlSpec(url);
  const send=message=>frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');
  useEffect(()=>{
   const release=()=>{for(const key of heldKeys.current)send({type:'hostKey',key,down:false});heldKeys.current.clear();};
@@ -37,7 +37,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   restartGate.current.cancel();
   if(desktopRequired){run.current=null;setDoc(null);setReady(false);setError(null);return;}
   const controller=new AbortController();const current={score:0,ended:false,interacted:!requireInteraction||replayIntent.current,save:game&&!preview?scoreRun(game.slug):null};run.current=current;replayIntent.current=false;
-  setDoc(null);setError(null);setReady(false);setFinished(null);setSave(null);setBoard(false);initialized.current=false;
+  setDoc(null);setError(null);setReady(false);setFinished(null);setSave(null);setBoard(false);setWaitingStart(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
@@ -50,12 +50,16 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
    if(event.type==='restart-ack'){restartGate.current.receive(e.source,event);return;}
    if(restartGate.current.pending){if(event.type==='loadError')restartGate.current.fail(e.source);return;}
    const current=run.current;if(!current)return;
-   if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board?'pause':'resume'});}
+   if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board||state.current.waitingStart?'pause':'resume'});}
    if(event.type==='webInteraction'&&!current.ended)current.interacted=true;
    if(event.type==='webEscape'&&state.current.expanded)exitExpanded();
    if(event.type==='score'&&!current.ended)current.score=event.value??event.score;
    if(['finished','gameOver','over'].includes(event.type)&&!current.ended){
     const score=event.score??event.value??current.score;if(!validRunScore(score))return;
+    // Some older games emit gameOver while their feed card is merely
+    // scrolling into view. Wait for an intentional start before treating that
+    // as the player's result.
+    if(requireInteraction&&!current.interacted){current.ended=true;setReady(true);setWaitingStart(true);send({type:'pause'});return;}
     current.ended=true;current.score=score;setReady(true);setFinished(score);setBoard(false);send({type:'pause'});
     if(current.save&&current.interacted)current.save.finish(score).then(receipt=>{if(run.current===current)setSave(receipt);}).catch(()=>{if(run.current===current)setSave({state:'failed'});});
     else if(current.save)setSave({state:'idle'});
@@ -68,7 +72,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   window.addEventListener('message',onMessage);document.addEventListener('visibilitychange',onVisibility);
   return()=>{window.removeEventListener('message',onMessage);document.removeEventListener('visibilitychange',onVisibility);};
  },[preview]);
- useEffect(()=>{if(ready)send({type:paused||document.hidden||finished!==null||board?'pause':'resume'});},[paused,ready,finished,board]);
+ useEffect(()=>{if(ready)send({type:paused||document.hidden||finished!==null||board||waitingStart?'pause':'resume'});},[paused,ready,finished,board,waitingStart]);
  useEffect(()=>{if(!doc||ready)return;const timer=setTimeout(()=>setError(new Error('This game is taking too long to start. Try reloading it.')),25000);return()=>clearTimeout(timer);},[doc,ready]);
  useEffect(()=>{const changed=()=>{if(!document.fullscreenElement)setExpanded(false);};document.addEventListener('fullscreenchange',changed);return()=>document.removeEventListener('fullscreenchange',changed);},[]);
  async function exitExpanded(){const el=container.current;if(el?.hidePopover&&el.matches(':popover-open'))el.hidePopover();el?.removeAttribute('popover');setExpanded(false);if(document.fullscreenElement===el)await document.exitFullscreen().catch(()=>{});}
@@ -100,6 +104,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   }});
   if(request)send({type:'restart',request});
  }
+ function startFromRest(){replayIntent.current=true;setWaitingStart(false);setRestart(v=>v+1);}
  if(desktopRequired)return <div ref={container} className="game-player desktop-required">
   <svg width="44" height="44" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="3" y="4" width="26" height="18" rx="3"/><path d="M16 22v6m-6 0h12"/></svg>
   <h2>This is a desktop game.</h2><p>Open {title} on your computer to play.</p>
@@ -110,6 +115,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
    <div className={`player-loading ${ready&&!error?'hidden':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
+   {waitingStart&&!error&&<button className="player-start-overlay" onClick={startFromRest}><span>Play</span></button>}
    {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay}/>}
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>

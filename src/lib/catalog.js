@@ -21,7 +21,7 @@ export async function loadGame(name){
 }
 export const socialCounts=(ids)=>result(supabase.rpc('game_social_counts',{p_ids:ids}));
 export const comments=(id,cursor)=>result(supabase.rpc('game_comment_page',{p_game_id:id,p_root_id:null,p_before_time:cursor?.created_at||null,p_before_id:cursor?.id||null,p_limit:20}));
-export const postComment=(id,body)=>asOwner((owner,client)=>result(client.rpc('post_game_comment',{p_owner:owner,p_game_id:id,p_body:body.trim(),p_gif_url:null,p_parent_id:null})));
+export const postComment=(id,body,gifUrl=null)=>asOwner((owner,client)=>result(client.rpc('post_game_comment',{p_owner:owner,p_game_id:id,p_body:body.trim(),p_gif_url:gifUrl,p_parent_id:null})));
 export const likeGame=(id,liked,legacyId)=>asOwner((owner,client)=>result(liked?client.from('game_likes').upsert({user_id:owner,game_id:id},{onConflict:'user_id,game_id'}):client.from('game_likes').delete().eq('user_id',owner).in('game_id',[...new Set([id,legacyId].filter(Boolean))])));
 export const likedGames=()=>asOwner((owner,client)=>result(client.from('game_likes').select('game_id').eq('user_id',owner).limit(1000)));
 export async function searchPeople(term=''){

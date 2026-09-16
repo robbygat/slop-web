@@ -16,8 +16,13 @@ function SlopStill({body='ghost',color='tangerine',look,avatar,className='',alt=
  const fallback=`${art}/characters/${shape}-${palette}.webp`;
  const key=look?JSON.stringify(look):'', [portrait,setPortrait]=useState(null);
  useEffect(()=>{let active=true;if(key)slopAvatar(JSON.parse(key)).then(src=>{if(active)setPortrait({key,src});}).catch(()=>{});return()=>{active=false;};},[key]);
- const source=key?(portrait?.key===key?portrait.src:fallback):trustedMedia(avatar)||fallback;
- return <img className={`slop ${className}`} src={source} alt={alt} onError={e=>{if(!e.currentTarget.src.endsWith(fallback))e.currentTarget.src=fallback;}} {...props}/>;
+ const savedAvatar=trustedMedia(avatar);
+ // Profiles created by the mobile app can use a look that is newer than the
+ // small web portrait atlas. Keep showing that account's saved Slop portrait
+ // while the native atlas resolves instead of silently replacing it with the
+ // orange starter character.
+ const source=key?(portrait?.key===key?portrait.src:fallback):savedAvatar||fallback;
+ return <img className={`slop ${className}`} src={source} alt={alt} onError={e=>{if(e.currentTarget.src!==fallback)e.currentTarget.src=fallback;}} {...props}/>;
 }
 export function Button({children,icon,variant='',className='',...props}){return <button className={`button ${variant} ${className}`} {...props}>{icon&&<Icon name={icon}/>}<span>{children}</span></button>;}
 export function IconButton({name,label,...props}){return <button className="icon-button" aria-label={label} title={label} {...props}><Icon name={name}/></button>;}

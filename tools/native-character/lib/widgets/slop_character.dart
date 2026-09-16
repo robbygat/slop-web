@@ -819,13 +819,14 @@ void paintSlopBinaryCode(Canvas canvas, Rect rect, double phase) {
   }
 }
 
-/// Resting facial strokes adapt only when a fixed dark material would swallow
-/// the owner's ordinary palette ink. Pupils and open mouth cavities deliberately
-/// keep their authored dark colors; this lighter ink is reserved for lids,
-/// brows, lashes, and closed-mouth linework.
-@visibleForTesting
+/// Resting facial strokes adapt when a material would swallow the owner's
+/// ordinary palette ink. Glass gets an electric-blue face that remains legible
+/// over whatever game art is behind it; SLOP Code keeps its authored terminal
+/// green. The remaining fixed dark finishes use a pale material-specific ink.
 Color slopMaterialFacialLineColorFor(SlopLook look) =>
-    look.pattern == SlopPattern.slopCode && look.finish != SlopFinish.clearGlass
+    look.finish == SlopFinish.clearGlass
+    ? const Color(0xFF65E8FF)
+    : look.pattern == SlopPattern.slopCode
     ? const Color(0xFF68FF91)
     : switch (look.finish) {
         SlopFinish.galaxy => const Color(0xFFF1E9FF),
@@ -837,11 +838,16 @@ Color slopMaterialFacialLineColorFor(SlopLook look) =>
       };
 
 /// Canonical selected eye pigment used by every eye family and performance.
-/// `ink` deliberately follows the owner's body palette; every named eye color
-/// remains stable across palettes and finishes.
+/// Material skins may replace the default `ink` pigment so a dark or clear
+/// face never loses its pupils. Explicitly chosen eye colors remain untouched.
 @visibleForTesting
 Color slopResolvedEyeColorFor(SlopLook look) =>
-    look.eyeColor.color ?? look.palette.ink;
+    look.eyeColor.color ??
+    (look.finish == SlopFinish.clearGlass
+        ? const Color(0xFF30D8FF)
+        : look.pattern == SlopPattern.slopCode
+        ? const Color(0xFF68FF91)
+        : look.palette.ink);
 
 /// A hue-preserving dark edge/core. Bright eye colors stay visibly authored,
 /// while pupils and graphic shapes retain enough contrast on the warm sclera.
@@ -1257,9 +1263,11 @@ List<({Offset crown, Offset root})> slopFittedHatContactsFor(
   SlopBody.triangle => (width: 1.08, height: 0.90, tip: 0.0),
   SlopBody.wide => (width: 1.12, height: 0.84, tip: 0.58),
   SlopBody.capsule => (width: 1.12, height: 0.72, tip: 0.0),
-  // `droplet` remains the compatibility/storage ID. Its authored identity is
-  // now a broad rounded square: visibly different from Tall, but still liquid.
-  SlopBody.droplet || SlopBody.heart => (width: 1.02, height: 0.94, tip: 0.0),
+  // `droplet` remains the compatibility/storage ID. Pillow keeps its broad
+  // rounded-square identity, but uses a ten-percent smaller resting footprint
+  // so it does not overpower neighbouring bodies or crowd a rank Crown.
+  SlopBody.droplet => (width: 0.92, height: 0.85, tip: 0.0),
+  SlopBody.heart => (width: 1.02, height: 0.94, tip: 0.0),
 };
 
 /// Body-specific rounded-box blend used by every Slop surface.
@@ -1861,6 +1869,9 @@ abstract final class SlopRenderer {
         shift: active == SlopShift.heart ? SlopShift.heart : silhouette,
         shiftMorph: active == SlopShift.heart ? heart : silhouetteMorph,
       );
+    }
+    if (showBody && look.pattern == SlopPattern.itCouldBeWorseRobot) {
+      _paintItCouldBeWorseRobotAntennas(canvas, bodyRect, unit, wave);
     }
 
     // Face. In blob form it sits mid-body; in panel form it rides near the
@@ -3821,8 +3832,104 @@ abstract final class SlopRenderer {
         paintSlopCloudQuilt(canvas, rect, phase);
       case SlopPattern.pixelPetal:
         paintSlopPixelPetal(canvas, rect, phase);
+      case SlopPattern.itCouldBeWorseRobot:
+        final detail = slopFinishDetailUnitFor(rect);
+        canvas.drawRect(
+          rect,
+          Paint()
+            ..shader = const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF2A66E), Color(0xFFD46D42), Color(0xFF8E3529)],
+              stops: [0, .5, 1],
+            ).createShader(rect),
+        );
+        for (final point in const [
+          (.17, .26),
+          (.83, .26),
+          (.15, .68),
+          (.85, .68),
+          (.30, .86),
+          (.70, .86),
+        ]) {
+          final center = Offset(
+            rect.left + rect.width * point.$1,
+            rect.top + rect.height * point.$2,
+          );
+          canvas.drawCircle(
+            center,
+            detail * 2.15,
+            Paint()..color = const Color(0xFF5C2D2D),
+          );
+          canvas.drawCircle(
+            center.translate(-detail * .45, -detail * .55),
+            detail * .65,
+            Paint()..color = const Color(0xFFFFC18F),
+          );
+        }
+        canvas.drawArc(
+          Rect.fromLTWH(
+            rect.left + rect.width * .18,
+            rect.top + rect.height * .08,
+            rect.width * .48,
+            rect.height * .26,
+          ),
+          math.pi * 1.05,
+          math.pi * .57,
+          false,
+          Paint()
+            ..color = Colors.white.withValues(alpha: .30)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = detail * 3.3
+            ..strokeCap = StrokeCap.round,
+        );
       case SlopPattern.none:
         break;
+    }
+  }
+
+  static void _paintItCouldBeWorseRobotAntennas(
+    Canvas canvas,
+    Rect rect,
+    double unit,
+    double wave,
+  ) {
+    final wire = Paint()
+      ..color = const Color(0xFF4A2428)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = unit * 1.5
+      ..strokeCap = StrokeCap.round;
+    for (final side in [-1.0, 1.0]) {
+      final root = Offset(
+        rect.center.dx + side * rect.width * .17,
+        rect.top + unit * 1.5,
+      );
+      final tip = Offset(
+        rect.center.dx + side * rect.width * (.22 + wave * .006),
+        rect.top - unit * (10.5 + (side > 0 ? 1.5 : 0)),
+      );
+      final antenna = Path()
+        ..moveTo(root.dx, root.dy)
+        ..quadraticBezierTo(
+          root.dx + side * unit * 1.7,
+          rect.top - unit * 4.5,
+          tip.dx,
+          tip.dy,
+        );
+      canvas.drawPath(antenna, wire);
+      canvas.drawCircle(
+        tip,
+        unit * 2.25,
+        Paint()..color = const Color(0xFFE98B53),
+      );
+      canvas.drawCircle(
+        tip,
+        unit * 2.25,
+        Paint()
+          ..color = const Color(0xFF4A2428)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = unit * .7,
+      );
     }
   }
 
@@ -5029,8 +5136,178 @@ abstract final class SlopRenderer {
           unit * 1.3,
           Paint()..color = Colors.white.withValues(alpha: 0.9),
         );
+      case SlopHat.itCouldBeWorse:
+        // A tiny copper robot head adapted from It Could Be Worse. It is
+        // intentionally a fitted headpiece: the slime body and ribbon remain
+        // fully visible underneath instead of being replaced by a costume.
+        final seat = Offset(cx, crownY(0) - unit * 1.2);
+        final headRect = Rect.fromCenter(
+          center: seat.translate(0, -unit * 7.9),
+          width: unit * 42,
+          height: unit * 14.4,
+        );
+        final shadow = RRect.fromRectAndRadius(
+          headRect.translate(0, unit * 1.7),
+          Radius.circular(unit * 4.6),
+        );
+        canvas.drawRRect(shadow, Paint()..color = const Color(0x55361619));
+        final shellPath = Path()
+          ..moveTo(headRect.left + unit * 3.2, headRect.top)
+          ..quadraticBezierTo(
+            headRect.center.dx,
+            headRect.top - unit * .8,
+            headRect.right - unit * 3.2,
+            headRect.top,
+          )
+          ..lineTo(headRect.right, headRect.bottom - unit * 3.2)
+          ..quadraticBezierTo(
+            headRect.right - unit * 1.4,
+            headRect.bottom,
+            headRect.right - unit * 5.8,
+            headRect.bottom,
+          )
+          ..lineTo(headRect.left + unit * 5.8, headRect.bottom)
+          ..quadraticBezierTo(
+            headRect.left + unit * 1.4,
+            headRect.bottom,
+            headRect.left,
+            headRect.bottom - unit * 3.2,
+          )
+          ..close();
+        canvas.drawShadow(
+          shellPath,
+          const Color(0x66361619),
+          unit * 2.2,
+          false,
+        );
+        canvas.drawPath(
+          shellPath,
+          Paint()
+            ..shader = const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF1A36A), Color(0xFFD06A3F), Color(0xFF8F3528)],
+              stops: [0, .5, 1],
+            ).createShader(headRect),
+        );
+        canvas.drawPath(
+          shellPath,
+          Paint()
+            ..color = const Color(0xFF4A2428)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = unit * 1.1
+            ..strokeJoin = StrokeJoin.round,
+        );
+        // Temple seams and a small lower jaw keep the silhouette handmade.
+        final seamPaint = Paint()
+          ..color = const Color(0xFF7A312C).withValues(alpha: .68)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = unit * .7
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(
+          Offset(headRect.left + unit * 4.5, headRect.top + unit * 3.1),
+          Offset(headRect.left + unit * 5.0, headRect.bottom - unit * 3.3),
+          seamPaint,
+        );
+        canvas.drawLine(
+          Offset(headRect.right - unit * 4.5, headRect.top + unit * 3.1),
+          Offset(headRect.right - unit * 5.0, headRect.bottom - unit * 3.3),
+          seamPaint,
+        );
+        for (final side in [-1.0, 1.0]) {
+          final eye = Offset(
+            headRect.center.dx + side * unit * 7.1,
+            headRect.center.dy - unit * 1.3,
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                center: eye,
+                width: unit * 10.4,
+                height: unit * 6.8,
+              ),
+              Radius.circular(unit * 2.1),
+            ),
+            Paint()..color = const Color(0xFF42272A),
+          );
+          canvas.drawCircle(
+            eye,
+            unit * 1.75,
+            Paint()
+              ..shader = const RadialGradient(
+                colors: [
+                  Color(0xFFFFE0A0),
+                  Color(0xFFFF6A42),
+                  Color(0xFF8E2330),
+                ],
+                stops: [0, .46, 1],
+              ).createShader(Rect.fromCircle(center: eye, radius: unit * 2.1)),
+          );
+          canvas.drawCircle(
+            eye.translate(-unit * .65, -unit * .7),
+            unit * .55,
+            Paint()..color = Colors.white.withValues(alpha: .9),
+          );
+        }
+        // The source robot's mouth is a broad inverted U whose two legs reach
+        // the lower edge of the head, not a small zigzag floating in its face.
+        final mouthBottom = headRect.bottom - unit * .55;
+        final mouthTop = headRect.bottom - unit * 3.65;
+        final mouthPath = Path()
+          ..moveTo(headRect.center.dx - unit * 5.7, mouthBottom)
+          ..cubicTo(
+            headRect.center.dx - unit * 5.2,
+            mouthTop,
+            headRect.center.dx + unit * 5.2,
+            mouthTop,
+            headRect.center.dx + unit * 5.7,
+            mouthBottom,
+          );
+        canvas.drawPath(
+          mouthPath,
+          Paint()
+            ..color = const Color(0xFF3B2025)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = unit * 1.25
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
+        // Two slightly crooked antennae match the little reference robot.
+        for (final side in [-1.0, 1.0]) {
+          final antennaBase = Offset(
+            headRect.center.dx + side * unit * 5.2,
+            headRect.top + unit * .2,
+          );
+          final antennaTip = antennaBase.translate(
+            side * unit * (side < 0 ? 1.5 : 1.1),
+            -unit * (side < 0 ? 6.2 : 5.5),
+          );
+          canvas.drawLine(
+            antennaBase,
+            antennaTip,
+            Paint()
+              ..color = const Color(0xFF4A2428)
+              ..strokeWidth = unit * 1.35
+              ..strokeCap = StrokeCap.round,
+          );
+          canvas.drawCircle(
+            antennaTip,
+            unit * 1.65,
+            Paint()..color = const Color(0xFFE78A51),
+          );
+          canvas.drawCircle(
+            antennaTip,
+            unit * 1.65,
+            Paint()
+              ..color = const Color(0xFF4A2428)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = unit * .65,
+          );
+        }
       case SlopHat.globalChampion:
-        // A soft three-point crown reserved for the current global holder.
+        // A blue diamond crown reserved for the current global holder. It is
+        // deliberately unlike the ordinary gold Crown cosmetic: this one is
+        // the live target that moves when another player takes first place.
         // The common topper transform seats the whole piece on every body
         // and carries its back plane around during a full turn.
         final w = rect.width * .38;
@@ -5066,20 +5343,25 @@ abstract final class SlopRenderer {
           ..lineTo(cx + w * .43, top + unit)
           ..quadraticBezierTo(cx, top + unit * 4, cx - w * .43, top + unit)
           ..close();
-        canvas.drawShadow(crest, const Color(0x555B4021), unit * 1.8, false);
+        canvas.drawShadow(crest, const Color(0xAA168BFF), unit * 2.2, false);
         canvas.drawPath(
           crest,
           Paint()
             ..shader = const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFFFF0B9), Color(0xFFFFD778), Color(0xFFEAB65C)],
+              colors: [
+                Color(0xFFE9FBFF),
+                Color(0xFF62D8FF),
+                Color(0xFF3389FF),
+                Color(0xFF2444C7),
+              ],
             ).createShader(crest.getBounds()),
         );
         canvas.drawPath(
           crest,
           Paint()
-            ..color = const Color(0xFFC58F43).withValues(alpha: .42)
+            ..color = const Color(0xFF174B9B).withValues(alpha: .82)
             ..style = PaintingStyle.stroke
             ..strokeWidth = unit * .7,
         );
@@ -5091,30 +5373,38 @@ abstract final class SlopRenderer {
           ),
           Radius.circular(unit * 2.5),
         );
-        canvas.drawRRect(band, Paint()..color = const Color(0xFFFFE8A5));
-        // A mint clay cabochon replaces lettering; the ordinary Crown hat
-        // retains its established artwork and ownership.
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset(cx, top - h * .43),
-            width: unit * 6.8,
-            height: unit * 8,
-          ),
-          Paint()..color = const Color(0xFF71BDA5),
+        canvas.drawRRect(band, Paint()..color = const Color(0xFF87E6FF));
+        final diamond = Path()
+          ..moveTo(cx, top - h * .72)
+          ..lineTo(cx + unit * 4.8, top - h * .45)
+          ..lineTo(cx, top - h * .12)
+          ..lineTo(cx - unit * 4.8, top - h * .45)
+          ..close();
+        canvas.drawPath(
+          diamond,
+          Paint()
+            ..shader = const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFFFFF),
+                Color(0xFF7CEBFF),
+                Color(0xFF2477FF),
+              ],
+            ).createShader(diamond.getBounds()),
         );
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: Offset(cx - unit, top - h * .48),
-            width: unit * 3.2,
-            height: unit * 4.4,
-          ),
-          Paint()..color = const Color(0xFFCAF4D9),
+        canvas.drawPath(
+          diamond,
+          Paint()
+            ..color = const Color(0xFF164B9E)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = unit * .65,
         );
         for (final x in [-.32, .32]) {
           canvas.drawCircle(
             Offset(cx + w * x, top - unit * .3),
             unit * 1.2,
-            Paint()..color = const Color(0xFFFFFCED),
+            Paint()..color = const Color(0xFFE8FBFF),
           );
         }
       case SlopHat.crown:
@@ -6695,6 +6985,94 @@ abstract final class SlopRenderer {
         (wide ? 1.14 : 1.0) *
         (narrow ? 0.82 : 1.0);
 
+    if (look.pattern == SlopPattern.itCouldBeWorseRobot) {
+      // One vertical shell line sits outside each socket on the reference.
+      // Keeping these in the face plane makes them turn with the eyes and
+      // avoids the rejected horizontal jaw seam across the whole head.
+      final seamPaint = Paint()
+        ..color = const Color(0xFF6B3032).withValues(alpha: .82)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = unit * 1.25
+        ..strokeCap = StrokeCap.round;
+      for (final direction in [-1.0, 1.0]) {
+        final x = center.dx + direction * unit * 29.2;
+        canvas.drawPath(
+          Path()
+            ..moveTo(x, eyeY - unit * 10.2)
+            ..quadraticBezierTo(
+              x + direction * unit * .9,
+              eyeY,
+              x,
+              eyeY + unit * 10.4,
+            ),
+          seamPaint,
+        );
+      }
+      for (final direction in [-1.0, 1.0]) {
+        final eye = Offset(
+          center.dx + direction * unit * 16.2 + gazeX * .28,
+          eyeY + gazeY * .18,
+        );
+        final socket = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: eye, width: unit * 20.5, height: unit * 17.2),
+          Radius.circular(unit * 4.2),
+        );
+        canvas.drawRRect(socket, Paint()..color = const Color(0xFF42272A));
+        canvas.drawRRect(
+          socket,
+          Paint()
+            ..color = const Color(0xFF6B3032)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = unit * .85,
+        );
+        if (blink > .9) {
+          canvas.drawLine(
+            eye.translate(-unit * 4.4, 0),
+            eye.translate(unit * 4.4, 0),
+            Paint()
+              ..color = const Color(0xFFFF6A42)
+              ..strokeWidth = unit * 1.8
+              ..strokeCap = StrokeCap.round,
+          );
+        } else {
+          final glowRect = Rect.fromCircle(center: eye, radius: unit * 3.2);
+          canvas.drawCircle(
+            eye,
+            unit * 2.85,
+            Paint()
+              ..shader = const RadialGradient(
+                colors: [
+                  Color(0xFFFFE0A0),
+                  Color(0xFFFF6A42),
+                  Color(0xFF8E2330),
+                ],
+                stops: [0, .46, 1],
+              ).createShader(glowRect),
+          );
+          canvas.drawCircle(
+            eye.translate(-unit * 1.3, -unit * 1.4),
+            unit * 1.0,
+            Paint()..color = Colors.white.withValues(alpha: .9),
+          );
+        }
+      }
+      if (showMouth && mouthOpacity > .001) {
+        final mouthMetrics = slopRestingMouthMetricsFor(look.body);
+        _paintMouth(
+          canvas,
+          center: Offset(center.dx, eyeY + unit * mouthMetrics.offsetY),
+          unit: unit,
+          look: look,
+          emotion: emotion,
+          talk: talk,
+          smirk: smirk,
+          reaction: reaction,
+          facialLineColor: facialLineColor,
+        );
+      }
+      return;
+    }
+
     if (premiumCyclops) {
       final transform = profileContext?.transformFor(
         canonicalX: center.dx,
@@ -7938,7 +8316,14 @@ abstract final class SlopRenderer {
       ..strokeWidth = unit * 2.7
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final fill = Paint()..color = palette.ink;
+    // Open cavities need the same material-aware contrast as one-line mouths.
+    // Keep them deeper than the linework so the tongue/teeth retain dimension.
+    final fill = Paint()
+      ..color = look.finish == SlopFinish.clearGlass
+          ? const Color(0xFF087FA8)
+          : look.pattern == SlopPattern.slopCode
+          ? const Color(0xFF14723C)
+          : palette.ink;
     final tongueFill = Paint()..color = const Color(0xFFFF759A);
     final tongueLine = Paint()
       ..color = const Color(0xFFD94B78)
@@ -7955,6 +8340,28 @@ abstract final class SlopRenderer {
             .clamp(0.0, 1.0);
     final metrics = slopRestingMouthMetricsFor(look.body);
     final w = unit * metrics.maxWidth;
+
+    if (look.pattern == SlopPattern.itCouldBeWorseRobot) {
+      // The source face is defined by a deep inverted arch, not a tiny seam.
+      // Its legs land at the bottom of the robot's face while the crown rises
+      // between the large eye sockets, matching the fitted headgear reward.
+      final bottom = center.dy + unit * metrics.maxHeight * .58;
+      final top = center.dy - unit * metrics.maxHeight * .68;
+      canvas.drawPath(
+        Path()
+          ..moveTo(center.dx - w * .62, bottom)
+          ..cubicTo(
+            center.dx - w * .58,
+            top,
+            center.dx + w * .58,
+            top,
+            center.dx + w * .62,
+            bottom,
+          ),
+        stroke..strokeWidth = unit * 2.8,
+      );
+      return;
+    }
 
     RRect cavityRect({double width = 1, double height = 10, double dy = 0}) {
       final rect = Rect.fromCenter(

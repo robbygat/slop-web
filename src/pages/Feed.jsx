@@ -6,6 +6,7 @@ import {canonicalGameUrl} from '../lib/game-links.js';
 import {visibleFeedGame} from '../lib/feed-focus.js';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
 import {feedPromoAfter} from '../lib/feed-promo.js';
+import {loadLeaderboard} from '../lib/leaderboard.js';
 import {useAuth} from '../auth.jsx';
 import {Button,Empty,Loading,Notice,Slop} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
@@ -21,6 +22,7 @@ export default function Feed(){
  const {user,requireAuth}=useAuth();
  const [order,setOrder]=useState('popular'),[platform,setPlatform]=useState('all'),[games,setGames]=useState([]),[active,setActive]=useState(null),[next,setNext]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[selected,setSelected]=useState(null);
  const [likes,setLikes]=useState(new Set()),[counts,setCounts]=useState({}),[likeBusy,setLikeBusy]=useState(false),[actionError,setActionError]=useState(null),[shared,setShared]=useState(null);
+ const [leaders,setLeaders]=useState({});
  const sentinel=useRef(null),generation=useRef(0),busy=useRef(false),cursor=useRef(null),hasMore=useRef(true),cards=useRef(new Map()),promos=useRef(new Map()),activeRef=useRef(active),touchStart=useRef(null);
  activeRef.current=active;
  async function more(reset=false){
@@ -50,6 +52,7 @@ export default function Feed(){
  },[games]);
  useEffect(()=>{let current=true;setLikes(new Set());if(user)likedGames().then(rows=>{if(current)setLikes(new Set(rows.map(r=>r.game_id)));}).catch(()=>{});return()=>{current=false;};},[user?.id]);
  useEffect(()=>{let current=true;const game=games.find(g=>g.id===active);if(game)socialCounts([game.slug]).then(rows=>{if(current&&rows[0])setCounts(old=>({...old,[game.slug]:rows[0]}));}).catch(()=>{});return()=>{current=false;};},[active]);
+ useEffect(()=>{let current=true;const game=games.find(item=>item.id===active);if(game&&!Object.hasOwn(leaders,game.slug))loadLeaderboard(game.slug).then(rows=>{if(current)setLeaders(old=>({...old,[game.slug]:rows[0]||null}));}).catch(()=>{if(current)setLeaders(old=>({...old,[game.slug]:null}));});return()=>{current=false;};},[active,games,leaders]);
  async function toggleLike(game){if(likeBusy||!requireAuth())return;const liked=likes.has(game.slug)||likes.has(game.id);setLikeBusy(true);setActionError(null);try{await likeGame(game.slug,!liked,game.id);setLikes(old=>{const value=new Set(old);value.delete(game.id);if(liked)value.delete(game.slug);else value.add(game.slug);return value;});setCounts(old=>({...old,[game.slug]:{...old[game.slug],likes:Math.max(0,(old[game.slug]?.likes||0)+(liked?-1:1))}}));}catch(e){setActionError(e);}finally{setLikeBusy(false);}}
  async function share(game){try{const url=canonicalGameUrl(game);if(navigator.share)await navigator.share({title:game.name,url});else await navigator.clipboard.writeText(url);setShared(game.id);}catch(e){if(e.name!=='AbortError')setActionError(new Error('Could not share this game. Try again.'));}}
  function nextGame(index,skipPromo=false){const nextCard=(!skipPromo&&promos.current.get(index))||cards.current.get(games[index+1]?.id);if(nextCard)nextCard.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});else sentinel.current?.scrollIntoView({behavior:'smooth',block:'center'});}
@@ -59,11 +62,11 @@ export default function Feed(){
   <Notice error={actionError}/>
   <div className="feed-platforms" aria-label="Game platform">{GAME_PLATFORMS.map(([id,label])=><button key={id} className={platform===id?'selected':''} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div>
   <div className="continuous-feed">{games.map((game,index)=>{
-   const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id);
+   const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],person=holder||game.profiles;
    return <React.Fragment key={game.id}><article ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} data-game={game.id} className={`feed-item ${live?'is-playing':''} ${gameFormat(game).orientation==='landscape'?'is-wide':''}`} style={tone(game)}>
     <div className="feed-game">{live?<GamePlayer key={game.id} url={gameEntry(game)} game={game} title={game.name} initialMuted requireInteraction paused={!!selected} onEvent={playerEvent}/>:<div className="feed-poster" aria-label={`${game.name} starts when you scroll here`}>{trustedMedia(game.thumb)?<img src={trustedMedia(game.thumb)} loading="lazy" alt=""/>:<Slop body="star" color="mint" alt=""/>}<span className="feed-next-label"><span/> Up next</span></div>}</div>
     <div className="feed-info">
-     <div className="feed-creator-ribbon"><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} className="feed-creator-slop" alt={`Slop by ${game.profiles?.username||'a creator'}`}/><div className="feed-ribbon-copy"><h2>{game.name}</h2><span className="feed-handle">@{game.profiles?.username||'slop'}</span>{game.description&&<p>{game.description}</p>}</div></div>
+     <div className={`feed-creator-ribbon ${holder?'has-crown-holder':''}`}><div className="feed-ribbon-person"><Slop look={person?.slop_look} avatar={person?.avatar_url} className="feed-creator-slop" alt={holder?`Crown holder @${holder.username}`:`Slop by ${game.profiles?.username||'a creator'}`}/>{holder&&<Icon className="feed-holder-crown" name="crown" size={34}/>}</div><div className="feed-ribbon-copy"><span className="feed-live-label"><span className={live?'is-live':''}/>{holder?'Crown holder':'Made by'}</span><h2>{game.name}</h2><span className="feed-handle">@{person?.username||'slop'}</span>{game.description&&<p>{game.description}</p>}</div></div>
      <div className="feed-social-actions"><button className={liked?'is-liked':''} aria-label={liked?'Unlike this game':'Like this game'} onClick={()=>toggleLike(game)} disabled={likeBusy}><Icon name="heart"/><span>{counts[game.slug]?.likes??'—'}</span></button><button onClick={()=>setSelected(game)} aria-label={`Comments for ${game.name}`}><Icon name="social"/><span>Comments</span></button><button onClick={()=>share(game)} aria-label={`Share ${game.name}`}><Icon name="share"/><span>{shared===game.id?'Shared':'Share'}</span></button></div>
      <a className="feed-remix" href={`#/build?remix=${game.id}`}><Icon name="build" size={17}/> Remix <Icon name="arrow" size={16}/></a>
      <button className="feed-next-game" onClick={()=>nextGame(index)} onTouchStart={e=>{touchStart.current=e.touches[0]?.clientY;}} onTouchEnd={e=>{if(touchStart.current!=null&&touchStart.current-e.changedTouches[0]?.clientY>45)nextGame(index);touchStart.current=null;}}><span>Next game</span><span className="feed-next-arrow">↓</span></button>

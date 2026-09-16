@@ -86,7 +86,7 @@ export function createOwnerScope({getSession,clientFactory}) {
 }
 export function ownerRequest({getSession, fetcher = fetch, base = `${API}/functions/v1`}) {
   return async (service,path,{body,signal,ownerReceipt=true}={}) => {
-    if(!['slop-mcp','slop-creator','game-bundle','stripe-checkout','stripe-portal','billing-status'].includes(service) || !/^\/[A-Za-z0-9/?=&_%-]*$/.test(path)) throw new SlopError('invalid_request');
+    if(!['slop-mcp','slop-creator','game-bundle','stripe-checkout','stripe-portal','billing-status','gif-proxy'].includes(service) || !/^\/[A-Za-z0-9/?=&_%-]*$/.test(path)) throw new SlopError('invalid_request');
     const owner=getSession();
     if(!owner?.user?.id || owner.user.is_anonymous || !owner.access_token) throw new SlopError('authentication_required');
     const assertOwner=()=>{const current=getSession();if(current?.user?.id!==owner.user.id || current?.epoch!==owner.epoch) throw new SlopError('account_changed');};

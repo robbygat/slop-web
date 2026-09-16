@@ -9,7 +9,7 @@ async function fixture(){const db=new PGlite();await db.exec(`
  create table auth.users(id uuid primary key,is_anonymous bool default false);
  create function auth.uid()returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
  create function public.is_nonanonymous_user(p uuid)returns bool language sql stable security definer as $$select exists(select 1 from auth.users where id=p and not is_anonymous)$$;
- create table public.games(id uuid default gen_random_uuid(),slug text unique,owner_id uuid,status text,media_delete_authorized bool default false);
+ create table public.games(id uuid default gen_random_uuid(),slug text unique,owner_id uuid,name text,status text,media_delete_authorized bool default false,draft_of text);
  create table public.slop_creator_projects(game_slug text unique,owner_id uuid);
  create table public.retired(slug text);
  create function public.is_game_slug_retired(p text)returns bool language sql stable as $$select exists(select 1 from public.retired where slug=p)$$;
@@ -65,4 +65,21 @@ test('an owned project reservation never resolves another owner’s matching gam
  await f.db.query("insert into public.games(slug,owner_id,status)values('creator-future-project',$1,'published')",[B]);
  await f.db.exec('set role anon');assert.equal(await f.scalar("select public.resolve_public_game_name('my-space-game')"),null);
  assert.deepEqual((await f.db.query("select * from public.game_public_names(array['creator-future-project'])")).rows,[]);
+ }finally{await f.db.close();}});
+test('published games automatically receive a permanent conflict-resolved display-name URL',async()=>{const f=await fixture();try{
+ await f.db.exec('reset role');
+ await f.db.query("insert into public.games(slug,owner_id,name,status)values('new-runner-1',$1,'Trig Runner','published'),('new-runner-2',$1,'Trig Runner','published'),('new-activity',$1,'Activity','published')",[A]);
+ assert.equal((await f.scalar("select public.resolve_public_game_name('trig-runner')")).slug,'new-runner-1');
+ assert.equal((await f.scalar("select public.resolve_public_game_name('trig-runner-2')")).slug,'new-runner-2');
+ assert.equal((await f.scalar("select public.resolve_public_game_name('activity-game')")).slug,'new-activity');
+ await f.owner();const preview=await f.scalar("select public.preview_game_url($1,'new-runner-1','A renamed title')",[A]);
+ assert.equal(preview.name,'trig-runner');assert.equal(preview.claimed,true);
+ }finally{await f.db.close();}});
+test('an owned legacy working copy can reserve its future canonical game link without exposing the draft',async()=>{const f=await fixture();try{
+ await f.db.exec('reset role');await f.db.query("insert into public.games(slug,owner_id,name,status,draft_of)values('draft--legacy-runner--11111111',$1,'Legacy Runner','draft','legacy-runner')",[A]);
+ await f.owner();const preview=await f.scalar("select public.preview_game_url($1,'legacy-runner','Legacy Runner')",[A]);assert.equal(preview.name,'legacy-runner');assert.equal(preview.claimed,false);
+ const claim=await f.claim('legacy-runner','legacy-runner');assert.equal(claim.url,'https://slop.game/legacy-runner');
+ await f.db.exec('set role anon');assert.equal(await f.scalar("select public.resolve_public_game_name('legacy-runner')"),null);
+ await f.db.exec('reset role');await f.db.query("insert into public.games(slug,owner_id,name,status)values('legacy-runner',$1,'Legacy Runner','published')",[A]);
+ await f.db.exec('set role anon');assert.equal((await f.scalar("select public.resolve_public_game_name('legacy-runner')")).slug,'legacy-runner');
  }finally{await f.db.close();}});

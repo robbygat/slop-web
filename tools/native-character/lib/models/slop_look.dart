@@ -390,6 +390,7 @@ enum SlopHat {
   blossomCrown,
   butterflyClips,
   mintedBeret,
+  itCouldBeWorse,
   globalChampion,
 }
 
@@ -432,6 +433,7 @@ enum SlopPattern {
   slopCode,
   pixelPetal,
   cloudQuilt,
+  itCouldBeWorseRobot,
 }
 
 /// The physical material of a Slop. Colour answers "which Slop is this?";
@@ -592,6 +594,7 @@ extension SlopHatLabel on SlopHat {
     SlopHat.blossomCrown => 'Blossom crown',
     SlopHat.butterflyClips => 'Butterfly clips',
     SlopHat.mintedBeret => 'Minted beret',
+    SlopHat.itCouldBeWorse => 'It Could Be Worse',
     SlopHat.globalChampion => 'Global Champion',
   };
 }
@@ -622,6 +625,7 @@ extension SlopPatternLabel on SlopPattern {
     SlopPattern.slopCode => 'SLOP Code',
     SlopPattern.pixelPetal => 'Lunar Glaze',
     SlopPattern.cloudQuilt => 'Cloud Quilt',
+    SlopPattern.itCouldBeWorseRobot => 'It Could Be Worse Robot',
   };
 }
 

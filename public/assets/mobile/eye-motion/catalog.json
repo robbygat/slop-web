@@ -27,24 +27,6 @@
     "fps": 12
   },
   {
-    "signature": "[\"classic\",\"cocoa\",\"cyclops\",\"ink\",\"gooberBite\",\"tuft\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",false]",
-    "id": "f8a09d25e4738f8e",
-    "url": "/assets/mobile/eye-motion/f8a09d25e4738f8e.webp",
-    "poster": "/assets/mobile/eye-motion/f8a09d25e4738f8e-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"wide\",\"cherry\",\"orbit\",\"sky\",\"smile\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
-    "id": "aef4f1bdad0829d2",
-    "url": "/assets/mobile/eye-motion/aef4f1bdad0829d2.webp",
-    "poster": "/assets/mobile/eye-motion/aef4f1bdad0829d2-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
     "signature": "[\"classic\",\"tangerine\",\"cyclops\",\"cocoa\",\"smile\",\"none\",\"none\",\"jelly\",\"bubbles\",\"none\",\"none\",true]",
     "id": "07c9b0f6a2c28d2d",
     "url": "/assets/mobile/eye-motion/07c9b0f6a2c28d2d.webp",
@@ -58,15 +40,6 @@
     "id": "6274344893e1f2b3",
     "url": "/assets/mobile/eye-motion/6274344893e1f2b3.webp",
     "poster": "/assets/mobile/eye-motion/6274344893e1f2b3-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"tall\",\"bubblegum\",\"angry\",\"violet\",\"oh\",\"mohawk\",\"none\",\"tidepool\",\"bubbles\",\"freckles\",\"none\",false]",
-    "id": "26f1a6f2fe3b9732",
-    "url": "/assets/mobile/eye-motion/26f1a6f2fe3b9732.webp",
-    "poster": "/assets/mobile/eye-motion/26f1a6f2fe3b9732-poster.webp",
     "size": 384,
     "frames": 96,
     "fps": 12
@@ -99,28 +72,10 @@
     "fps": 12
   },
   {
-    "signature": "[\"droplet\",\"bubblegum\",\"orbit\",\"ink\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",false]",
-    "id": "8607e0b32962f5cd",
-    "url": "/assets/mobile/eye-motion/8607e0b32962f5cd.webp",
-    "poster": "/assets/mobile/eye-motion/8607e0b32962f5cd-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
     "signature": "[\"tall\",\"butter\",\"sparkle\",\"violet\",\"smile\",\"ponytail\",\"none\",\"jelly\",\"bubbles\",\"none\",\"none\",true]",
     "id": "abefa4e9bb3ddab6",
     "url": "/assets/mobile/eye-motion/abefa4e9bb3ddab6.webp",
     "poster": "/assets/mobile/eye-motion/abefa4e9bb3ddab6-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"tall\",\"cherry\",\"heart\",\"rose\",\"smile\",\"none\",\"none\",\"clearGlass\",\"bubbles\",\"none\",\"none\",true]",
-    "id": "51d852f95fcd9a3b",
-    "url": "/assets/mobile/eye-motion/51d852f95fcd9a3b.webp",
-    "poster": "/assets/mobile/eye-motion/51d852f95fcd9a3b-poster.webp",
     "size": 384,
     "frames": 96,
     "fps": 12
@@ -144,37 +99,10 @@
     "fps": 12
   },
   {
-    "signature": "[\"droplet\",\"tangerine\",\"liquid\",\"gold\",\"jellyBean\",\"none\",\"none\",\"clearGlass\",\"bubbles\",\"none\",\"none\",true]",
-    "id": "125af9aa2ed55025",
-    "url": "/assets/mobile/eye-motion/125af9aa2ed55025.webp",
-    "poster": "/assets/mobile/eye-motion/125af9aa2ed55025-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"classic\",\"butter\",\"orbit\",\"forest\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"bubbles\",\"none\",\"none\",false]",
-    "id": "f3df562b7e192701",
-    "url": "/assets/mobile/eye-motion/f3df562b7e192701.webp",
-    "poster": "/assets/mobile/eye-motion/f3df562b7e192701-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
     "signature": "[\"ghost\",\"butter\",\"spiral\",\"ink\",\"glossySmile\",\"mintedBeret\",\"checker\",\"hologram\",\"ideaComets\",\"glasses\",\"red\",true]",
     "id": "2a06b0bcbdd29dce",
     "url": "/assets/mobile/eye-motion/2a06b0bcbdd29dce.webp",
     "poster": "/assets/mobile/eye-motion/2a06b0bcbdd29dce-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"classic\",\"grape\",\"cyclops\",\"ink\",\"grin\",\"tuft\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
-    "id": "d8d4a2b154984343",
-    "url": "/assets/mobile/eye-motion/d8d4a2b154984343.webp",
-    "poster": "/assets/mobile/eye-motion/d8d4a2b154984343-poster.webp",
     "size": 384,
     "frames": 96,
     "fps": 12
@@ -211,33 +139,6 @@
     "id": "83dc4a96bbb6e970",
     "url": "/assets/mobile/eye-motion/83dc4a96bbb6e970.webp",
     "poster": "/assets/mobile/eye-motion/83dc4a96bbb6e970-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"classic\",\"rose\",\"cyclops\",\"ink\",\"smile\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
-    "id": "50c9dafd9377e566",
-    "url": "/assets/mobile/eye-motion/50c9dafd9377e566.webp",
-    "poster": "/assets/mobile/eye-motion/50c9dafd9377e566-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"wide\",\"seafoam\",\"squint\",\"silver\",\"flat\",\"bangs\",\"none\",\"clearGlass\",\"bubbles\",\"tear\",\"none\",false]",
-    "id": "806c7da60e12dfdf",
-    "url": "/assets/mobile/eye-motion/806c7da60e12dfdf.webp",
-    "poster": "/assets/mobile/eye-motion/806c7da60e12dfdf-poster.webp",
-    "size": 384,
-    "frames": 96,
-    "fps": 12
-  },
-  {
-    "signature": "[\"classic\",\"lavender\",\"orbit\",\"ink\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"bubbles\",\"none\",\"none\",false]",
-    "id": "8a0c8a60c2526f3b",
-    "url": "/assets/mobile/eye-motion/8a0c8a60c2526f3b.webp",
-    "poster": "/assets/mobile/eye-motion/8a0c8a60c2526f3b-poster.webp",
     "size": 384,
     "frames": 96,
     "fps": 12
@@ -283,6 +184,105 @@
     "id": "intro-star",
     "url": "/assets/mobile/eye-motion/intro-star.webp",
     "poster": "/assets/mobile/eye-motion/intro-star-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"tall\",\"bubblegum\",\"angry\",\"violet\",\"oh\",\"mohawk\",\"none\",\"tidepool\",\"bubbles\",\"freckles\",\"none\",false]",
+    "id": "26f1a6f2fe3b9732",
+    "url": "/assets/mobile/eye-motion/26f1a6f2fe3b9732.webp",
+    "poster": "/assets/mobile/eye-motion/26f1a6f2fe3b9732-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"wide\",\"cherry\",\"orbit\",\"sky\",\"smile\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
+    "id": "aef4f1bdad0829d2",
+    "url": "/assets/mobile/eye-motion/aef4f1bdad0829d2.webp",
+    "poster": "/assets/mobile/eye-motion/aef4f1bdad0829d2-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"classic\",\"grape\",\"cyclops\",\"ink\",\"grin\",\"tuft\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
+    "id": "d8d4a2b154984343",
+    "url": "/assets/mobile/eye-motion/d8d4a2b154984343.webp",
+    "poster": "/assets/mobile/eye-motion/d8d4a2b154984343-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"classic\",\"lavender\",\"orbit\",\"ink\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"bubbles\",\"none\",\"none\",false]",
+    "id": "8a0c8a60c2526f3b",
+    "url": "/assets/mobile/eye-motion/8a0c8a60c2526f3b.webp",
+    "poster": "/assets/mobile/eye-motion/8a0c8a60c2526f3b-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"classic\",\"butter\",\"orbit\",\"forest\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"bubbles\",\"none\",\"none\",false]",
+    "id": "f3df562b7e192701",
+    "url": "/assets/mobile/eye-motion/f3df562b7e192701.webp",
+    "poster": "/assets/mobile/eye-motion/f3df562b7e192701-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"wide\",\"seafoam\",\"squint\",\"silver\",\"flat\",\"bangs\",\"none\",\"clearGlass\",\"bubbles\",\"tear\",\"none\",false]",
+    "id": "806c7da60e12dfdf",
+    "url": "/assets/mobile/eye-motion/806c7da60e12dfdf.webp",
+    "poster": "/assets/mobile/eye-motion/806c7da60e12dfdf-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"droplet\",\"tangerine\",\"liquid\",\"gold\",\"jellyBean\",\"none\",\"none\",\"clearGlass\",\"bubbles\",\"none\",\"none\",true]",
+    "id": "125af9aa2ed55025",
+    "url": "/assets/mobile/eye-motion/125af9aa2ed55025.webp",
+    "poster": "/assets/mobile/eye-motion/125af9aa2ed55025-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"classic\",\"cocoa\",\"cyclops\",\"ink\",\"gooberBite\",\"tuft\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",false]",
+    "id": "f8a09d25e4738f8e",
+    "url": "/assets/mobile/eye-motion/f8a09d25e4738f8e.webp",
+    "poster": "/assets/mobile/eye-motion/f8a09d25e4738f8e-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"tall\",\"cherry\",\"heart\",\"rose\",\"smile\",\"none\",\"none\",\"clearGlass\",\"bubbles\",\"none\",\"none\",true]",
+    "id": "51d852f95fcd9a3b",
+    "url": "/assets/mobile/eye-motion/51d852f95fcd9a3b.webp",
+    "poster": "/assets/mobile/eye-motion/51d852f95fcd9a3b-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"classic\",\"rose\",\"cyclops\",\"ink\",\"smile\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",true]",
+    "id": "50c9dafd9377e566",
+    "url": "/assets/mobile/eye-motion/50c9dafd9377e566.webp",
+    "poster": "/assets/mobile/eye-motion/50c9dafd9377e566-poster.webp",
+    "size": 384,
+    "frames": 96,
+    "fps": 12
+  },
+  {
+    "signature": "[\"droplet\",\"bubblegum\",\"orbit\",\"ink\",\"gooberBite\",\"none\",\"none\",\"tidepool\",\"none\",\"none\",\"none\",false]",
+    "id": "8607e0b32962f5cd",
+    "url": "/assets/mobile/eye-motion/8607e0b32962f5cd.webp",
+    "poster": "/assets/mobile/eye-motion/8607e0b32962f5cd-poster.webp",
     "size": 384,
     "frames": 96,
     "fps": 12

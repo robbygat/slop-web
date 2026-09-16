@@ -14,4 +14,10 @@ for(const entry of catalog){
  }
  console.log('Encoded native eye portrait '+entry.id);
 }
-await cp(input+'/catalog.json',new URL('catalog.json',output));
+if(process.env.SLOP_EYE_MERGE==='1'){
+ const existing=JSON.parse(await readFile(new URL('catalog.json',output),'utf8').catch(()=>Buffer.from('[]')));
+ const replacements=new Map(catalog.map(entry=>[entry.signature,entry]));
+ const merged=existing.filter(entry=>!replacements.has(entry.signature));
+ merged.push(...catalog);
+ await (await import('node:fs/promises')).writeFile(new URL('catalog.json',output),JSON.stringify(merged,null,2)+'\n');
+}else await cp(input+'/catalog.json',new URL('catalog.json',output));

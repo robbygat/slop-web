@@ -50,7 +50,7 @@ jobs:
       - name: Test shared mobile comment authority
         run: node --test supabase/social/test/comments.test.mjs
       - name: Test public game name ownership
-        run: node --test supabase/game-links/test/claims.test.mjs
+        run: node --test supabase/game-links/test/*.test.mjs
       - name: Test game compatibility authority
         run: node --test supabase/game-platforms/test/platforms.test.mjs
       - name: Test billing request and signature handling
