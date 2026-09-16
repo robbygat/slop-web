@@ -42,6 +42,6 @@ Do not commit `dist/`, account tokens, Android signing keys, or Edge Function se
 
 Games run in an opaque sandbox without account tokens. Creation and publishing use the existing server authorities. MCP connections and every private draft revision require account-owner confirmation; the bridge cannot publish or spend coins.
 
-New premium sales remain disabled. The backend checks exact provider prices and replay-safe payment receipts, but live billing still requires webhook/portal configuration, a provider round trip, and reliable provider cleanup after account erasure. See [billing status and activation](docs/billing.md). An APK download is a separate signed Android build and does not come from the website bundle.
+New premium sales remain disabled. The backend checks exact provider prices and replay-safe payment receipts, but live billing still requires webhook/portal configuration, a provider round trip, and reliable provider cleanup after account erasure. See [billing status and activation](docs/billing.md). The signed Android APK is hosted as a public GitHub Release asset, so the website bundle stays small while the Download page provides a direct file download.
 
 Project decisions and verification are in [the overhaul notes](docs/web-overhaul.md) and [MCP release evidence](docs/mcp-release-2026-09-16.md).

@@ -1,9 +1,12 @@
 {
-  "url": "/downloads/slop-game-3.7.3-4050-arm64.apk",
-  "version": "3.7.3",
-  "date": "September 16, 2026",
-  "size": "68 MB",
-  "sha256": "bcabba16ba5f171d9bf1445394ce06799723f61bd522e642b56c88870b1088d6",
+  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.5-build-2051/Slop-3.7.5-build-2051-universal.apk",
+  "file": "Slop-3.7.5-build-2051-universal.apk",
+  "version": "3.7.5",
+  "build": 2051,
+  "date": "September 17, 2026",
+  "size": "145 MB",
+  "sha256": "772d9346f44cf050b6356f0205bf75eb903ac4787dd07d3f3e442d5461bedb67",
   "commit": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+  "architectures": "Universal APK",
   "minAndroid": "7.0"
 }
