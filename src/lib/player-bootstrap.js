@@ -21,6 +21,10 @@
  addEventListener('message',event=>{
   if(event.source!==parent || typeof event.data!=='string' || event.data.length>4096)return;
   let value;try{value=JSON.parse(event.data);}catch{return;}
+  if(value.type==='hostKey'&&typeof value.down==='boolean'&&['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(value.key)){
+   const keyEvent=new KeyboardEvent(value.down?'keydown':'keyup',{key:value.key==='Space'?' ':value.key,code:value.key,bubbles:true,cancelable:true});
+   Object.defineProperty(keyEvent,'__slopHost',{value:true});dispatchEvent(keyEvent);return;
+  }
   if(value.type!=='webCapture' || typeof value.request!=='string')return;
   try {
    const canvas=[...document.querySelectorAll('canvas')].filter(c=>c.width>0&&c.height>0).sort((a,b)=>b.width*b.height-a.width*a.height)[0];

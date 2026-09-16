@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import mediaVersions from '../lib/hero-media-versions.json';
+import {mobileReelIndex, mobileReelStart} from '../lib/mobile-reel.js';
 
 const version = (item, kind) => mediaVersions[`${item.folder}/${item.file}`]?.[kind] || 'short';
 const film = item => `/assets/${item.folder}/${item.file}.mp4?v=${version(item,'video')}`;
@@ -75,5 +76,57 @@ export function GameplayReel({items, running, onSelect, selected, onChoose}) {
         aria-label={`Show ${item.name} gameplay`} aria-pressed={slots[active] === index}
         onClick={() => onChoose(index)}><span/></button>)}
     </div>}
+  </>;
+}
+
+// Mobile Safari often declines to buffer the next short file until the current
+// file has ended. Use one fast-start MP4 and seek inside it for direct choices.
+export function MobileGameplayReel({items, running, onSelect, selected, onChoose}) {
+  const player = useRef(null), current = useRef(selected), retry = useRef(null);
+  current.current = selected;
+  const key = mediaVersions['gameplay/mobile-hero-reel'];
+  const source = `/assets/gameplay/mobile-hero-reel.mp4?v=${key.video}`;
+  const image = `/assets/gameplay/mobile-hero-reel.jpg?v=${key.poster}`;
+  function play() {
+    const video = player.current;
+    if (!video || !running) return;
+    video.muted = true;
+    video.play().catch(() => {
+      clearTimeout(retry.current);
+      retry.current = setTimeout(() => {
+        if (player.current === video && running && video.readyState >= 2) video.play().catch(() => {});
+      }, 350);
+    });
+  }
+  function sync(event) {
+    const index = mobileReelIndex(event.currentTarget.currentTime);
+    if (index !== current.current) {
+      current.current = index;
+      onSelect(index);
+    }
+  }
+  useEffect(() => {
+    const video = player.current;
+    if (!video) return;
+    if (running) play(); else video.pause();
+    return () => clearTimeout(retry.current);
+  }, [running]);
+  useEffect(() => {
+    const video = player.current;
+    if (!video || mobileReelIndex(video.currentTime) === selected) return;
+    video.currentTime = mobileReelStart(selected) + .03;
+    play();
+  }, [selected]);
+  return <>
+    <video ref={player} className="arcade-film arcade-film-continuous is-current"
+      src={source} poster={image} muted playsInline autoPlay={running} loop preload="auto"
+      disablePictureInPicture aria-label="Recorded Slop mobile gameplay"
+      onLoadedData={play} onCanPlay={play} onPlaying={sync} onTimeUpdate={sync}
+      onWaiting={play}/>
+    <div className="arcade-reel" aria-label="Featured games">
+      {items.map((item, index) => <button key={item.slug} title={item.name}
+        aria-label={`Show ${item.name} gameplay`} aria-pressed={selected === index}
+        onClick={() => onChoose(index)}><span/></button>)}
+    </div>
   </>;
 }

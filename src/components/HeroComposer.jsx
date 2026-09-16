@@ -6,7 +6,7 @@ import SlopMark from './SlopMark.jsx';
 import './hero-composer.css';
 export {SlopMark};
 
-export default function HeroComposer({className='',placeholder='Make your own game…'}){
+export default function HeroComposer({className='',placeholder='Make your own game'}){
  const {user}=useAuth();const [prompt,setPrompt]=useState(''),[listening,setListening]=useState(false),[error,setError]=useState('');
  const input=useRef(null),dictation=useRef(null),pendingSubmit=useRef(false),label=useId();const [supported]=useState(()=>!!speechRecognitionFor());
  useEffect(()=>{

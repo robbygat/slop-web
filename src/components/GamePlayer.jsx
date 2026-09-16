@@ -7,6 +7,7 @@ import {scoreRun} from '../lib/leaderboard.js';
 import {validRunScore} from '../lib/score-contracts.js';
 import {createRestartGate} from '../lib/player-restart.js';
 import {legacyControlSpec} from '../lib/player-input.js';
+import {gameControlKey} from '../lib/player-focus.js';
 import {lockBodyScroll} from '../lib/scroll-lock.js';
 import {useAuth} from '../auth.jsx';
 import {Loading,Notice,IconButton,Button} from './ui.jsx';
@@ -14,7 +15,7 @@ import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
 export function GamePlayer({url,game,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game'}){
  const {profile}=useAuth();
- const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null);callbacks.current=onEvent;
+ const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),heldKeys=useRef(new Set());callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false);
@@ -22,6 +23,13 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
  const state=useRef({});state.current={muted,finished,board,paused,expanded};const format=gameFormat(game),controls=legacyControlSpec(url);
  const send=message=>frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');
+ useEffect(()=>{
+  const release=()=>{for(const key of heldKeys.current)send({type:'hostKey',key,down:false});heldKeys.current.clear();};
+  const down=event=>{if(state.current.paused||state.current.finished!==null||state.current.board)return;const key=gameControlKey(event);if(!key)return;event.preventDefault();event.stopPropagation();frame.current?.contentWindow?.focus();if(!event.repeat){heldKeys.current.add(key);send({type:'hostKey',key,down:true});const current=run.current;if(current&&!current.ended)current.interacted=true;}};
+  const up=event=>{const key=event.code==='Space'?'Space':event.key;if(!heldKeys.current.has(key))return;event.preventDefault();event.stopPropagation();heldKeys.current.delete(key);send({type:'hostKey',key,down:false});};
+  const hidden=()=>{if(document.hidden)release();};window.addEventListener('keydown',down,true);window.addEventListener('keyup',up,true);window.addEventListener('blur',release);document.addEventListener('visibilitychange',hidden);
+  return()=>{release();window.removeEventListener('keydown',down,true);window.removeEventListener('keyup',up,true);window.removeEventListener('blur',release);document.removeEventListener('visibilitychange',hidden);};
+ },[]);
  useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send}));
  useEffect(()=>{const query=matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
  useEffect(()=>{if(desktopRequired&&expanded)exitExpanded();},[desktopRequired,expanded]);
@@ -99,10 +107,10 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button>
  </div>;
  return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${format.orientation}`} style={{'--game-aspect':format.playerAspect}}>
-  <div className="player-surface"><div className="player-frame">
-   {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
+  <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
+   {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
    <div className={`player-loading ${ready&&!error?'hidden':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
-   {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay} onLeaderboard={showBoard}/>}
+   {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay}/>}
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}

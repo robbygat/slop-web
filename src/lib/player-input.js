@@ -52,7 +52,7 @@ export function installLegacyKeyboard(spec, target = window) {
     raf=target.requestAnimationFrame(tick);
   }
   target.addEventListener('keydown',e=>{
-    if(!e.isTrusted||e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey||paused||!fine()||editable(e.target))return;
+    if((!e.isTrusted&&!e.__slopHost)||e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey||paused||!fine()||editable(e.target))return;
     const key=e.code==='Space'?'Space':e.key, arrow=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(key);
     if(key!=='Space'&&!arrow)return;if(spec.mode==='tap'&&key!=='Space')return;
     e.preventDefault();if(e.repeat)return;

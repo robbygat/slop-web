@@ -48,6 +48,8 @@ export default function Social() {
   const [error, setError] = useState(null);
   const [person, setPerson] = useState(null);
   const [transitionId, setTransitionId] = useState(null);
+  const [visiblePeople,setVisiblePeople]=useState(24);
+  const peopleSentinel=useRef(null);
   const pending = useRef(false);
   const people = useAsync(() => searchPeople(query.trim().replace(/^@/, '')), [query]);
 
@@ -55,6 +57,8 @@ export default function Social() {
     const timer = setTimeout(() => setQuery(term), 250);
     return () => clearTimeout(timer);
   }, [term]);
+  useEffect(()=>setVisiblePeople(24),[people.data,query]);
+  useEffect(()=>{const node=peopleSentinel.current;if(!node||visiblePeople>=(people.data?.length||0))return;const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting)setVisiblePeople(count=>Math.min(count+24,people.data?.length||count));},{rootMargin:'500px'});observer.observe(node);return()=>observer.disconnect();},[people.data,visiblePeople]);
   useEffect(() => {
     let alive = true;
     setFollowing(new Set());
@@ -115,18 +119,19 @@ export default function Social() {
 
     <div className="circle-results-heading">
       <h2>{query.trim() ? 'Search results' : 'People on Slop'}</h2>
-      <span role="status">{people.loading ? 'Finding people…' : query.trim() && !people.error ? `${people.data?.length || 0} found` : ''}</span>
+      <span role="status">{people.loading ? 'Finding people…' : !people.error ? `${Math.min(visiblePeople,people.data?.length||0)} of ${people.data?.length||0}` : ''}</span>
     </div>
     <Notice error={error}/>
     <Notice error={people.error} onRetry={people.refresh}/>
     {people.loading && !people.data ? <Loading label="Finding people…"/> : !people.error && !people.data?.length ?
       <div className="circle-empty"><Icon name="search" size={30}/><h3>No matching usernames</h3><p>Try another name.</p>{term && <Button variant="secondary small" onClick={() => setTerm('')}>Clear search</Button>}</div> :
       <div className={`circle-people ${people.loading ? 'is-loading' : ''}`} aria-busy={people.loading}>
-        {people.data?.map((profile, index) => <PersonRibbon key={profile.id} person={profile} index={index}
+        {people.data?.slice(0,visiblePeople).map((profile, index) => <PersonRibbon key={profile.id} person={profile} index={index}
           following={following.has(profile.id)} busy={busy} own={profile.id === user?.id}
           onFollow={() => follow(profile.id)} onOpen={() => openProfile(profile)}
           transition={transitionId === profile.id && !person}/>) }
       </div>}
+    {!people.error&&visiblePeople<(people.data?.length||0)&&<div ref={peopleSentinel} className="circle-people-sentinel"><span className="loader"/><span>More people</span></div>}
     {person && <PersonProfile person={person} own={person.id === user?.id} following={following.has(person.id)} busy={busy}
       onFollow={() => follow(person.id)} onClose={() => setPerson(null)} transition={transitionId === person.id}/>}
   </div>;

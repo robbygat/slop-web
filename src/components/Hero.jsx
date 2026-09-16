@@ -3,7 +3,7 @@ import {loadGame} from '../lib/catalog.js';
 import {gameEntry} from '../lib/contracts.js';
 import {Icon} from './Icon.jsx';
 import {Loading} from './ui.jsx';
-import {GameplayReel} from './GameplayReel.jsx';
+import {GameplayReel, MobileGameplayReel} from './GameplayReel.jsx';
 import HeroComposer from './HeroComposer.jsx';
 import './hero.css';
 
@@ -62,10 +62,13 @@ export default function Hero() {
       {game ? <Suspense fallback={<div className="arcade-loading"><Loading label={`Opening ${game.name}…`}/></div>}>
         <LiveGame game={game} url={gameEntry(game)} title={game.name} paused={!visible} initialMuted requireInteraction/>
       </Suspense> : <>
-        <GameplayReel key={compact ? 'mobile' : 'desktop'} items={compact ? mobile : desktop}
+        {compact ? <MobileGameplayReel key="mobile" items={mobile}
           running={!paused && visible && !busy} selected={requestedClip}
           onSelect={index => {setClip(index); setRequestedClip(index);}}
-          onChoose={index => {setRequestedClip(index); setError('');}}/>
+          onChoose={index => {setRequestedClip(index); setError('');}}/> : <GameplayReel key="desktop" items={desktop}
+          running={!paused && visible && !busy} selected={requestedClip}
+          onSelect={index => {setClip(index); setRequestedClip(index);}}
+          onChoose={index => {setRequestedClip(index); setError('');}}/>}
         <div className="arcade-shade" aria-hidden="true"/>
         <div className="arcade-feature">
           <div className="arcade-game-name"><h2>{featured.name}</h2><span>@{featured.creator}</span></div>

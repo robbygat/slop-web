@@ -21,6 +21,7 @@ test('tap bridge consumes only genuine desktop primary keys, respects handled ke
  const f=fixture('tap');for(const extra of [{isTrusted:false},{defaultPrevented:true},{ctrlKey:true},{repeat:true},{target:{closest:()=>true}}])f.key('Space',extra);
  f.key('ArrowLeft');assert.equal(f.events.length,0);f.target.matchMedia=()=>({matches:false});f.key('Space');assert.equal(f.events.length,0);
  f.target.matchMedia=()=>({matches:true});assert.equal(f.key('Space').defaultPrevented,true);assert.deepEqual(f.events.map(e=>e.type),['pointerdown','pointerup']);f.canvas.setPointerCapture(7);assert.deepEqual(f.events.at(-1),['capture',7]);
+ const host=f.key('Space',{isTrusted:false,__slopHost:true});assert.equal(host.defaultPrevented,true);assert.equal(f.events.filter(e=>e.type==='pointerdown').length,2);
 });
 test('swipe and drag adapters preserve their audited pointer contracts and stop on host pause',()=>{
  const s=fixture('swipe');s.key('ArrowLeft');assert.deepEqual(s.events.map(e=>e.type),['pointerdown','pointermove','pointerup']);assert.ok(s.events[1].clientX<s.events[0].clientX);

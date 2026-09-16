@@ -373,3 +373,13 @@ verified separately by the release owner.
 - Slopcraft's control update is published at a new immutable root under its existing official game ID. All10public files were read back and hashed; the canonical SDK is unchanged. See `slopcraft-controls-release-receipt.json`.
 - The320px Night Drift composition now places the car fully above the title and Play controls; its video ends at449px and the feature starts at452.5px. No media bytes were recropped or regenerated for this layout correction.
 - The ten-point shipping review, fixed findings and remaining limitations are recorded in `release/ship-readiness-2026-09-16.md`.
+
+## Mobile playback, Crown and player-control follow-up — 17 September
+
+- Mobile hero playback now uses one 31-second, 720×1360 fast-start H.264 reel. Browser QA at 390×844 observed one video element at readyState4 playing continuously, with its game title advancing from the media timeline. The delivery file is4.9MB at approximately1.31Mbps; segment and content hashes are in `mobile-hero-reel.source.json`.
+- Game results are a fixed-height grid inside the player frame. The score, three-row leaderboard and replay action remain visible without scrolling, and the redundant “See leaderboard” action is removed. At320×720, the result overlay and its529px scroll/client heights were identical; replay ended10px above the529px frame edge.
+- Rank one now carries the Crown mark in every web leaderboard. A signed-in run can start the three-second takeover animation only from the exact atomic `submit_score_with_community_transition` receipt bound to its owner, game, request and score. Forged transition IDs, owners, scores and non-winning results fail closed. Desktop QA loaded the live shared leaderboard, displayed its Crown, and kept the complete result inside the game frame.
+- The active mounted game owns Space and arrow keys unless focus is in a text control or a modifier shortcut is held. Host key events cross the existing isolated relay as a bounded five-key message, and the inner canonical Slop.js receives ordinary keydown/keyup events. Browser QA confirmed a repeated Space press kept the same iframe focus and did not move the page.
+- Social discovery reads every public profile in bounded500-row database pages, reshuffles on each load, orders customized Slops before the base orange look, and renders24more cards near the scroll boundary. Browser QA loaded all78current public profiles at320px without a sentinel remaining.
+- The hero composer uses the complete “Make your own game” prompt. At320px its165px input remained inside a245px pill with no horizontal document overflow.
+-117 website contract tests,27 MCP tests and the production build passed for this follow-up.

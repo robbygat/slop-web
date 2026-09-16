@@ -1,0 +1,17 @@
+{
+  "purpose": "A single fast-start mobile hero reel that avoids cross-file autoplay stalls on iOS browsers.",
+  "duration_seconds": 31,
+  "dimensions": "720x1360",
+  "frame_rate": 30,
+  "codec": "H.264 High profile, level 4.0, yuv420p",
+  "segments": [
+    {"start": 0, "duration": 5, "name": "Flight Horizon", "sha256": "d7e347fc784ae93f5a0e342b08605b2379c568835c96476b01ae4f4c9b51c4ef"},
+    {"start": 5, "duration": 5, "name": "Night Drift X", "sha256": "f719f7575e52c77daabbb853ddfc765de25847f128c1ebfff1bba050e27859c9"},
+    {"start": 10, "duration": 6, "name": "Dead Signal", "sha256": "f71a592d262f188ca87fba6e58719a8dd71793b04763f6ee5179e822c5c45827"},
+    {"start": 16, "duration": 5, "name": "Surfy Sub", "sha256": "9f1f2a1919e279bbedb75e37ddf15642c0fd8844715f7163c121edd8871a6599"},
+    {"start": 21, "duration": 5, "name": "Flappy Duck", "sha256": "776f2a7fde4ec662bcd3c8b4357518d5cab03aa53542c602dbc57501c6197dfc"},
+    {"start": 26, "duration": 5, "name": "Stax", "sha256": "63bd28af9ef78b7114597f1137d453460bc1a719d4f62cd13a4ce5afc2e8d173"}
+  ],
+  "output_sha256": "c487b8ee4db00f57a18fa9a60826936563498107bc7efb311bbaf2a39193ad14",
+  "poster_sha256": "7709c5af7ee36a31c33561ce0834f47e0a2c93d9cb0b4a8cb00d40747fe359b5"
+}
