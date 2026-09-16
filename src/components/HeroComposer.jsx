@@ -2,14 +2,9 @@ import React,{useEffect,useId,useRef,useState} from 'react';
 import {useAuth} from '../auth.jsx';
 import {buildIdeaRoute,MAX_GAME_IDEA,saveBuildIdea} from '../lib/build-draft.js';
 import {createDictation,speechRecognitionFor} from '../lib/dictation.js';
+import SlopMark from './SlopMark.jsx';
 import './hero-composer.css';
-
-// Exact resting classic U-nav outline from Flutter's slopFormOutlineFor:
-// 128 samples, the same breathing term and midpoint quadratic construction.
-const points=Array.from({length:128},(_,i)=>{const a=i*Math.PI*2/128,r=1-.14*(1+Math.cos(5*(a+Math.PI/2)+Math.PI))/2,b=1+.009*Math.sin(a*3);return [16+Math.cos(a)*12.5*r*b,16.5+Math.sin(a)*12.5*r*b];});
-const pair=p=>p.map(v=>v.toFixed(5)).join(' '),middle=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
-const outline='M'+pair(middle(points.at(-1),points[0]))+points.map((p,i)=>'Q'+pair(p)+' '+pair(middle(p,points[(i+1)%128]))).join('')+'Z';
-export function SlopMark({className=''}){return <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d={outline} fill="currentColor" fillOpacity=".07" stroke="currentColor" strokeWidth="2.35" strokeLinecap="round" strokeLinejoin="round"/><ellipse cx="11.7" cy="15.1" rx="1.4" ry="2.15" fill="currentColor"/><ellipse cx="20.3" cy="15.1" rx="1.4" ry="2.15" fill="currentColor"/><path d="M14 20.4Q16 22.1 18 20.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>;}
+export {SlopMark};
 
 export default function HeroComposer({className='',placeholder='Make your own game…'}){
  const {user}=useAuth();const [prompt,setPrompt]=useState(''),[listening,setListening]=useState(false),[error,setError]=useState('');

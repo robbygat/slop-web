@@ -282,3 +282,39 @@ Source and file hashes are included in `public/assets/gameplay/sources.json`.
 Flappy Duck's authored body is 40×32 logical pixels in the 432×936 recording
 viewport (about 9.3% of the width and 3.4% of the height). Its small bird is native
 composition, separate from the hero's phone-fill cropping.
+
+## Composer mark motion
+
+The composer preserves its original classic Slop outline byte-for-byte and
+morphs through six resting forms using Flutter's `slopFormOutlineFor` geometry:
+classic, cloud, ghost, wide, star and droplet. All share the native 128 angular
+samples and midpoint quadratic construction. The face, position and stroke stay
+fixed. Each 2.4-second hold schedules one timer; the 1.5-second smooth transition
+updates only the SVG outline, capped at 30 fps. No React frame rerenders or
+whole-icon motion is used. Offscreen, hidden and reduced-motion states cancel
+pending animation; reduced motion shows the original classic mark.
+
+Geometry checks verified the exact original resting path, full-stroke bounds and
+continuous loop seams. Browser sampling confirmed settled holds, changing
+outlines and fixed 32×32 position/face; an offscreen mark remained unchanged for
+4.2 seconds. Lifecycle fixtures verified timer/RAF cancellation, preference
+changes, resume and unmount cleanup. The 86 web tests and initial full build
+passed; the release owner will run the final build after the concurrent native
+renderer export completes.
+
+## Final stationary profile and composer release
+
+The hero composer stays white in both themes; its full placeholder fits at
+320- and 390-pixel browser widths. Empty mobile composers omit the disabled send
+control, restoring it when there is an idea to submit. The exact native profile
+renderer now holds a neutral, undeformed pose until horizontal drag or keyboard
+rotation. It holds the released angle without idle movement or inertia. Native
+geometry, equipped materials and manual continuous rotation are preserved.
+
+Compiled browser captures before interaction and after release were separately
+byte-identical while idle. Drag, arrow keys, Home reset and mint glass Sunbeam
+appearance were observed. Three Flutter regression tests passed. The fallback
+atlas renderer also stops idle motion. The content-bound renderer version
+`5cf9da7007b8855c0810` updates the iframe, bootstrap and Dart loader URLs together.
+The release owner's final `npm run check` passed all 87 website tests, 27 MCP
+tests and the production build after the native renderer export.

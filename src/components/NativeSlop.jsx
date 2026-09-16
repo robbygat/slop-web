@@ -2,6 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import SlopMotion from './SlopMotion.jsx';
 import {nativePortrait} from '../lib/slop-avatar.js';
 import {nativeCharacterMessage,nativeCharacterReady,nativeCharacterPerformance,nativeCharacterRendered} from '../lib/native-character-contracts.js';
+import nativeViewer from '../../public/native-character/version.json';
 import './slop-toon.css';
 export function NativeSlop({look,body='ghost',color='tangerine',className='',alt='Your Slop',controls=true,autoRotate=false,paused=false}){
  const frame=useRef(null),host=useRef(null),state=useRef({ready:false,visible:true,reducedMotion:false,requestId:0,autoRotate,paused}),[ready,setReady]=useState(false);
@@ -18,8 +19,8 @@ export function NativeSlop({look,body='ghost',color='tangerine',className='',alt
  },[]);
  useEffect(()=>{send();},[key,paused,autoRotate]);
  return <div ref={host} className={`slop slop-toon slop-native-viewer ${className}`} data-renderer={ready?'native-flutter-live':'native-flutter-loading'}>
-  {!ready&&<div className="slop-native-placeholder" role="status" aria-label="Loading your Slop">{portrait?<img src={portrait} alt={alt} width="512" height="512"/>:<SlopMotion alt="Loading your Slop"/>}</div>}
-  <iframe ref={frame} src="/native-character/index.html" title={alt} sandbox="allow-scripts" referrerPolicy="no-referrer" className={ready?'is-ready':''}/>
+  {!ready&&<div className="slop-native-placeholder" role="status" aria-label="Loading your Slop">{portrait?<img src={portrait} alt={alt} width="512" height="512"/>:<SlopMotion paused alt="Loading your Slop"/>}</div>}
+  <iframe ref={frame} src={nativeViewer.entry} title={alt} sandbox="allow-scripts" referrerPolicy="no-referrer" className={ready?'is-ready':''}/>
   {controls&&<div className="slop-turntable-controls"><button type="button" onClick={()=>send(true)} aria-label="Reset Slop to front view" title="Front view">↻</button></div>}
  </div>;
 }
