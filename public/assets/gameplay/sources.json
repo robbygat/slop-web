@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "e2538ff05461130ca4dbf5bd70073e7cc1861068",
+  "games": [
+    {
+      "slug": "creator-55ba1336-8042-4791-8dc7-d98cd77a241c",
+      "name": "Claybound",
+      "preview_url": "releases/e26e1a71769f0b2e1180dee8a5b58c712f794f09e5a2d240d9f9db0f261dfae1/creator-55ba1336-8042-4791-8dc7-d98cd77a241c/1.0.0/previews/1bdeae96-d8e9-4300-9e1c-38941c4f4d34/b3-6086fdaade5da56dc0c3bbb732f37630-c3-82c50d7c8039c5f0c9f48386f0c09952/preview.gif",
+      "preview_status": "ready",
+      "file": "claybound"
+    },
+    {
+      "slug": "slither-circuit-661ad91b70d31f1007dfc3eceab26bd3",
+      "name": "SLITHER CIRCUIT",
+      "preview_url": "slither-circuit-661ad91b70d31f1007dfc3eceab26bd3/1.0.0/published-previews/eb8237d8c829bdba9f6747f5d8918ee26d660b9f17de49e874cf9ae23ec0e841/ef8dcce6-509b-4ef5-ae9d-02a7f422155a/r4-eb8237d8c829bdba9f6747f5d8918ee2-c3-dc5c625a62d9790060b84dcb5f982ce5/preview.gif",
+      "preview_status": "ready",
+      "file": "slither-circuit"
+    },
+    {
+      "slug": "voxel-drift-ace-9s5l",
+      "name": "Night Drift",
+      "preview_url": "voxel-drift-ace-9s5l/1.0.0/published-previews/a443a1ba9a934d0bebf70607bc2cb4126920d4a94d3fe97533adef7cd0ae498e/06a0c812-e3f2-4e6c-9868-0cc51c0accf8/r4-a443a1ba9a934d0bebf70607bc2cb412-c3-8fea6ad079d9d4445e87502bfe8cb2ad/preview.gif",
+      "preview_status": "ready",
+      "file": "night-drift"
+    }
+  ]
+}

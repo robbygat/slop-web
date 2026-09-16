@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { LocalCredentials, SlopBridge } from "./client.mjs";
+import { gameTemplate } from "./game-template.mjs";
 import { pairingResult } from "./pairing-display.mjs";
 
 const bridge = new SlopBridge({
@@ -15,7 +16,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.1.0" });
+const server = new McpServer({ name: "slop", version: "0.2.0" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -42,7 +43,7 @@ function tool(name, description, inputSchema, action, annotations = {}) {
 }
 tool(
   "slop_pair",
-  "Display a real QR image on the computer for Slop's in-app phone scanner. Start a ten-minute pairing request; the user must explicitly approve draft access in the signed-in phone app. No connection exists until approval. Show the returned image to the user.",
+  "Display a real QR image and web pairing link for Slop. Start a ten-minute pairing request; the user must explicitly approve draft access in their signed-in mobile app or at slop.game. No connection exists until approval. Show the returned image and link to the user.",
   { client_name: z.string().min(1).max(60).default("My coding agent") },
   (args) => bridge.pair(args.client_name),
 );
@@ -53,9 +54,10 @@ tool(
   () => bridge.status(),
   { readOnlyHint: true },
 );
+tool("slop_game_template", "Get the canonical mobile Slop runtime and a tiny working canvas game. Use before building any Slop game so ready, score, finish, restart, touch and pause work on web/iOS/Android. No account or connection required.", {}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
 tool(
   "slop_send_draft",
-  "Send a private text game bundle for phone confirmation and validation. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this initial bridge.",
+  "Use slop_game_template first and include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
   {
     project_id: z.string().uuid(),
     request_id: z.string().uuid(),
@@ -69,7 +71,7 @@ tool(
 );
 tool(
   "slop_draft_status",
-  "List this connection’s private draft revisions and whether the phone has confirmed a validated preview. Preview capabilities are delivered only to the phone.",
+  "List this connection’s private draft revisions and whether the owner has confirmed a validated preview. Private preview URLs are delivered only to the signed-in owner, never to the agent.",
   {},
   () => bridge.authorized("/agent/drafts"),
   { readOnlyHint: true },

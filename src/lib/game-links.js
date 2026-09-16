@@ -1,0 +1,6 @@
+import {SLUG} from './contracts.js';
+const reserved=new Set('home feed play games g r build studio social shop you settings connect download open invite profile mcp assets api auth privacy terms tos support help about newsite releases bridge 404 index favicon robots sitemap admin login signup logout account billing uploads downloads game-frame native-character native-wasm appearance service-worker sw'.split(' '));
+export function validGameName(name){return typeof name==='string'&&name.length>=3&&name.length<=50&&/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(name)&&!reserved.has(name);}
+export function suggestGameName(title){return String(title||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50).replace(/-+$/,'');}
+export function canonicalGameUrl(game){const name=validGameName(game?.public_name)?game.public_name:game?.slug;if(!SLUG.test(name))throw new Error('This game has no shareable URL.');return `https://slop.game/${reserved.has(name.toLowerCase())?'g/':''}${name}`;}
+export function gameNameFromPath(pathname){if(typeof pathname!=='string'||!/^\/[A-Za-z0-9][A-Za-z0-9_-]{0,159}\/?$/.test(pathname))return null;const name=pathname.replace(/^\/|\/$/g,'');return reserved.has(name.toLowerCase())?null:name;}

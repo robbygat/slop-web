@@ -1,0 +1,16 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "game.slop",
+      "sha256_cert_fingerprints": [
+        "52:F5:B2:EB:00:A4:34:D2:5D:6F:D0:15:A0:FB:DE:DE:72:55:6B:2C:3E:FF:D1:90:39:E0:5D:A8:93:BA:99:EE",
+        "D5:D4:1E:86:E1:46:B1:7C:76:4B:2E:02:07:83:6B:63:6C:2C:B2:0D:D6:36:CD:C2:0C:09:F3:55:FC:FE:A4:15",
+        "48:66:DC:90:3F:E0:41:F8:E0:BE:E3:C2:40:AE:13:40:EC:4E:BC:FD:D5:A4:E3:40:19:F4:FC:8E:B5:97:B8:AB"
+      ]
+    }
+  }
+]

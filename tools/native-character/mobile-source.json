@@ -1,0 +1,15 @@
+{
+  "source": "slop-mobile",
+  "files": {
+    "models/slop_look.dart": "b2d8f2a20b9302b887a84248256415735d99fe4bab863bb5abc7a973c8a4d05f",
+    "widgets/slop_character.dart": "0efbf9d8ec0d920927e8287e5d3ab4c8ba4f96fd9cc2c3a164a7dbc80ce6bdf6",
+    "widgets/slop_form_renderer.dart": "7832e1df9027dc696d18271bd55b5d6d840ef76d87e43f64db24d0e5ce4b77c7",
+    "widgets/slop_headpieces.dart": "c4dbca2e2e970ce4c73b3d6424498ef2bd23e6cdb9296056e5beb93514c0044f",
+    "widgets/slop_toon_character.dart": "fc122645b8150acda6f79262ad638c802201af84031c81b485ea5e096295afba",
+    "widgets/slop_toon_parts_atlas.dart": "bfe89017c6ac43d4a1fd187f35c92fe7495bfc61930093dbfe0627d6c2e1c706",
+    "widgets/slop_coin_mark.dart": "04c2f10a0139afa1fe34f9d4512a79a47a20c08f242fc4ed9a1b96f60d1ed5fc",
+    "widgets/slop_cape.dart": "5492e0037d4b32b2ccd412db87c55eec71a7728f7e79d53fc4b4630daa8a7cd2",
+    "theme/tokens.dart": "8ee8777a6bb179b0affd86f2a60c7305a50ca188d0c3d57e98d1224e49444601",
+    "config/product_features.dart": "89cc8d4c258b5df03337b84cc518f40e0513aad6fd700895d74a020e1ca0c3e5"
+  }
+}

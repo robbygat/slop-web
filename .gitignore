@@ -13,3 +13,8 @@ supabase/.env
 
 # Supabase CLI local cache
 supabase/.temp/
+
+# Generated web output and local verification artifacts
+dist/
+.art-export/
+*.local

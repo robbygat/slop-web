@@ -18,8 +18,10 @@ test("computer pairing output includes a real QR decodable to the exact phone ch
   assert.equal(png.height, 640);
   const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
   assert.equal(decoded.data, uri);
-  assert.match(result.content.at(-1).text, /Scan QR/);
-  assert.match(result.content.at(-1).text, /does not grant access/);
+  const instructions=result.content.filter(item=>item.type==='text').map(item=>item.text).join('\n');
+  assert.match(instructions, /Scan QR/);
+  assert.match(instructions, /does not grant access/);
+  assert.match(instructions, /https:\/\/api\.slop\.game\/functions\/v1\/slop-mcp\/authorize#id=/);
 });
 test("QR generation rejects unrelated hosts and malformed or duplicated challenge fields", async () => {
   const uri =
@@ -39,3 +41,5 @@ test("QR generation rejects unrelated hosts and malformed or duplicated challeng
   }
   assert.equal((await pairingResult({ status: "active" })).content.length, 1);
 });
+
+test("authorization instructions reject a substituted destination",async()=>{await assert.rejects(()=>pairingResult({confirmation_uri:"https://slop.game/mcp/pair#id=11111111-1111-4111-8111-111111111111&code=abcdefabcdefabcdefabcdefabcdefab",authorization_uri:"https://evil.example"}),/invalid authorization link/);});

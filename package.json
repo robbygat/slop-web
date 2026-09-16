@@ -1,13 +1,29 @@
 {
-  "name": "slop-game",
+  "name": "slop-web",
   "private": true,
-  "version": "0.5.0",
+  "version": "1.0.0",
   "type": "module",
-  "description": "SLOP.game — prompt it. play it. share it.",
+  "description": "The Slop game community, creator and desktop bridge on the web.",
   "scripts": {
-    "start": "node server.js"
+    "dev": "vite --host 127.0.0.1",
+    "start": "vite --host 127.0.0.1",
+    "build": "vite build && node tools/postbuild-routes.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test test/*.test.mjs",
+    "test:mcp": "npm --prefix mcp test",
+    "check": "npm run test && npm run test:mcp && npm run build"
   },
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.12"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0",
+    "gifenc": "1.0.3",
+    "qrcode": "1.5.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "vite": "8.3.0"
   }
 }

@@ -15,6 +15,10 @@ export async function pairingResult(data) {
     !/^[0-9a-f]{32}$/.test(code ?? "") ||
     [...fields.keys()].sort().join(",") !== "code,id"
   ) throw new Error("Slop returned an invalid pairing link. Try again.");
+  const authorizationUri = `https://api.slop.game/functions/v1/slop-mcp/authorize#id=${id}&code=${code}`;
+  if (data.authorization_uri != null && data.authorization_uri !== authorizationUri) {
+    throw new Error("Slop returned an invalid authorization link. Try again.");
+  }
   const image = await QRCode.toBuffer(data.confirmation_uri, {
     type: "png",
     width: 640,
@@ -32,5 +36,6 @@ export async function pairingResult(data) {
     text:
       "Display this QR on your computer. In Slop on your phone, open Build → Connect an agent → Scan QR. Review the named agent and approve it there. This QR expires after ten minutes; opening or scanning it does not grant access.",
   });
+  content.push({type:"text", text:`To allow your coding app to send games to Slop, open ${authorizationUri}. Sign in, check the coding app name, and choose Allow. Nothing is published by connecting.`});
   return { content };
 }

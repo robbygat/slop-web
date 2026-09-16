@@ -1,9 +1,20 @@
-import { BridgeError, mime, requireValue, VERSION } from "./contract.mjs";
+import { BridgeError, mime, requireValue, UUID, VERSION } from "./contract.mjs";
 import { createHandler } from "./handler.mjs";
 
 const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
-const anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+function platformKey(mapName: string, legacyName: string): string {
+  const raw = Deno.env.get(mapName);
+  if (!raw) return Deno.env.get(legacyName) ?? "";
+  let named;
+  try { named = JSON.parse(raw); } catch {
+    throw new Error("Invalid platform key configuration");
+  }
+  requireValue(typeof named?.default === "string" && named.default.length > 0,
+    "platform_key_unavailable", 503);
+  return named.default;
+}
+const anon = platformKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_ANON_KEY");
+const service = platformKey("SUPABASE_SECRET_KEYS", "SUPABASE_SERVICE_ROLE_KEY");
 const knownCodes = new Set([
   "invalid_pairing",
   "pairing_expired",
@@ -23,16 +34,18 @@ const knownCodes = new Set([
 ]);
 async function request(
   path: string,
-  token: string,
+  token: string | null,
   method = "GET",
   body?: unknown,
   extra: Record<string, string> = {},
+  apiKey = anon,
 ) {
   const response = await fetch(`${base}${path}`, {
     method,
+    redirect: "error",
     headers: {
-      apikey: anon,
-      Authorization: `Bearer ${token}`,
+      apikey: apiKey,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...extra,
       ...(body == null ? {} : { "content-type": "application/json" }),
     },
@@ -63,10 +76,10 @@ async function request(
 }
 const deps = {
   service: (action: string, input: unknown) =>
-    request("/rest/v1/rpc/mcp_service", service, "POST", {
+    request("/rest/v1/rpc/mcp_service", service.startsWith("sb_secret_") ? null : service, "POST", {
       p_action: action,
       p: input,
-    }),
+    }, {}, service),
   phone: (token: string, action: string, input: unknown) =>
     request("/rest/v1/rpc/mcp_phone", token, "POST", {
       p_action: action,
@@ -123,10 +136,31 @@ const deps = {
     token: string,
     slug: string,
     files: Record<string, string>,
+    ownerId: string,
   ) => {
     // Bounded four-request fanout. A failed worker never continues launching
     // more uploads. The next confirmation retries the identical immutable set.
     const entries = Object.entries(files);
+    // Storage completion requires the same owner-issued, bounded reservation
+    // as mobile. Service-role storage writes would bypass this authority.
+    const reservation = await request(
+      "/rest/v1/rpc/reserve_game_draft_upload", token, "POST", {
+        p_slug: slug,
+        p_objects: entries.map(([path, body]) => ({
+          path: `${slug}/${VERSION}/${path}`,
+          bytes: new TextEncoder().encode(body).length,
+          content_type: mime(path),
+        })),
+      },
+    );
+    requireValue(
+      reservation?.owner_id === ownerId && reservation.slug === slug &&
+        reservation.object_count === entries.length &&
+        UUID.test(reservation.upload_id ?? "") &&
+        Date.parse(reservation.expires_at) > Date.now(),
+      "upload_not_confirmed", 503,
+    );
+    const metadata = btoa(JSON.stringify({slop_upload_id: reservation.upload_id}));
     let next = 0;
     let failure: unknown;
     await Promise.all(
@@ -138,11 +172,13 @@ const deps = {
               `${base}/storage/v1/object/game-drafts/${slug}/${VERSION}/${path}`,
               {
                 method: "POST",
+                redirect: "error",
                 headers: {
                   apikey: anon,
                   Authorization: `Bearer ${token}`,
                   "content-type": mime(path),
                   "x-upsert": "true",
+                  "x-metadata": metadata,
                   "cache-control": "max-age=0",
                 },
                 body,

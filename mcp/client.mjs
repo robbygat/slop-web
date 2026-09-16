@@ -52,6 +52,8 @@ export class SlopBridge {
   async request(path, token, body) {
     const response = await this.fetcher(`${this.base}${path}`, {
       method: body == null ? "GET" : "POST",
+      redirect: "error",
+      credentials: "omit",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(body == null ? {} : { "content-type": "application/json" }),
@@ -113,8 +115,9 @@ export class SlopBridge {
       status: result.status,
       expires_at: result.expires_at,
       confirmation_uri: result.confirmation_uri,
+      authorization_uri: result.authorization_uri,
       message:
-        "Open this pairing link in Slop on your phone. Review the requested draft access and approve it there. Opening the link does not approve.",
+        "Open this pairing link at slop.game or scan the QR in Slop on your phone. Review the requested draft access and explicitly approve it. Opening the link does not approve.",
     };
   }
   async status() {

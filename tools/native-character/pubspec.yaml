@@ -1,0 +1,13 @@
+name: slop_character_viewer
+publish_to: none
+environment:
+  sdk: ^3.12.2
+dependencies:
+  flutter:
+    sdk: flutter
+flutter:
+  uses-material-design: false
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Gabarito-Variable.ttf

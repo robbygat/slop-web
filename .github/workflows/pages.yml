@@ -1,0 +1,85 @@
+name: Verify and publish Slop
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slop-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mcp/package-lock.json
+      - name: Set up Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: '2.9.6'
+      - name: Install web dependencies
+        run: npm ci
+      - name: Install MCP test and package dependencies
+        working-directory: mcp
+        run: npm ci
+      - name: Test the web application
+        run: npm test
+      - name: Test MCP pairing and draft authority
+        run: npm run test:mcp
+      - name: Test billing PostgreSQL authority
+        run: node --test supabase/billing/test/authority.test.mjs
+      - name: Test shared mobile comment authority
+        run: node --test supabase/social/test/comments.test.mjs
+      - name: Test public game name ownership
+        run: node --test supabase/game-links/test/claims.test.mjs
+      - name: Test game compatibility authority
+        run: node --test supabase/game-platforms/test/platforms.test.mjs
+      - name: Test billing request and signature handling
+        run: deno test --no-lock --node-modules-dir=none --allow-env supabase/functions/billing-tests/
+      - name: Type-check billing Edge Functions
+        run: deno check --no-lock --node-modules-dir=none supabase/functions/billing-status/index.ts supabase/functions/stripe-checkout/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/stripe-portal/index.ts
+      - name: Build the installable MCP download
+        run: npm --prefix mcp run package
+      - name: Build the web application
+        run: npm run build
+      - name: Read GitHub Pages configuration
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish Slop
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

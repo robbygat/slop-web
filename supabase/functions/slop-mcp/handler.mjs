@@ -65,12 +65,8 @@ async function readBody(req) {
 export function createHandler(deps, config = {}) {
   const origins = config.previewOrigins ??
     ["https://api.slop.game", "https://yqlolbebqfsodqgjlbeh.supabase.co"];
-  return async (req) => {
+  const handle = async (req) => {
     try {
-      const origin = req.headers.get("origin");
-      // The first release is a native phone + local STDIO bridge; it accepts no
-      // credentialed browser origins, avoiding accidental cross-site approval.
-      requireValue(!origin, "browser_origin_not_allowed", 403);
       const url = new URL(req.url);
       const path = url.pathname.replace(/^.*\/slop-mcp/, "") || "/";
       if (req.method === "GET" && path === "/health") {
@@ -80,6 +76,16 @@ export function createHandler(deps, config = {}) {
           protocol: "stdio-bridge",
           deployed: true,
         });
+      }
+      if (req.method === "GET" && path === "/authorize") {
+        // A fixed destination prevents open redirects. Omitting a fragment in
+        // Location preserves the incoming pairing fragment in browser navigation;
+        // the existing web pair page validates it before showing owner approval.
+        return new Response(null, {status:303,headers:{
+          location:"https://slop.game/mcp/pair",
+          "cache-control":"no-store", "referrer-policy":"no-referrer",
+          "x-content-type-options":"nosniff",
+        }});
       }
       requireValue(
         ["GET", "POST"].includes(req.method),
@@ -104,6 +110,7 @@ export function createHandler(deps, config = {}) {
         });
         return json({
           ...pair,
+          authorization_uri: `https://api.slop.game/functions/v1/slop-mcp/authorize#id=${pair.pairing_id}&code=${code}`,
           confirmation_code: code,
           poll_token: poll,
           confirmation_uri:
@@ -198,7 +205,7 @@ export function createHandler(deps, config = {}) {
           submission_id: draft.submission_id,
           lease: draft.lease,
         });
-        await deps.uploadFiles(bearer, draft.slug, validated.files);
+        await deps.uploadFiles(bearer, draft.slug, validated.files, draft.owner_id);
         await phone("check_lease", {
           submission_id: draft.submission_id,
           lease: draft.lease,
@@ -238,5 +245,43 @@ export function createHandler(deps, config = {}) {
       // Never echo database responses, upstream bodies, code, credentials or URLs.
       return json({ ok: false, code: "service_unavailable" }, 503);
     }
+  };
+  const webOrigins = new Set(config.webOrigins ?? ["https://slop.game"]);
+  const browserRoutes = new Set([
+    "/health", "/authorize", "/pair/review", "/pair/confirm", "/connections",
+    "/connections/revoke", "/drafts", "/drafts/confirm",
+  ]);
+  return async (req) => {
+    const origin = req.headers.get("origin");
+    if (!origin) return handle(req);
+    // Web owner actions share the native JWT/RLS authority. Local agent
+    // secrets and pairing creation remain unavailable to browser clients.
+    if (!webOrigins.has(origin)) {
+      return json({ok: false, code: "browser_origin_not_allowed"}, 403);
+    }
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-headers": "authorization, content-type, accept, apikey",
+      "access-control-max-age": "600",
+      "vary": "Origin",
+    };
+    const path = new URL(req.url).pathname.replace(/^.*\/slop-mcp/, "") || "/";
+    if (!browserRoutes.has(path)) {
+      return json({ok: false, code: "browser_route_not_allowed"}, 403, headers);
+    }
+    if (req.method === "OPTIONS") {
+      const method = req.headers.get("access-control-request-method");
+      const requested = (req.headers.get("access-control-request-headers") ?? "")
+        .toLowerCase().split(",").map(value => value.trim()).filter(Boolean);
+      if (!["GET", "POST"].includes(method) ||
+          requested.some(value => !["authorization", "content-type", "accept", "apikey"].includes(value))) {
+        return json({ok: false, code: "invalid_preflight"}, 403, headers);
+      }
+      return new Response(null, {status: 204, headers});
+    }
+    const response = await handle(req);
+    for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
+    return response;
   };
 }

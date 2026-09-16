@@ -129,12 +129,12 @@ export async function validateDraft(input) {
 }
 export function mime(path) {
   return ({
-    html: "text/html",
-    js: "application/javascript",
-    css: "text/css",
-    json: "application/json",
-    svg: "image/svg+xml",
-    txt: "text/plain",
+    html: "text/html; charset=utf-8",
+    js: "text/javascript; charset=utf-8",
+    css: "text/css; charset=utf-8",
+    json: "application/json; charset=utf-8",
+    svg: "image/svg+xml; charset=utf-8",
+    txt: "text/plain; charset=utf-8",
   })[path.split(".").pop()];
 }
 export function trustedPreview(receipt, slug, origins, now = Date.now()) {

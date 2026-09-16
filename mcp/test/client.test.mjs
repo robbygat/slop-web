@@ -83,6 +83,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
     assert.deepEqual(listed.tools.map((t) => t.name), [
       "slop_pair",
       "slop_connection_status",
+      "slop_game_template",
       "slop_send_draft",
       "slop_draft_status",
       "slop_disconnect",

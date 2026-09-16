@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BridgeError,
+  mime,
   sha256,
   trustedPreview,
   validateDraft,
@@ -299,3 +300,5 @@ test("cross-origin, oversized streaming body and unknown routes fail closed with
   );
   assert.equal(response.status, 413);
 });
+
+test("JavaScript drafts use the strict mobile gateway MIME contract",()=>{assert.equal(mime("game.js"),"text/javascript; charset=utf-8");assert.equal(mime("index.html"),"text/html; charset=utf-8");});

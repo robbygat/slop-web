@@ -1,19 +1,32 @@
 {
   "name": "@slop-game/mcp-bridge",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.0",
+  "description": "Send private mobile game drafts from your coding agent to Slop on web and mobile.",
+  "license": "UNLICENSED",
   "type": "module",
+  "bin": {
+    "slop-mcp": "cli.mjs"
+  },
+  "files": [
+    "cli.mjs",
+    "client.mjs",
+    "pairing-display.mjs",
+    "README.md",
+    "game-template.mjs",
+    "runtime/creator-v1.js"
+  ],
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.12"
   },
   "scripts": {
     "start": "node cli.mjs",
+    "package": "node build-package.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
     "qrcode": "1.5.4",
-    "zod": "^3.25.76"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.14",

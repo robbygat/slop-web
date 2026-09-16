@@ -1,0 +1,8 @@
+.slop-motion{display:block;position:relative;width:100%;aspect-ratio:1;isolation:isolate}
+.slop-motion>img,.slop-motion>video{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.slop-motion>video{opacity:0;pointer-events:none}
+.slop-motion>video.is-ready{opacity:1}
+.slop-motion[data-native-motion=video]>img{visibility:hidden}
+.loading .loading-morph{width:100px;height:100px;flex:none}
+.loading{min-height:180px;gap:8px}
+.loading>p{font-size:13px;color:var(--soft)}

@@ -1,0 +1,46 @@
+{
+  "file": "slop-game-3.7.3-4049-arm64.apk",
+  "version": "3.7.3",
+  "versionCode": 4049,
+  "sourceBuildNumber": 2049,
+  "package": "game.slop",
+  "abi": "arm64-v8a",
+  "minSdk": 24,
+  "targetSdk": 36,
+  "bytes": 66097203,
+  "sha256": "6184b5a8112c337cc23e8a5113e773e6072c863dd2f9f5d926b23f1100fb2148",
+  "certificateSha256": "48:66:DC:90:3F:E0:41:F8:E0:BE:E3:C2:40:AE:13:40:EC:4E:BC:FD:D5:A4:E3:40:19:F4:FC:8E:B5:97:B8:AB",
+  "builtAt": "2026-09-16T10:52:16.678124+00:00",
+  "sourceRevision": "6c965890a609b68474f59e705cd8e6f4bd389922",
+  "sourceBaseRevision": "e2538ff05461130ca4dbf5bd70073e7cc1861068",
+  "flutterVersion": "3.47.4",
+  "mcpEnabled": true,
+  "billingEnabled": false,
+  "creatorBackendVersion": 9,
+  "verification": {
+    "releaseBuild": "passed with dependency locking and checksum verification",
+    "signature": "APK v2 release certificate verified; same direct-download certificate as build 4048",
+    "android36Install": "passed in-place update from build 4048; pulled installed APK SHA-256 equals download",
+    "coldLaunch": "passed on Android 36; no fatal or unhandled Flutter error markers in release process",
+    "gameOverLayout": "56 result/Crown tests passed: stable panel, leaderboard and replay bounds across loading, empty, unavailable and ranked states; light/dark renders inspected",
+    "creatorBackend": "v9 source verified byte-for-byte after deployment; signed-in capabilities available with two models; unauthenticated request rejected"
+  },
+  "previousFunctionalVerification": {
+    "sourceRevision": "b85e1b53425c670980a325fea792e2193ef29760",
+    "versionCode": 4048,
+    "verification": {
+      "releaseBuild": "passed with dependency locking and checksum verification",
+      "signature": "APK v2 release certificate verified",
+      "android36Install": "passed",
+      "signIn": "passed through native email and password UI",
+      "mcpPhoneFlow": "passed: native owner approval, SDK draft delivery, per-revision approval, native WebView playback, three taps counted",
+      "pairingMethod": "exact QR universal link opened through Android intent; native scanner screen inspected; physical camera scanning not exercised",
+      "lightModeStartup": "passed: recorded cold launch transitions through themed loading and cover states to the real game"
+    }
+  },
+  "limitations": [
+    "Physical camera QR scanning was not exercised.",
+    "MCP sign-in/pairing/delivery/playback passed on build 4048; that end-to-end UI flow was not repeated for this layout-only native update.",
+    "No new provider generation was purchased or invoked for the prompt-only backend deployment."
+  ]
+}
