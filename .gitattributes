@@ -1,1 +1,4 @@
 *.mov filter=lfs diff=lfs merge=lfs -text
+# Preserve upstream license notices and generated Flutter bytes exactly.
+**/*-OFL.txt -whitespace
+public/native-character/** -whitespace

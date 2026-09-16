@@ -134,7 +134,7 @@ export default function Social() {
           transition={transitionId === profile.id && !person}/>) }
       </div>}
     {person && <PersonProfile person={person} own={person.id === user?.id} following={following.has(person.id)} busy={busy}
-      onFollow={() => follow(person.id)} onClose={() => setPerson(null)} transition={transitionId === person.id}/>} 
+      onFollow={() => follow(person.id)} onClose={() => setPerson(null)} transition={transitionId === person.id}/>}
   </div>;
 }
 
