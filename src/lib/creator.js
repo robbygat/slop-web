@@ -10,7 +10,17 @@ async function reserve(client,owner,slug,objects){
  if(r?.owner_id!==owner||r.slug!==slug||r.object_count!==objects.length||!UUID.test(r.upload_id)||!futureExpiry(r.expires_at,11*60_000))throw new SlopError('invalid_response');
  return {slop_upload_id:r.upload_id};
 }
+const preparedPreviews=new Map();
 export async function privatePreview(project,revision,slugOverride){
+ const owner=getSession();if(!owner||project.owner_id!==owner.user.id)throw new SlopError('account_changed');
+ const key=[owner.user.id,owner.epoch,project.id,revision.id,revision.digest,slugOverride||'preview'].join(':');
+ const cached=preparedPreviews.get(key);if(cached&&cached.until>Date.now()){const prepared=await cached.work;verify(owner);return prepared;}
+ const work=preparePrivatePreview(project,revision,slugOverride);
+ preparedPreviews.set(key,{work,until:Date.now()+12*60_000});
+ if(preparedPreviews.size>12)preparedPreviews.delete(preparedPreviews.keys().next().value);
+ try{const prepared=await work;verify(owner);return prepared;}catch(error){if(preparedPreviews.get(key)?.work===work)preparedPreviews.delete(key);throw error;}
+}
+async function preparePrivatePreview(project,revision,slugOverride){
  const expected=getSession();if(!expected||project.owner_id!==expected.user.id||revision.project_id!==project.id)throw new SlopError('account_changed');
  if(!UUID.test(project.id)||!UUID.test(revision.id))throw new SlopError('invalid_response');
  const files=Object.freeze({...revision.files});

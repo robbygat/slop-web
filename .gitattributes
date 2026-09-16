@@ -2,3 +2,5 @@
 # Preserve upstream license notices and generated Flutter bytes exactly.
 **/*-OFL.txt -whitespace
 public/native-character/** -whitespace
+# Unified diffs require a literal context prefix on blank lines.
+tools/native-character/profile-face-clock.patch -whitespace

@@ -1,0 +1,50 @@
+{
+  "games/sloppy-zombies-desktop": {
+    "video": "dfc97744b752",
+    "poster": "5bd7a4688ffc"
+  },
+  "games/slopkart-desktop": {
+    "video": "5faf7bbc4f42",
+    "poster": "eea321351752"
+  },
+  "games/dungeon-panic-desktop": {
+    "video": "f02c844a1286",
+    "poster": "593455b431e5"
+  },
+  "games/run-infinite-desktop": {
+    "video": "97af468a453d",
+    "poster": "032a9c464d47"
+  },
+  "games/umbral-red-desktop": {
+    "video": "2f1c2d5b3757",
+    "poster": "0c915ea9ef30"
+  },
+  "games/slopcraft-desktop": {
+    "video": "4fe18c364d49",
+    "poster": "0782b1a00505"
+  },
+  "gameplay/flight-horizon": {
+    "video": "d7e347fc784a",
+    "poster": "a32b3f1f510f"
+  },
+  "gameplay/dead-signal": {
+    "video": "f71a592d262f",
+    "poster": "3cdb06b79c19"
+  },
+  "gameplay/night-drift-x": {
+    "video": "f719f7575e52",
+    "poster": "f3422976413c"
+  },
+  "gameplay/surfy-sub": {
+    "video": "9f1f2a1919e2",
+    "poster": "f2ad05594da2"
+  },
+  "gameplay/flappy-duck": {
+    "video": "776f2a7fde4e",
+    "poster": "fc57c389116c"
+  },
+  "gameplay/stax": {
+    "video": "63bd28af9ef7",
+    "poster": "efebdf6fdef2"
+  }
+}

@@ -3,7 +3,7 @@ import './slop-toon.css';
 
 const tau=Math.PI*2;
 const normalize=angle=>((angle%tau)+tau)%tau;
-export function SlopToon({look,body='ghost',color='tangerine',className='',alt='Your Slop',controls=true,autoRotate=false,...props}){
+export function SlopToon({look,body='ghost',color='tangerine',className='',alt='Your Slop',controls=true,autoRotate=false,onActivate,...props}){
  const canvas=useRef(null),stage=useRef(null),pose=useRef({angle:0,drag:null,lastInput:-Infinity});
  const control=useRef(null),[ready,setReady]=useState(false),[turn,setTurn]=useState(0);
  const key=JSON.stringify({...{body,palette:color},...look});
@@ -40,10 +40,10 @@ export function SlopToon({look,body='ghost',color='tangerine',className='',alt='
   }).catch(()=>{});
   return()=>{disposed=true;cancelAnimationFrame(raf);observer.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',motion);control.current=null;};
  },[key,autoRotate]);
- function begin(e){if(e.button!==0&&e.pointerType==='mouse')return;const p=pose.current;p.angle=p.drawnAngle??p.angle;p.drag={id:e.pointerId,startX:e.clientX,angle:p.angle};p.lastInput=performance.now();e.currentTarget.setPointerCapture(e.pointerId);control.current?.draw();}
- function move(e){const p=pose.current,d=p.drag;if(!d||d.id!==e.pointerId)return;const width=Math.max(100,stage.current.clientWidth);p.angle=d.angle+(e.clientX-d.startX)/width*tau;p.lastInput=performance.now();control.current?.draw();}
- function end(e){const p=pose.current,d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.lastInput=performance.now();setTurn(Math.round(normalize(p.angle)*180/Math.PI));control.current?.draw();}
- function keyboard(e){if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();pose.current.angle=e.key==='Home'?0:e.key==='End'?Math.PI:pose.current.angle+(e.key==='ArrowLeft'?-1:1)*Math.PI/12;pose.current.lastInput=performance.now();setTurn(Math.round(normalize(pose.current.angle)*180/Math.PI));control.current?.draw();}
+ function begin(e){if(e.button!==0&&e.pointerType==='mouse')return;const p=pose.current;p.angle=p.drawnAngle??p.angle;p.drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,angle:p.angle,moved:false};p.lastInput=performance.now();e.currentTarget.setPointerCapture(e.pointerId);control.current?.draw();}
+ function move(e){const p=pose.current,d=p.drag;if(!d||d.id!==e.pointerId)return;const width=Math.max(100,stage.current.clientWidth);d.moved||=Math.hypot(e.clientX-d.startX,e.clientY-d.startY)>8;p.angle=d.angle+(e.clientX-d.startX)/width*tau;p.lastInput=performance.now();control.current?.draw();}
+ function end(e){const p=pose.current,d=p.drag;if(!d||d.id!==e.pointerId)return;p.drag=null;p.lastInput=performance.now();setTurn(Math.round(normalize(p.angle)*180/Math.PI));control.current?.draw();if(e.type==='pointerup'&&!d.moved&&Math.hypot(e.clientX-d.startX,e.clientY-d.startY)<=8)onActivate?.();}
+ function keyboard(e){if(onActivate&&['Enter',' '].includes(e.key)){e.preventDefault();onActivate();return;}if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();pose.current.angle=e.key==='Home'?0:e.key==='End'?Math.PI:pose.current.angle+(e.key==='ArrowLeft'?-1:1)*Math.PI/12;pose.current.lastInput=performance.now();setTurn(Math.round(normalize(pose.current.angle)*180/Math.PI));control.current?.draw();}
  const palette=['mint','tangerine','lavender','bubblegum'].includes(color)?color:'tangerine';
  return <div className={`slop slop-toon ${className}`} {...props}><div ref={stage} className="slop-turntable" role="slider" tabIndex={0} aria-label={`Rotate ${alt}`} aria-valuemin={0} aria-valuemax={359} aria-valuenow={turn} aria-valuetext="Front view" onPointerDown={begin} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onKeyDown={keyboard}>
  {!ready&&<img className="slop-toon-fallback" src={`/assets/mobile/characters/ghost-${palette}.webp`} alt={alt}/>}

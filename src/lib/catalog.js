@@ -2,6 +2,7 @@ import {supabase,result,asOwner} from './supabase.js';
 import {discoveryBoundary} from './catalog-cursor.js';
 import {publicGameNames} from './game-name-claims.js';
 import {filterPlatform} from './game-platforms.js';
+import {PUBLIC_PROFILE_COLUMNS} from './profile-banners.js';
 const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
 export async function loadGames({category='all',platform='all',search='',offset=0,owner}={}){
   let query=supabase.from('games').select(columns).eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
@@ -22,7 +23,7 @@ export const comments=(id,cursor)=>result(supabase.rpc('game_comment_page',{p_ga
 export const postComment=(id,body)=>asOwner((owner,client)=>result(client.rpc('post_game_comment',{p_owner:owner,p_game_id:id,p_body:body.trim(),p_gif_url:null,p_parent_id:null})));
 export const likeGame=(id,liked,legacyId)=>asOwner((owner,client)=>result(liked?client.from('game_likes').upsert({user_id:owner,game_id:id},{onConflict:'user_id,game_id'}):client.from('game_likes').delete().eq('user_id',owner).in('game_id',[...new Set([id,legacyId].filter(Boolean))])));
 export const likedGames=()=>asOwner((owner,client)=>result(client.from('game_likes').select('game_id').eq('user_id',owner).limit(1000)));
-export const searchPeople=(term='')=>result(supabase.from('profiles').select('id,username,display_name,avatar_url,bio,slop_look').ilike('username',`%${term.replace(/[%_\\]/g,'').slice(0,40)}%`).order('username').limit(24));
+export const searchPeople=(term='')=>result(supabase.from('profiles').select(PUBLIC_PROFILE_COLUMNS).ilike('username',`%${term.replace(/[%_\\]/g,'').slice(0,40)}%`).order('username').limit(24));
 export const followPerson=(id,follow)=>asOwner((owner,client)=>result(follow?client.from('follows').upsert({follower_id:owner,following_id:id},{onConflict:'follower_id,following_id'}):client.from('follows').delete().eq('follower_id',owner).eq('following_id',id)));
 
 // Stable continuation through the real, public mobile catalog. Never turn a

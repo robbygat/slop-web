@@ -14,7 +14,8 @@ const additional = process.argv.includes('--additional');
 const output = path.resolve(process.argv.slice(2).find(value=>!value.startsWith('--')) || (additional?'/tmp/slop-web-redesign/restored-desktop-additional':'/tmp/slop-desktop-originals'));
 const source = file => execFileSync('git', ['show', `${sourceCommit}:${file}`], {maxBuffer:4*1024*1024}).toString();
 const digest = value => createHash('sha256').update(value).digest('hex');
-const games = additional ? additionalGames : [
+const only = process.argv.find(value=>value.startsWith('--only='))?.slice(7);
+const games = (additional ? additionalGames : [
   {id:'run-infinite-desktop', old:'run3', name:'Run Infinite', width:800, height:600,
     description:'The original June desktop gravity runner. A/D or arrow keys steer around the tunnel; Space jumps. Score is distance in metres.',
     restart:'startSolo()', score:'Math.floor(game.dist)',
@@ -27,7 +28,8 @@ const games = additional ? additionalGames : [
     description:'The original June desktop zombie survival game. WASD moves, mouse aims and shoots. Survive rounds, repair windows and upgrade weapons. Score is the round reached.',
     restart:'startSingle()', score:'game.round',
     end:'function gameOver() {', result:'game.round'},
-];
+]).filter(entry=>!only||entry.id===only);
+if(!games.length)throw Error('Unknown original game selection');
 
 await fs.mkdir(output, {recursive:true});
 const vendorUrl='https://unpkg.com/three@0.160.0/build/three.module.js';

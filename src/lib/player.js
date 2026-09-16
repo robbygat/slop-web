@@ -2,7 +2,7 @@ import bootstrap from './player-bootstrap.js?raw';
 import {trustedEntry} from './contracts.js';
 import {gamePolicy} from './player-contracts.js';
 import {installGameStorage} from './player-storage.js';
-import {installLegacyKeyboard,legacyControlSpec} from './player-input.js';
+import {installLegacyKeyboard,legacyControlSpec,auditedCursorStyle} from './player-input.js';
 export {gamePolicy,acceptPlayerEvent} from './player-contracts.js';
 export async function loadDocument(url,{signal,preview=false}={}){
  if(!trustedEntry(url,{preview}))throw new Error('This game URL is not trusted.');
@@ -20,6 +20,7 @@ export async function loadDocument(url,{signal,preview=false}={}){
  const referrer=doc.createElement('meta');referrer.name='referrer';referrer.content='no-referrer';
  const boot=doc.createElement('script');boot.textContent=`(${installGameStorage.toString()})();\n(${installLegacyKeyboard.toString()})(${JSON.stringify(legacyControlSpec(url))});\n${bootstrap}`;
  const view=doc.createElement('meta');view.name='viewport';view.content='width=device-width,initial-scale=1,viewport-fit=cover';
+ const cursorCss=auditedCursorStyle(url);if(cursorCss){const style=doc.createElement('style');style.textContent=cursorCss;doc.head.append(style);}
  doc.head.prepend(policy,baseEl,referrer,view,boot);
  return {html:'<!doctype html>'+doc.documentElement.outerHTML,csp};
 }

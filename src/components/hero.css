@@ -32,3 +32,4 @@
 
 .arcade-create{position:absolute;z-index:4;bottom:28px;left:24px;right:24px;display:flex;justify-content:center}
 @media(max-width:700px){.arcade-create{bottom:25px;left:12px;right:12px}.arcade-reel{top:20px;right:56px;gap:1px}.arcade-reel>button{width:24px}.arcade-reel>button>span{width:14px}.arcade-reel>button[aria-pressed=true]>span{width:20px}.arcade-title br{display:none}}
+@media(max-width:700px){.arcade-film[data-composition=road]{height:calc(100% - 180px);mask-image:linear-gradient(#000 88%,transparent)}}

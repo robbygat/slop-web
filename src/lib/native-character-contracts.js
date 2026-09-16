@@ -9,8 +9,8 @@ export function nativeCharacterLook(value){
  }
  return look;
 }
-export function nativeCharacterMessage(look,{reducedMotion=false,paused=false,front=false,autoRotate=false,requestId=0}={}){
- return JSON.stringify({type:'slop.character.render',version:1,look:nativeCharacterLook(look),reducedMotion:!!reducedMotion,paused:!!paused,front:!!front,autoRotate:!!autoRotate,requestId:Number.isSafeInteger(requestId)&&requestId>=0?requestId:0});
+export function nativeCharacterMessage(look,{reducedMotion=false,paused=false,front=false,autoRotate=false,canActivate=false,requestId=0}={}){
+ return JSON.stringify({type:'slop.character.render',version:1,look:nativeCharacterLook(look),reducedMotion:!!reducedMotion,paused:!!paused,front:!!front,autoRotate:!!autoRotate,canActivate:!!canActivate,requestId:Number.isSafeInteger(requestId)&&requestId>=0?requestId:0});
 }
 export function nativeCharacterReady(event,frameWindow){
  if(!frameWindow||event.source!==frameWindow||event.origin!=='null'||typeof event.data!=='string'||event.data.length>100)return false;
@@ -24,4 +24,8 @@ export function nativeCharacterPerformance(event,frameWindow){
 export function nativeCharacterRendered(event,frameWindow,requestId){
  if(!frameWindow||event.source!==frameWindow||event.origin!=='null'||typeof event.data!=='string'||event.data.length>160)return false;
  try{const v=JSON.parse(event.data);return v.type==='slop.character.rendered'&&v.version===1&&Object.keys(v).length===3&&v.requestId===requestId;}catch{return false;}
+}
+export function nativeCharacterActivated(event,frameWindow,requestId){
+ if(!frameWindow||event.source!==frameWindow||event.origin!=='null'||typeof event.data!=='string'||event.data.length>160)return false;
+ try{const v=JSON.parse(event.data);return v.type==='slop.character.activate'&&v.version===1&&Object.keys(v).length===3&&v.requestId===requestId;}catch{return false;}
 }

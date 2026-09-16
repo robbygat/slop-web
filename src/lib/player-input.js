@@ -10,6 +10,14 @@ const legacy = new Map([
 ]);
 export const legacyControlSpec = url => legacy.get(url) || null;
 
+// These originals already paint their own aiming reticle. Do not hide the
+// cursor for guessed genres or future releases whose controls may differ.
+const paintedCursor = new Map([
+ ['https://api.slop.game/storage/v1/object/public/games/releases/b63e8ee36d570cd184982fa331f7b62a47eff1e4b63a9ec22c044a164c8e5637/sloppy-zombies-desktop/1.0.0/index.html','canvas{cursor:none!important}'],
+ ['https://api.slop.game/storage/v1/object/public/games/releases/85916f9d9b3f4c1cc46428de52a703ba6f9987dce543b7e2a11d768817ffa4d6/slopcraft-desktop/1.0.0/index.html','#stage:has(>#overlay.hidden) canvas{cursor:none!important}'],
+]);
+export const auditedCursorStyle = url => paintedCursor.get(url) || '';
+
 // Serialized into the opaque game frame. This only supplies the pointer actions
 // proven by the listed bundles. New games keep their authored keyboard handlers.
 export function installLegacyKeyboard(spec, target = window) {

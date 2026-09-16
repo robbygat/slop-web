@@ -17,7 +17,9 @@ const desktop = [
   {file: 'umbral-red-desktop', folder: 'games', name: 'Umbral Red', creator: 'slop.game', slug: 'umbral-red-desktop'},
 ];
 const mobile = [
-  {file: 'night-drift', folder: 'gameplay', name: 'Night Drift', creator: 'rob', slug: 'voxel-drift-ace-9s5l'},
+  {file: 'flight-horizon', folder: 'gameplay', name: 'Flight Horizon', creator: 'slop.game', slug: 'flight-horizon-706301da56589f8348655f6480df11c5'},
+  {file: 'night-drift-x', composition: 'road', folder: 'gameplay', name: 'Night Drift X', creator: 'slop.game', slug: 'night-drift-x-9f236c686f1ef654a420ea7520a3bad6'},
+  {file: 'dead-signal', folder: 'gameplay', name: 'Dead Signal', creator: 'slop.game', slug: 'dead-signal-db6f9b4620995c201c3686bcd712cb34'},
   {file: 'surfy-sub', folder: 'gameplay', name: 'Surfy Sub', creator: 'rob', slug: 'surfy-sub-d6zs'},
   {file: 'flappy-duck', folder: 'gameplay', name: 'Flappy Duck', creator: 'rob', slug: 'flappy-duck-7prm'},
   {file: 'stax', folder: 'gameplay', name: 'Stax', creator: 'rob', slug: 'shear-stack-85048e702bb293254ebb9bd0f4926638'},

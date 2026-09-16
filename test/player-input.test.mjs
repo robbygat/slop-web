@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import {installLegacyKeyboard,legacyControlSpec} from '../src/lib/player-input.js';
+import {installLegacyKeyboard,legacyControlSpec,auditedCursorStyle} from '../src/lib/player-input.js';
 import {acceptPlayerEvent} from '../src/lib/player-contracts.js';
 function fixture(mode) {
  const listeners={},events=[],rafs=new Map();let n=0;
@@ -30,4 +30,12 @@ test('swipe and drag adapters preserve their audited pointer contracts and stop 
 test('player accepts only bounded SDK results from its own current frame',()=>{
  const frame={};assert.deepEqual(acceptPlayerEvent(frame,frame,'{"type":"finished","score":93}'),{type:'finished',score:93});assert.deepEqual(acceptPlayerEvent(frame,frame,'{"type":"finished"}'),{type:'finished'});
  for(const score of [-1,1.5,1e8,'93'])assert.equal(acceptPlayerEvent(frame,frame,JSON.stringify({type:'finished',score})),null);assert.equal(acceptPlayerEvent({},frame,'{"type":"finished","score":93}'),null);assert.equal(acceptPlayerEvent(frame,frame,'[]'),null);
+});
+
+test('painted cursor fixes bind audited immutable originals and leave menus and other games alone',()=>{
+ const zombies='https://api.slop.game/storage/v1/object/public/games/releases/b63e8ee36d570cd184982fa331f7b62a47eff1e4b63a9ec22c044a164c8e5637/sloppy-zombies-desktop/1.0.0/index.html';
+ assert.equal(auditedCursorStyle(zombies),'canvas{cursor:none!important}');
+ assert.equal(auditedCursorStyle(zombies.replace('1.0.0','2.0.0')),'');
+ assert.equal(auditedCursorStyle(zombies.replace('api.slop.game','evil.test')),'');
+ assert.equal(auditedCursorStyle('https://api.slop.game/storage/v1/object/public/games/a-new-game/1.0.0/index.html'),'');
 });

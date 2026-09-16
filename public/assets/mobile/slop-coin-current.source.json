@@ -1,0 +1,10 @@
+{
+  "source": "slop-mobile/lib/widgets/slop_coin_mark.dart",
+  "sourceSha256": "04c2f10a0139afa1fe34f9d4512a79a47a20c08f242fc4ed9a1b96f60d1ed5fc",
+  "renderer": "SlopCoinPainter, unchanged Flutter source",
+  "export": "flutter test test/export_coin.dart; cwebp -lossless",
+  "width": 384,
+  "height": 384,
+  "bytes": 28530,
+  "sha256": "211c451ac5d70a6a418c2dd5869218ca577e2defabe93069158d2260587a12f3"
+}

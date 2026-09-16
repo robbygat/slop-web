@@ -168,13 +168,13 @@ scene itself comes directly from its original renderer.
 
 | Web asset | Native dimensions | Duration | Encoding | Bytes |
 | --- | --- | --- | --- | --- |
-| `assets/games/run-infinite-desktop.mp4` | 1600×1200 | 16.500 s | H.264, 30 fps | 21,166,581 |
-| `assets/games/slopkart-desktop.mp4` | 1920×1200 | 16.467 s | H.264, 30 fps | 5,725,564 |
+| `assets/games/run-infinite-desktop.mp4` | 1600×1200 | 5.000 s | H.264, 30 fps | 6,984,943 |
+| `assets/games/slopkart-desktop.mp4` | 1920×1200 | 5.000 s | H.264, 30 fps | 1,850,881 |
 
 Both exports use CRF 21, a bounded bitrate, limited-range YUV420P and fast-start
 metadata. Their JPG posters are actual frames at the same native dimensions.
 Selected first, middle and final gameplay frames were inspected, and browser
-playback advanced with the expected native dimensions and no media error. Source
+playback advanced with the expected native dimensions and no media error. Original full-capture source
 patches, raw recordings, segment ranges, hashes and encoding receipts are in
 `/tmp/slop-hero-hd/final-capture-report.json` and
 `/tmp/slop-hero-hd/kart-final-capture-report.json`. The mobile app's optimized
@@ -230,54 +230,55 @@ Umbral 43,265/360,430. These pass the finalizer's image limits.
 
 ## Complete gameplay media receipts
 
-The six desktop hero MP4s were decoded with `ffprobe`, hashed, and checked for
-fast-start metadata. Complete file and poster hashes are in
-`desktop-hero-media-receipts.json`.
+At the user's final request, all twelve active hero videos now last exactly five
+seconds, except Dead Signal at six seconds. Each starts during actual play.
+All are H.264, 30 fps, YUV420P and fast-start; the five-second files have exactly
+150 decoded frames and Dead Signal has 180. The final cuts preserve their prior
+native dimensions, crop and speed, with no resize or motion interpolation.
 
 | Game | Actual rendered pixels | Duration | MP4 bytes |
 | --- | --- | --- | --- |
-| Run Infinite | 1600×1200 | 16.500 s | 21,166,581 |
-| SlopKart | 1920×1200 | 16.467 s | 5,725,564 |
-| Sloppy Zombies | 1600×1200 | 16.467 s | 1,005,585 |
-| Dungeon Panic | 1600×1200 | 16.467 s | 1,263,328 |
-| Slopcraft | 1920×1080 | 22.033 s | 3,117,112 |
-| Umbral Red | 1600×1200 | 16.467 s | 992,210 |
+| Run Infinite | 1600×1200 | 5.000 s | 6,984,943 |
+| SlopKart | 1920×1200 | 5.000 s | 1,850,881 |
+| Sloppy Zombies | 1600×1200 | 5.000 s | 319,508 |
+| Dungeon Panic | 1600×1200 | 5.000 s | 459,827 |
+| Slopcraft | 1920×1080 | 5.000 s | 662,395 |
+| Umbral Red | 1600×1200 | 5.000 s | 270,405 |
+| Flight Horizon | 1206×2188 | 5.000 s | 2,030,998 |
+| Night Drift X | 1206×1974 | 5.000 s | 3,745,318 |
+| Dead Signal | 1206×2188 | 6.000 s | 1,750,062 |
+| Surfy Sub | 1080×2340 | 5.000 s | 2,170,993 |
+| Flappy Duck | 1080×2340 | 5.000 s | 800,720 |
+| Stax | 1080×2340 | 5.000 s | 1,958,978 |
 
-These render the actual restored games at high backing resolution with unchanged
-logical geometry. Ordinary keyboard/mouse actions drive their original rules.
-Zombies shows movement and shooting; Dungeon shows room traversal and combat;
-Slopcraft shows building/mining; Umbral shows exploration, battle and victory.
-The Dungeon selected segment ends before the later natural death. Slopcraft's
-canvas footage excludes its separate DOM hotbar/crosshair. Slopcraft retains
-variable recording frame timing (approximately 29.3 fps); the other five encode
-at 30 fps. No AI frames, motion interpolation or enlarged low-resolution source
-was used. The mobile app's bundled reel remains unchanged by these web exports.
+Combined video bytes fall from 78,344,866 to 23,005,028, a 70.64% reduction.
+Original complete clips, posters and metadata remain under
+`/tmp/slop-hero-shortcuts-20260916/originals`; final receipts preserve each
+original full clip's hash, bytes and duration beside the chosen edit offset.
+Desktop receipts are in `desktop-hero-media-receipts.json`, and mobile capture
+provenance remains in `public/assets/gameplay/sources.json`. The small
+`src/lib/hero-media-versions.json` supplies content hashes for cache-busting the
+12 video/poster pairs. Slopcraft uses its refreshed custom WebP poster; the other
+11 use actual-frame JPGs at unchanged pixel dimensions.
 
-The mobile hero also has new Flappy Duck and Stax captures from their exact
-published mobile bundles. Both preserve a logical 432×936 phone viewport and
-render at 1080×2340, with ordinary pointer taps chosen through read-only
-telemetry. Flappy's successful take reached score 13; Stax reached 17 layers and
-score 680. Selected clips contain active play without a game-over screen.
-Flappy's H.264 file is 14.0 seconds/2,281,375 bytes; Stax is 13.8 seconds/4,904,194
-bytes, both 30 fps and fast-start. Stax composites the authored CSS gradient
-behind its transparent WebGL canvas at the same native resolution; its separate
-DOM score HUD is omitted. Stax's first, middle and final frames were inspected,
-and encoded browser playback advanced at 1080×2340 without a media error.
-Actual source URLs, hashes and capture adjustments are recorded in
-`public/assets/gameplay/sources.json`.
+All final cuts were decoded and checked for frame count, duration, dimensions,
+fast-start metadata and SHA-256. First, middle and final frames were visually
+inspected for all twelve cuts. Run Infinite shows jumps and collapsing gaps;
+Kart shows active racing; Zombies and Dungeon show combat; Slopcraft shows a
+placed glowstone block; Umbral shows attack, victory and return to its world.
+Original game geometry and mechanics stay intact. Slopcraft and Kart canvas
+footage omit their separate DOM HUDs. These web edits leave the immutable
+published game bundles and mobile app's bundled reel unchanged.
 
-
-The final additional mobile clip is **Surfy Sub** by `@rob`, verified against the
-live published catalog (`surfy-sub-d6zs`). Its original three-lane runner uses
-ordinary pointer swipes for lane changes, coin collection and obstacle avoidance.
-The unmodified simulation reached score 279 at 20.1 seconds without game over.
-The selected 14.2-second H.264 clip is rendered at native 1080×2340, 30 fps,
-6,502,439 bytes, with an actual-frame 188,489-byte JPG poster. Decoded first,
-middle and final frames contain active play; fast-start metadata and dimensions
-were verified. Original camera, world geometry and rules are preserved, with
-only high-resolution WebGL backing and read-only input telemetry in the capture
-fixture. Separate DOM score and instructions are omitted from canvas footage.
-Source and file hashes are included in `public/assets/gameplay/sources.json`.
+Flappy Duck, Stax and Surfy Sub use their exact published mobile bundles, rendered
+at 1080×2340 while keeping a logical 432×936 viewport. Ordinary pointer inputs
+are selected through read-only telemetry; no world or score state is written.
+The complete source takes reached Flappy score 13, Stax 17 layers/score 680 and
+Surfy score 279. Their final short cuts show consecutive pipe crossings, glass
+stacking and lane changes/coins respectively, without game-over screens. Stax
+composites its authored CSS gradient behind its transparent WebGL canvas at the
+same resolution; its DOM score is omitted. Surfy's separate DOM score and
+instructions are also omitted.
 
 Flappy Duck's authored body is 40×32 logical pixels in the 432×936 recording
 viewport (about 9.3% of the width and 3.4% of the height). Its small bird is native
@@ -318,3 +319,57 @@ atlas renderer also stops idle motion. The content-bound renderer version
 `5cf9da7007b8855c0810` updates the iframe, bootstrap and Dart loader URLs together.
 The release owner's final `npm run check` passed all 87 website tests, 27 MCP
 tests and the production build after the native renderer export.
+
+## Actual iPhone Simulator hero footage
+
+Night Drift X, Flight Horizon and Dead Signal use recordings of the released
+games inside the native app, captured with `simctl recordVideo` on iPhone 17 Pro /
+iOS 26.5. The installed app was build 2050 from source
+`66313b2d4b17bc1ad80e1f458dffb7d964cbe26c`. The three published games belong to
+`@slop.game`; exact immutable bundle URLs and source hashes are recorded alongside
+the media in `public/assets/gameplay/sources.json`. Sky supplied ordinary touch
+actions. No browser recreation, gameplay changes or score/state injection was
+used, and the guest runs were not submitted to leaderboards.
+
+| Game | Cropped native pixels | Duration | MP4 bytes | JPG bytes |
+| --- | --- | --- | --- | --- |
+| Flight Horizon | 1206×2188 | 5.000 s | 2,030,998 | 118,377 |
+| Dead Signal | 1206×2188 | 6.000 s | 1,750,062 | 100,437 |
+| Night Drift X | 1206×1974 | 5.000 s | 3,745,318 | 168,784 |
+
+All raw recordings are 1206×2622. Final Flight selects take1's island bank and
+ring passage at approximately 5.5–10.5 seconds. Its take2, which left the game
+for Shop, is entirely excluded. Dead Signal selects close combat, aiming and
+repeated shots at approximately 192.5–198.5 seconds of clean2. Its selected cut
+stays in Wave 1; the later Wave 2 transition belongs to the preserved complete
+take. Night Drift X selects a continuous drift beside traffic at approximately
+41–46 seconds of clean final4. These source ranges map the final short cuts back
+to their original recordings; complete earlier montage receipts remain nested
+as `source_full_clip` in public provenance.
+
+The crop removes phone status, Dynamic Island and native close/speaker controls.
+Night Drift X also ends above its guest sign-in banner. Each crop preserves the
+full plane or car and original game graphics/HUD. Exports are H.264 at 30 fps
+with fast-start metadata, using captured frames without upscaling, interpolation
+or a speed change. Game-over screens, non-game navigation and idle footage are
+excluded. Detailed original capture receipts and reviewed frames remain under
+`/tmp/slop-simulator-hero/exports`; final short-cut receipts and decoded review
+frames are under `/tmp/slop-hero-shortcuts-20260916`. Final hero framing is
+verified separately by the release owner.
+
+## Compact Shop and current coin — 16 September follow-up
+
+- The oversized Shop introduction is replaced by one compact title/balance row. Sunbeam and Daily drop sit beside each other on phones, followed directly by filters and the native cosmetic artwork.
+- The balance opens an accessible dialog with the same `my_coins` snapshot and replay-safe `claim_daily_coins` service used by mobile. Claims require an explicit tap. Absolute receipt balances are validated; conflicting/invalid receipts are rejected, and pending reads cannot overwrite the dialog's newer claim receipt. Account changes unmount owner-specific shop state.
+- The coin is exported directly from the unchanged mobile `SlopCoinPainter` at 384px and losslessly encoded to a28,530-byte WebP. It is used in the balance, claim control and cosmetic prices. `public/assets/mobile/slop-coin-current.source.json` records source/output SHA256; `tools/native-character/test/export_coin.dart` reproduces the source PNG.
+- Stripe payments remain coming soon. No Shop purchase or paid generation was made during these checks.
+- Two coin-contract tests cover duplicate claims using an absolute balance and malformed/contradictory response rejection. A temporary account's real daily reward was claimed once, read back at200coins, and replayed without another credit.
+- Browser QA passed at390×844 and320×720 in both light/dark themes: equal18px page gutters, no horizontal overflow, first two look cards fully visible by580px/561px. Clicking the current coin opened a200-coin balance dialog with the server's already-claimed state; the320px dialog was292px wide. Evidence: `/tmp/slop-final-shop-qa`.
+
+## Final calm-profile and control corrections
+
+- The exact user-reported bouncing You page was signed out and still loaded the old ghost idle video. It now uses the exact stationary native eye portrait, with no whole-body video and no extra Flutter engine.
+- Social discovery now includes the equipped banner before opening a profile.75samples across the first1.5seconds of opening the verified Neon Arcade profile contained only its equipped image; no desert fallback was shown. Native portrait animation pauses beneath an opened game.
+- Slopcraft's control update is published at a new immutable root under its existing official game ID. All10public files were read back and hashed; the canonical SDK is unchanged. See `slopcraft-controls-release-receipt.json`.
+- The320px Night Drift composition now places the car fully above the title and Play controls; its video ends at449px and the feature starts at452.5px. No media bytes were recropped or regenerated for this layout correction.
+- The ten-point shipping review, fixed findings and remaining limitations are recorded in `release/ship-readiness-2026-09-16.md`.

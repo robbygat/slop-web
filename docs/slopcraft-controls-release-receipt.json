@@ -1,0 +1,97 @@
+{
+  "name": "Slopcraft",
+  "slug": "slopcraft-desktop",
+  "id": "67b96c1b-df5a-431e-9fcc-ac5db1239bbe",
+  "owner": "@slop.game",
+  "source_commit": "0c7aef1",
+  "source_game_sha256": "b898e4237f55600b49a7ae5fcf122c693715aafd6aa5538f5556561759f57072",
+  "runtime_sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f",
+  "release_root": "releases/dd79866ff90546557cf8242c201531c478ee28dd38b0acbc2fcb8e10ef0322b9/slopcraft-desktop",
+  "release_id": "10ed7fac-8a1a-41c5-852f-a41de2c544c6",
+  "digest": "faff63593e48a6ae36d747b256c85cb49f3e27c7a53527a8ce04ffd0a9b9a53e",
+  "previous_release_root": "releases/85916f9d9b3f4c1cc46428de52a703ba6f9987dce543b7e2a11d768817ffa4d6/slopcraft-desktop",
+  "previous_release_id": "b4c10878-afcd-46a3-ae11-7594498f1d18",
+  "previous_digest": "1bfe583182ba4b1239bb6d535888af1fa102a3b310d24a69ad972a68d30a21dc",
+  "verified_public_objects": 10,
+  "verified_at": "2026-09-16T14:40:28.975Z",
+  "supported_platforms": [
+    "desktop"
+  ],
+  "logical_viewport": {
+    "width": 960,
+    "height": 540
+  },
+  "changed_source_files": [
+    "game.js"
+  ],
+  "script_sha256": "c2c95a77c5e7a46a9864dc2c670c19c89f054bd28d984157df3bd6e0056e45f8",
+  "publication": "Atomic existing staged-withdrawal, submission and admin release finalizers; prior history preserved; no game row created.",
+  "verification": {
+    "rollback_rehearsal": true,
+    "anonymous_catalog_readback": true,
+    "sdk_lifecycle": true,
+    "browser_drag_mine_escape": true
+  },
+  "manifest": [
+    {
+      "path": "1.0.0/covers/67b96c1b-df5a-431e-9fcc-ac5db1239bbe/b3-223a4c6faf3186cd7396241cd03e4452-c3-4473cc09baaddf062895c50694c5d686/cover.jpg",
+      "bytes": 62456,
+      "sha256": "4473cc09baaddf062895c50694c5d6869db899f7a47ef558eb4b7b2d65382c22",
+      "content_type": "image/jpeg"
+    },
+    {
+      "path": "1.0.0/covers/67b96c1b-df5a-431e-9fcc-ac5db1239bbe/b3-b89fb4b217d6bf16ec5c30ee49f807da-c3-4473cc09baaddf062895c50694c5d686/cover.jpg",
+      "bytes": 62456,
+      "sha256": "4473cc09baaddf062895c50694c5d6869db899f7a47ef558eb4b7b2d65382c22",
+      "content_type": "image/jpeg"
+    },
+    {
+      "path": "1.0.0/game.js",
+      "bytes": 671536,
+      "sha256": "c2c95a77c5e7a46a9864dc2c670c19c89f054bd28d984157df3bd6e0056e45f8",
+      "content_type": "text/javascript; charset=utf-8"
+    },
+    {
+      "path": "1.0.0/index.html",
+      "bytes": 229343,
+      "sha256": "b1c6ebb97ad24ecadc12aa494bef329dfb42a08a169baa76ca419479fffec4ff",
+      "content_type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "1.0.0/licenses/fredokaone-OFL.txt",
+      "bytes": 4399,
+      "sha256": "43186c592361336474683e302dcc988831a53857bef188c4466f6b45dc238f84",
+      "content_type": "text/plain"
+    },
+    {
+      "path": "1.0.0/licenses/nunito-OFL.txt",
+      "bytes": 4385,
+      "sha256": "580df76c95a1ec5ab878ceb25bb3d85c6a076804e9c970c8c6972aea775fdf65",
+      "content_type": "text/plain"
+    },
+    {
+      "path": "1.0.0/licenses/spacemono-OFL.txt",
+      "bytes": 4392,
+      "sha256": "8e4ee42b2553e1e01504e61cb0d46d148cd8c9e5eacaa3622a7df2d4f2955b9f",
+      "content_type": "text/plain"
+    },
+    {
+      "path": "1.0.0/previews/67b96c1b-df5a-431e-9fcc-ac5db1239bbe/b3-223a4c6faf3186cd7396241cd03e4452-c3-1f42975c56a66086a3e5aef08552a2d4/preview.gif",
+      "bytes": 333765,
+      "sha256": "1f42975c56a66086a3e5aef08552a2d40fd00308bea2233ca49c5c0c6d2e950b",
+      "content_type": "image/gif"
+    },
+    {
+      "path": "1.0.0/previews/67b96c1b-df5a-431e-9fcc-ac5db1239bbe/b3-b89fb4b217d6bf16ec5c30ee49f807da-c3-1f42975c56a66086a3e5aef08552a2d4/preview.gif",
+      "bytes": 333765,
+      "sha256": "1f42975c56a66086a3e5aef08552a2d40fd00308bea2233ca49c5c0c6d2e950b",
+      "content_type": "image/gif"
+    },
+    {
+      "path": "1.0.0/slop.js",
+      "bytes": 9612,
+      "sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f",
+      "content_type": "text/javascript; charset=utf-8"
+    }
+  ]
+}

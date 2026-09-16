@@ -791,6 +791,7 @@ abstract final class SlopToonRenderer {
     double round = 0,
     double phase = 0,
     double? performancePhase,
+    double? facePhase,
     SlopToonExpression? expression,
     double reaction = 0,
     Offset gaze = Offset.zero,
@@ -828,9 +829,9 @@ abstract final class SlopToonRenderer {
     final expressionFrame = expression == null
         ? null
         : slopToonExpressionFrameFor(
-            phase: performancePhase ?? phase,
+            phase: performancePhase ?? facePhase ?? phase,
             state: expression,
-            reducedMotion: reducedMotion,
+            reducedMotion: facePhase == null && reducedMotion,
           );
     final effectiveEmotion = expressionFrame?.emotion ?? emotion;
     final effectiveTalk = math.max(talk, expressionFrame?.talk ?? 0);
@@ -930,7 +931,7 @@ abstract final class SlopToonRenderer {
         look: look,
         emotion: effectiveEmotion,
         round: round,
-        phase: phase,
+        phase: face ? facePhase ?? phase : phase,
         reaction: canonicalReaction,
         gaze: effectiveGaze,
         talk: effectiveTalk,
@@ -1180,6 +1181,7 @@ class SlopToonCharacter extends StatefulWidget {
     this.shift,
     this.shiftT = 0,
     this.phaseOverride,
+    this.facePhaseOverride,
     this.orientationAngle,
     this.personalitySeed,
     this.reducedMotion,
@@ -1225,6 +1227,8 @@ class SlopToonCharacter extends StatefulWidget {
   /// Freezes the living clock at an exact normalized frame when supplied.
   /// Useful for coordinated Studio choreography and deterministic captures.
   final double? phaseOverride;
+  /// Optional native face clock for a stationary body presentation.
+  final double? facePhaseOverride;
 
   /// Optional radians-based front/side/back orientation. When null, the
   /// seeded personality supplies rare complete turns. Callers that own a
@@ -1543,6 +1547,7 @@ class _SlopToonCharacterState extends State<SlopToonCharacter>
                 emotion: widget.emotion,
                 expression: automaticExpression,
                 phase: phase,
+                facePhase: widget.facePhaseOverride,
                 frame: frame,
                 smirk: _reduceMotion ? 0 : (autonomous?.smilePulse ?? 0) * .62,
                 orientationAngle: orientationAngle,
@@ -1680,6 +1685,7 @@ class _SlopToonPainter extends CustomPainter {
     required this.emotion,
     required this.expression,
     required this.phase,
+    required this.facePhase,
     required this.frame,
     required this.orientationAngle,
     required this.externalGaze,
@@ -1700,6 +1706,7 @@ class _SlopToonPainter extends CustomPainter {
   final SlopEmotion emotion;
   final SlopToonExpression expression;
   final double phase;
+  final double? facePhase;
   final SlopToonFrame frame;
   final double? orientationAngle;
   final Offset externalGaze;
@@ -1729,6 +1736,8 @@ class _SlopToonPainter extends CustomPainter {
       expression: expression,
       round: round,
       phase: phase,
+      facePhase: facePhase,
+      centerFaceHorizontally: facePhase != null,
       gaze: externalGaze,
       smirk: smirk,
       talk: talking ? (0.32 + math.sin(phase * math.pi * 14).abs() * 0.68) : 0,
@@ -1754,6 +1763,7 @@ class _SlopToonPainter extends CustomPainter {
       oldDelegate.emotion != emotion ||
       oldDelegate.expression != expression ||
       oldDelegate.phase != phase ||
+      oldDelegate.facePhase != facePhase ||
       oldDelegate.frame != frame ||
       oldDelegate.orientationAngle != orientationAngle ||
       oldDelegate.externalGaze != externalGaze ||

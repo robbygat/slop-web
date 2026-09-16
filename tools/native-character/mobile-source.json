@@ -1,5 +1,6 @@
 {
   "source": "slop-mobile",
+  "presentationPatch": "profile-face-clock.patch",
   "files": {
     "models/slop_look.dart": "b2d8f2a20b9302b887a84248256415735d99fe4bab863bb5abc7a973c8a4d05f",
     "widgets/slop_character.dart": "0efbf9d8ec0d920927e8287e5d3ab4c8ba4f96fd9cc2c3a164a7dbc80ce6bdf6",

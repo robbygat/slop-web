@@ -50,61 +50,22 @@ if(slopAudioHeld)return null;`);
     audio='setSlopAudio(slopPaused,slopMuted);';
   }else if(entry.old==='slopcraft'){
     code=replaceOnce(code,"import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';",`import * as THREE from ${JSON.stringify(threePath)};`);
-    code=replaceOnce(code,'let locked = false;',`let locked = false;
-let slopDragLook=false,slopDragStart=null,slopDragLast=null,slopDragDistance=0;
-const slopDragHint=document.createElement('div');
-slopDragHint.textContent='Drag to look · click to break · right-click to place · Esc to pause';
-slopDragHint.style.cssText='display:none;position:absolute;left:12px;right:12px;top:12px;z-index:8;text-align:center;font:12px Nunito,sans-serif;color:white;text-shadow:0 1px 4px #000;pointer-events:none';
-stage.appendChild(slopDragHint);
-function leaveSlopLook(){
- slopDragLook=false;slopDragStart=null;slopDragLast=null;locked=false;
- slopDragHint.style.display='none';overlay.classList.remove('hidden');
- if(document.pointerLockElement===renderer.domElement)document.exitPointerLock();
-}
-function useSlopDragLook(){
- if(slopPaused)return;
- slopDragLook=true;locked=true;overlay.classList.add('hidden');
- slopDragHint.style.display='block';
-}
-function beginSlopLook(){
- try{
-  if(!renderer.domElement.requestPointerLock){useSlopDragLook();return;}
-  const request=renderer.domElement.requestPointerLock();
-  if(request&&typeof request.catch==='function')request.catch(useSlopDragLook);
- }catch{useSlopDragLook();}
-}
-document.addEventListener('pointerlockerror',useSlopDragLook);
-window.addEventListener('keydown',e=>{if(e.code==='Escape'&&slopDragLook)leaveSlopLook();});`);
-    code=replaceOnce(code,"overlay.addEventListener('click', () => renderer.domElement.requestPointerLock());","overlay.addEventListener('click', beginSlopLook);");
-    code=replaceOnce(code,`locked = document.pointerLockElement === renderer.domElement;
-overlay.classList.toggle('hidden', locked);`,`if(document.pointerLockElement===renderer.domElement){
- slopDragLook=false;locked=true;slopDragHint.style.display='none';
-}else if(!slopDragLook){locked=false;}
-overlay.classList.toggle('hidden',locked);`);
-    code=replaceOnce(code,`if (!locked) return;
-player.yaw += e.movementX * 0.0024;
-player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - e.movementY * 0.0024));`,`if (!locked) return;
-let dx=e.movementX,dy=e.movementY;
-if(slopDragLook){
- if(!slopDragStart||!slopDragLast)return;
- dx=e.clientX-slopDragLast.x;dy=e.clientY-slopDragLast.y;
- slopDragLast={x:e.clientX,y:e.clientY};slopDragDistance+=Math.hypot(dx,dy);
-}
-player.yaw += dx * 0.0024;
-player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - dy * 0.0024));`);
-    code=replaceOnce(code,`if (e.button === 0) breakBlock();
-if (e.button === 2) placeBlock();`,`if(slopDragLook&&e.button===0){
- slopDragStart={x:e.clientX,y:e.clientY};slopDragLast=slopDragStart;slopDragDistance=0;
-}else if(e.button===0)breakBlock();
-if(e.button===2)placeBlock();`);
-    code+=`
-document.addEventListener('mouseup',e=>{
- if(e.button!==0||!slopDragStart)return;
- const shouldBreak=slopDragLook&&locked&&slopDragDistance<5;
- slopDragStart=null;slopDragLast=null;
- if(shouldBreak)breakBlock();
+    code="import {installSlopcraftPointerControls} from "+JSON.stringify(new URL('./slopcraft-pointer-controls.js',import.meta.url).pathname)+";\n"+code;
+    const inputStart=code.indexOf('// ---------------------------------------------------------------- pointer lock');
+    const inputEnd=code.indexOf('// ---------------------------------------------------------------- boot & loop',inputStart);
+    if(inputStart<0||inputEnd<inputStart)throw Error('Original Slopcraft input seams changed');
+    code=code.slice(0,inputStart)+`// ---------------------------------------------------------------- pointer lock
+const overlay=document.getElementById('overlay');
+let locked=false;
+const slopLook=installSlopcraftPointerControls({
+ canvas:renderer.domElement,stage,overlay,isPaused:()=>slopPaused,
+ onActive:value=>{locked=value;},onRelease:()=>{for(const key of Object.keys(keys))delete keys[key];},
+ onLook:(dx,dy)=>{player.yaw+=dx*.0024;player.pitch=Math.max(-1.55,Math.min(1.55,player.pitch-dy*.0024));},
+ onBreak:breakBlock,onPlace:placeBlock,
 });
-`;
+function leaveSlopLook(){slopLook.leave();}
+
+`+code.slice(inputEnd);
     pause='leaveSlopLook();';
     // Pointer lock is always reacquired through the original user gesture.
     resume='';

@@ -1,6 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
+import mediaVersions from '../lib/hero-media-versions.json';
 
-const film = item => `/assets/${item.folder}/${item.file}.mp4`;
+const version = (item, kind) => mediaVersions[`${item.folder}/${item.file}`]?.[kind] || 'short';
+const film = item => `/assets/${item.folder}/${item.file}.mp4?v=${version(item,'video')}`;
+const poster = item => `${item.poster || `/assets/${item.folder}/${item.file}.jpg`}?v=${version(item,'poster')}`;
 
 // Only the current clip plays. Prepare one successor shortly before the cut,
 // keeping the current frame visible until its replacement can actually render.
@@ -59,8 +62,9 @@ export function GameplayReel({items, running, onSelect, selected, onChoose}) {
     {slots.map((index, slot) => index == null ? null : <video
       key={slot} ref={element => {players.current[slot] = element;}}
       className={`arcade-film ${slot === active ? 'is-current' : ''}`}
+      data-composition={items[index].composition}
       src={film(items[index])} muted playsInline preload={running ? 'auto' : 'metadata'}
-      poster={items[index].poster || `/assets/${items[index].folder}/${items[index].file}.jpg`}
+      poster={poster(items[index])}
       aria-label={`Recorded ${items[index].name} gameplay`} aria-hidden={slot !== active}
       onTimeUpdate={event => progress(event, slot)} onEnded={() => ended(slot)}
       onCanPlay={activate}

@@ -38,12 +38,38 @@
         "width": 1080,
         "height": 2340,
         "fps": 30,
-        "seconds": 14,
-        "bytes": 2281375,
-        "poster_bytes": 102813,
+        "seconds": 5.0,
+        "bytes": 800720,
+        "poster_bytes": 99910,
         "codec": "H.264",
-        "gameplay": "Real tap-controlled flight through pipes; successful take reached score 13 without a game-over screen.",
-        "render_adjustment": "Canvas pixel ratio 2.5; original logical viewport and gameplay rules preserved. Read-only telemetry chose ordinary pointer taps; no world or score writes."
+        "gameplay": "Real flaps through consecutive pipe gaps. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "Canvas pixel ratio 2.5; original logical viewport and gameplay rules preserved. Read-only telemetry chose ordinary pointer taps; no world or score writes.",
+        "sha256": "776f2a7fde4ec662bcd3c8b4357518d5cab03aa53542c602dbc57501c6197dfc",
+        "poster_sha256": "fc57c389116c410132121787a83c2cd11847021c8eb6be219882ddbbad94fd37",
+        "frames": 150,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "public mobile bundle in an isolated browser canvas",
+          "logical_width": 432,
+          "logical_height": 936,
+          "width": 1080,
+          "height": 2340,
+          "fps": 30,
+          "seconds": 14.0,
+          "bytes": 2281375,
+          "poster_bytes": 102813,
+          "codec": "H.264",
+          "gameplay": "Real tap-controlled flight through pipes; successful take reached score 13 without a game-over screen.",
+          "render_adjustment": "Canvas pixel ratio 2.5; original logical viewport and gameplay rules preserved. Read-only telemetry chose ordinary pointer taps; no world or score writes.",
+          "sha256": "d9ad97f633e0037068910063420fc4389cd0f3da65f2fdb9fee754e684edfbad"
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 7,
+          "seconds": 5.0,
+          "poster_at_seconds": 2.4,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
       }
     },
     {
@@ -61,13 +87,38 @@
         "width": 1080,
         "height": 2340,
         "fps": 30,
-        "seconds": 13.8,
-        "bytes": 4904194,
-        "poster_bytes": 135347,
+        "seconds": 5.0,
+        "bytes": 1958978,
+        "poster_bytes": 129711,
         "codec": "H.264",
-        "sha256": "778449627a3822fe4788cd965e5351fd2d18d7ed115aba53a7cff56412155732",
-        "gameplay": "Ordinary touch taps stack glass panes, trim edges and build 17 layers. The original game reached score 680 without game over.",
-        "render_adjustment": "WebGL backing pixel ratio 2.5 with unchanged logical viewport and game rules. Read-only telemetry chooses ordinary pointer taps; no world or score writes. The transparent WebGL canvas is composited over its exact authored CSS gradient at identical native dimensions. Separate DOM score HUD is omitted."
+        "sha256": "63bd28af9ef78b7114597f1137d453460bc1a719d4f62cd13a4ce5afc2e8d173",
+        "gameplay": "High glass tower stacking with trimmed falling panes. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "WebGL backing pixel ratio 2.5 with unchanged logical viewport and game rules. Read-only telemetry chooses ordinary pointer taps; no world or score writes. The transparent WebGL canvas is composited over its exact authored CSS gradient at identical native dimensions. Separate DOM score HUD is omitted.",
+        "poster_sha256": "efebdf6fdef24a5a9bc5de67d1c1e8cbde4a4d2f7ab1bc2183cf38faa167eb27",
+        "frames": 150,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "Published mobile bundle in an isolated browser canvas",
+          "logical_width": 432,
+          "logical_height": 936,
+          "width": 1080,
+          "height": 2340,
+          "fps": 30,
+          "seconds": 13.8,
+          "bytes": 4904194,
+          "poster_bytes": 135347,
+          "codec": "H.264",
+          "sha256": "778449627a3822fe4788cd965e5351fd2d18d7ed115aba53a7cff56412155732",
+          "gameplay": "Ordinary touch taps stack glass panes, trim edges and build 17 layers. The original game reached score 680 without game over.",
+          "render_adjustment": "WebGL backing pixel ratio 2.5 with unchanged logical viewport and game rules. Read-only telemetry chooses ordinary pointer taps; no world or score writes. The transparent WebGL canvas is composited over its exact authored CSS gradient at identical native dimensions. Separate DOM score HUD is omitted."
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 7.3,
+          "seconds": 5.0,
+          "poster_at_seconds": 2.5,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
       }
     },
     {
@@ -86,13 +137,317 @@
         "width": 1080,
         "height": 2340,
         "fps": 30,
-        "seconds": 14.2,
-        "bytes": 6502439,
-        "poster_bytes": 188489,
+        "seconds": 5.0,
+        "bytes": 2170993,
+        "poster_bytes": 164352,
         "codec": "H.264",
-        "sha256": "f974f51bcfd73faf9afc9c055247a2e5a0263e0e4cedec3ecbd4bc17246377b2",
-        "gameplay": "Original 3D lane runner with ordinary swipes, coin collection and obstacle avoidance; the run reached score 279 at 20.1 seconds without game over.",
-        "render_adjustment": "WebGL pixel ratio 2.5 and preserveDrawingBuffer; unchanged original geometry, camera and rules. Read-only telemetry chooses ordinary pointer swipes, without state or score writes. Separate DOM score and instructions are omitted."
+        "sha256": "9f1f2a1919e279bbedb75e37ddf15642c0fd8844715f7163c121edd8871a6599",
+        "gameplay": "Lane changes, coin collection and obstacle avoidance. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "WebGL pixel ratio 2.5 and preserveDrawingBuffer; unchanged original geometry, camera and rules. Read-only telemetry chooses ordinary pointer swipes, without state or score writes. Separate DOM score and instructions are omitted.",
+        "poster_sha256": "f2ad05594da20bfc1c431c235c51a01ef881c9c12ac32d5c9f8bedeab0f34322",
+        "frames": 150,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "Live published mobile bundle in an isolated browser canvas",
+          "logical_width": 432,
+          "logical_height": 936,
+          "width": 1080,
+          "height": 2340,
+          "fps": 30,
+          "seconds": 14.2,
+          "bytes": 6502439,
+          "poster_bytes": 188489,
+          "codec": "H.264",
+          "sha256": "f974f51bcfd73faf9afc9c055247a2e5a0263e0e4cedec3ecbd4bc17246377b2",
+          "gameplay": "Original 3D lane runner with ordinary swipes, coin collection and obstacle avoidance; the run reached score 279 at 20.1 seconds without game over.",
+          "render_adjustment": "WebGL pixel ratio 2.5 and preserveDrawingBuffer; unchanged original geometry, camera and rules. Read-only telemetry chooses ordinary pointer swipes, without state or score writes. Separate DOM score and instructions are omitted."
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 8.5,
+          "seconds": 5.0,
+          "poster_at_seconds": 1.7,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
+      }
+    },
+    {
+      "slug": "flight-horizon-706301da56589f8348655f6480df11c5",
+      "name": "Flight Horizon",
+      "creator": "slop.game",
+      "file": "flight-horizon",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/releases/987b72a621a2797146b160980734353d3e973c76ae0c57d49e67149ea849d68e/flight-horizon-706301da56589f8348655f6480df11c5/1.0.0/index.html",
+      "source_game_sha256": "385bf97d3ab67142327639f94bf466216efd2a0126d248c09815c0adaa491dae",
+      "source_html_sha256": "480d778d145030b055d088cee8d99b39980515741602e71b598f89d99578ef4b",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+        "device": "iPhone 17 Pro",
+        "runtime": "iOS 26.5",
+        "app_build": 2050,
+        "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+        "raw_dimensions": [
+          1206,
+          2622
+        ],
+        "crop": [
+          0,
+          360,
+          1206,
+          2188
+        ],
+        "width": 1206,
+        "height": 2188,
+        "fps": 30,
+        "seconds": 5.0,
+        "bytes": 2030998,
+        "poster_bytes": 118377,
+        "codec": "H.264",
+        "sha256": "d7e347fc784ae93f5a0e342b08605b2379c568835c96476b01ae4f4c9b51c4ef",
+        "poster_sha256": "a32b3f1f510f9948156dc851c6b5d72d1611e213c88ab2be82b88d4fe64ce1bf",
+        "raw_sha256": "177c8c93815c38ce4ecebf7a0c8441f96765f40fff84d1ef4b38756182933f1f",
+        "segments": [
+          {
+            "start": 5.5,
+            "seconds": 5.0
+          }
+        ],
+        "gameplay": "Banking along an island and through a flight ring. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "Native Simulator pixels cropped to remove phone status, app close/speaker controls and bottom inset. Original game HUD and full wingspan remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps.",
+        "frames": 150,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+          "device": "iPhone 17 Pro",
+          "runtime": "iOS 26.5",
+          "app_build": 2050,
+          "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+          "raw_dimensions": [
+            1206,
+            2622
+          ],
+          "crop": [
+            0,
+            360,
+            1206,
+            2188
+          ],
+          "width": 1206,
+          "height": 2188,
+          "fps": 30,
+          "seconds": 26.433333,
+          "bytes": 9086991,
+          "poster_bytes": 125456,
+          "codec": "H.264",
+          "sha256": "fd50f0d5538f2e209c8df82e7e41122f9ad562d679f74c910af4331962803487",
+          "poster_sha256": "fecf379e00481caaf6e7189d4f7d49a89ee4ef2f6d7703406b45a308df3a5022",
+          "raw_sha256": "177c8c93815c38ce4ecebf7a0c8441f96765f40fff84d1ef4b38756182933f1f",
+          "segments": [
+            {
+              "start": 0.5,
+              "seconds": 17
+            },
+            {
+              "start": 69,
+              "seconds": 9.4
+            }
+          ],
+          "gameplay": "Two real flight segments: ring gates and island coastline, then a sustained bank. Ordinary touch drags control the unchanged published game. All non-game footage is excluded.",
+          "render_adjustment": "Native Simulator pixels cropped to remove phone status, app close/speaker controls and bottom inset. Original game HUD and full wingspan remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps."
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 5,
+          "seconds": 5.0,
+          "poster_at_seconds": 1.8,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
+      }
+    },
+    {
+      "slug": "dead-signal-db6f9b4620995c201c3686bcd712cb34",
+      "name": "Dead Signal",
+      "creator": "slop.game",
+      "file": "dead-signal",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/releases/895dc9e53dd3105b33d9f29897fe32d761bc7689bfdc000aa578687a170a2eed/dead-signal-db6f9b4620995c201c3686bcd712cb34/1.0.0/index.html",
+      "source_game_sha256": "b86e8b53ed0f18529cba7d16ea9631d15cea70c0747f9237368a99894aa293db",
+      "source_html_sha256": "1223d6eb4b6d5825f5a74f31cbc2bbf9c0060ed313cc14c678d7f63edc482ab6",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+        "device": "iPhone 17 Pro",
+        "runtime": "iOS 26.5",
+        "app_build": 2050,
+        "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+        "raw_dimensions": [
+          1206,
+          2622
+        ],
+        "crop": [
+          0,
+          360,
+          1206,
+          2188
+        ],
+        "width": 1206,
+        "height": 2188,
+        "fps": 30,
+        "seconds": 6.0,
+        "bytes": 1750062,
+        "poster_bytes": 100437,
+        "codec": "H.264",
+        "sha256": "f71a592d262f188ca87fba6e58719a8dd71793b04763f6ee5179e822c5c45827",
+        "poster_sha256": "3cdb06b79c19bfec24564fdee8764525bbdb674a8c220fd28a816c6b7ffa3139",
+        "raw_sha256": "7842a8c7118451125259302d54d61422a64e1891d1dba4bfb9755b8405990ac1",
+        "segments": [
+          {
+            "start": 192.5,
+            "seconds": 6.0
+          }
+        ],
+        "gameplay": "Close enemy encounters, aiming and repeated shots. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "Native Simulator pixels cropped to remove phone status and app close/speaker controls; original game HUD and controls remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps.",
+        "frames": 180,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+          "device": "iPhone 17 Pro",
+          "runtime": "iOS 26.5",
+          "app_build": 2050,
+          "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+          "raw_dimensions": [
+            1206,
+            2622
+          ],
+          "crop": [
+            0,
+            360,
+            1206,
+            2188
+          ],
+          "width": 1206,
+          "height": 2188,
+          "fps": 30,
+          "seconds": 19.8,
+          "bytes": 3650776,
+          "poster_bytes": 104528,
+          "codec": "H.264",
+          "sha256": "1959dfca85470fc84e2e844ab181df2d44a9aa5cf92539d52d64142e2f1a3b0a",
+          "poster_sha256": "85cc0cd1c8572b211441e0c94460a39190c61ca308873facf5f0ab706f5092c5",
+          "raw_sha256": "7842a8c7118451125259302d54d61422a64e1891d1dba4bfb9755b8405990ac1",
+          "segments": [
+            {
+              "start": 181.5,
+              "seconds": 3.5
+            },
+            {
+              "start": 186.7,
+              "seconds": 12.3
+            },
+            {
+              "start": 201.7,
+              "seconds": 4
+            }
+          ],
+          "gameplay": "Three real combat segments showing touch aim and firing, enemies falling, and Wave 2. Pauses, game-over screens and navigation are excluded. The guest run was not posted to leaderboards.",
+          "render_adjustment": "Native Simulator pixels cropped to remove phone status and app close/speaker controls; original game HUD and controls remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps."
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 9.3,
+          "seconds": 6.0,
+          "poster_at_seconds": 2.0,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
+      }
+    },
+    {
+      "slug": "night-drift-x-9f236c686f1ef654a420ea7520a3bad6",
+      "name": "Night Drift X",
+      "creator": "slop.game",
+      "file": "night-drift-x",
+      "entry_url": "https://api.slop.game/storage/v1/object/public/games/releases/8c1a19c0f9410ee63bc3a9f34d555dafd865a5f013c03c0bd7fb547b1e081984/night-drift-x-9f236c686f1ef654a420ea7520a3bad6/1.0.0/index.html",
+      "source_game_sha256": "f3f641a4f7cb490353a50bee5dcd2b28af28259f81839d7f83195180ddb5cadb",
+      "source_html_sha256": "1223d6eb4b6d5825f5a74f31cbc2bbf9c0060ed313cc14c678d7f63edc482ab6",
+      "capture": {
+        "date": "2026-09-16",
+        "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+        "device": "iPhone 17 Pro",
+        "runtime": "iOS 26.5",
+        "app_build": 2050,
+        "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+        "raw_dimensions": [
+          1206,
+          2622
+        ],
+        "crop": [
+          0,
+          360,
+          1206,
+          1974
+        ],
+        "width": 1206,
+        "height": 1974,
+        "fps": 30,
+        "seconds": 5.0,
+        "bytes": 3745318,
+        "poster_bytes": 168784,
+        "codec": "H.264",
+        "sha256": "f719f7575e52c77daabbb853ddfc765de25847f128c1ebfff1bba050e27859c9",
+        "poster_sha256": "f3422976413c3251087f65258298e35832a7f7f06d49a49c20d1e10cc10fecbe",
+        "raw_sha256": "2b40ac4fd21d5f74b0203ad9444b1bce23c7752839f20bc0e00eecdb9aed93d5",
+        "segments": [
+          {
+            "start": 41,
+            "seconds": 5.0
+          }
+        ],
+        "gameplay": "Sustained car drift beside traffic. Ordinary inputs drive the unchanged published game; no gameplay or score state was written.",
+        "render_adjustment": "Native Simulator pixels cropped above the guest sign-in banner and below phone status/app close controls. The full car and original game HUD remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps.",
+        "frames": 150,
+        "faststart": true,
+        "source_full_clip": {
+          "date": "2026-09-16",
+          "surface": "Actual iPhone Simulator app recording with simctl; no browser recreation",
+          "device": "iPhone 17 Pro",
+          "runtime": "iOS 26.5",
+          "app_build": 2050,
+          "app_source": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+          "raw_dimensions": [
+            1206,
+            2622
+          ],
+          "crop": [
+            0,
+            360,
+            1206,
+            1974
+          ],
+          "width": 1206,
+          "height": 1974,
+          "fps": 30,
+          "seconds": 25.0,
+          "bytes": 18648711,
+          "poster_bytes": 183169,
+          "codec": "H.264",
+          "sha256": "766481d2c4d7634833207d4a1444e407ed9fee1d6f53b6f5c8d5d72e6fde3aa6",
+          "poster_sha256": "4845087cd3543107413988592927f069c49f1442505a3a85de333c8c0c9fc093",
+          "raw_sha256": "2b40ac4fd21d5f74b0203ad9444b1bce23c7752839f20bc0e00eecdb9aed93d5",
+          "segments": [
+            {
+              "start": 40,
+              "seconds": 25
+            }
+          ],
+          "gameplay": "Continuous real driving with sustained drifts, traffic and close passes. Ordinary touch steering runs the unchanged published game; the guest score is not posted.",
+          "render_adjustment": "Native Simulator pixels cropped above the guest sign-in banner and below phone status/app close controls. The full car and original game HUD remain. No source changes, upscaling, interpolation or speed change. Captured frames normalized to 30 fps."
+        },
+        "hero_edit": {
+          "start_in_full_clip_seconds": 1,
+          "seconds": 5.0,
+          "poster_at_seconds": 1.5,
+          "method": "Action selection at original pixel dimensions and playback speed; no resize or motion interpolation. Exact 30 fps frame cap."
+        }
       }
     }
   ]

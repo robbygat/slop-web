@@ -10,6 +10,12 @@ export const PROFILE_BANNERS=[
 ];
 export const profileBanner=id=>PROFILE_BANNERS.find(b=>b.id===id)||null;
 export const bannerImage=banner=>`/assets/mobile/worlds/${banner.art}.webp`;
+// Discovery and the opened profile must start with the same equipped backdrop.
+export const PUBLIC_PROFILE_COLUMNS='id,username,display_name,avatar_url,bio,slop_look,profile_banner_id';
+export function profileBackdrop(id){
+ const banner=profileBanner(id||'banner-living-gel');
+ return banner?bannerImage(banner):'/assets/illustrations/desert-dusk.webp';
+}
 const validIds=ids=>Array.isArray(ids)&&ids.length<=100&&ids.every(id=>typeof id==='string'&&id.length>0&&id.length<=160);
 export function parseBannerInventory(value){
  if(value?.authenticated!==true||!validIds(value.owned_ids)||typeof value.equipped_id!=='string'||!value.equipped_id.length||value.equipped_id.length>160)throw new SlopError('invalid_response');

@@ -1,10 +1,18 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {nativeCharacterLook,nativeCharacterMessage,nativeCharacterReady,nativeCharacterRendered,nativeCharacterPerformance} from '../src/lib/native-character-contracts.js';
+import {nativeCharacterLook,nativeCharacterMessage,nativeCharacterReady,nativeCharacterRendered,nativeCharacterPerformance,nativeCharacterActivated} from '../src/lib/native-character-contracts.js';
 test('native painter receives bounded appearance only, never identity or authority',()=>{
  const look=nativeCharacterLook({body:'star',palette:'mint',finish:'clearGlass',designVersion:3,blush:false,token:'secret',user_id:'person',url:'https://evil.example',name:'Person',hat:'x'.repeat(41)});
  assert.equal(look.designVersion,7);assert.equal(look.finish,'clearGlass');assert.equal(look.hat,'none');assert.equal(look.blush,false);
  for(const key of ['token','user_id','url','name'])assert.equal(Object.hasOwn(look,key),false);
  const message=JSON.parse(nativeCharacterMessage(look,{paused:true,autoRotate:true,requestId:12}));assert.equal(message.requestId,12);assert.equal(message.paused,true);assert.equal(message.autoRotate,true);assert.ok(JSON.stringify(message).length<3000);
+});
+test('native activation requires the current isolated frame and render request',()=>{
+ const frame={},message={type:'slop.character.activate',version:1,requestId:7};
+ const event={source:frame,origin:'null',data:JSON.stringify(message)};
+ assert.equal(nativeCharacterActivated(event,frame,7),true);
+ for(const invalid of [{...event,source:{}},{...event,origin:'https://slop.game'},{...event,data:JSON.stringify({...message,requestId:6})},{...event,data:JSON.stringify({...message,action:'save'})}])assert.equal(nativeCharacterActivated(invalid,frame,7),false);
+ assert.equal(JSON.parse(nativeCharacterMessage({})).canActivate,false);
+ assert.equal(JSON.parse(nativeCharacterMessage({},{canActivate:true})).canActivate,true);
 });
 test('opaque frame handshakes require exact WindowProxy and current appearance paint acknowledgement',()=>{
  const frame={},event={source:frame,origin:'null',data:JSON.stringify({type:'slop.character.ready',version:1})};

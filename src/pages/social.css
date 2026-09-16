@@ -12,10 +12,9 @@
 .circle-search button{display:grid;place-items:center;flex-shrink:0;width:32px;height:36px;border:0;border-radius:50%;background:transparent;color:#4d425d;cursor:pointer}
 .circle-residents{position:absolute;right:20px;bottom:15px;width:42%;height:245px;pointer-events:none}
 .circle-resident.slop{position:absolute;width:clamp(135px,14vw,190px);height:auto;object-fit:contain;filter:drop-shadow(0 16px 8px #30224724)}
-.resident-ghost{left:25%;bottom:-8px;z-index:2;animation:circle-idle 6s ease-in-out infinite}
-.resident-heart{left:0;bottom:33px;transform:rotate(-8deg);animation:circle-idle 7s ease-in-out -2s infinite}
-.resident-star{right:-2%;bottom:45px;transform:rotate(8deg);animation:circle-idle 6.7s ease-in-out -4s infinite}
-@keyframes circle-idle{0%,100%{translate:0 0}50%{translate:0 -9px}}
+.resident-ghost{left:25%;bottom:-8px;z-index:2}
+.resident-heart{left:0;bottom:33px;transform:rotate(-8deg)}
+.resident-star{right:-2%;bottom:45px;transform:rotate(8deg)}
 .circle-results-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:38px 3px 4px}
 .circle-results-heading h2{font-size:27px;font-weight:700;letter-spacing:-.025em;margin:0}
 .circle-results-heading>span{font-size:13px;color:var(--soft)}

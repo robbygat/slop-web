@@ -28,6 +28,8 @@ class _CharacterViewerState extends State<CharacterViewer>
   double orientation = 0, currentOrientation = 0;
   int resetGeneration = 0;
   bool autoRotate = false;
+  bool canActivate = false;
+  int currentRequestId = 0;
   double autoAngle = 0;
   Duration? lastTick;
   late final Ticker turnTicker;
@@ -92,6 +94,7 @@ class _CharacterViewerState extends State<CharacterViewer>
             'paused',
             'front',
             'autoRotate',
+            'canActivate',
             'requestId',
           ].contains(key),
         ))
@@ -128,6 +131,7 @@ class _CharacterViewerState extends State<CharacterViewer>
         if (value['reducedMotion'] is! bool ||
             value['paused'] is! bool ||
             value['autoRotate'] is! bool ||
+            value['canActivate'] is! bool ||
             value['requestId'] is! int ||
             value['requestId'] < 0)
           return;
@@ -136,6 +140,8 @@ class _CharacterViewerState extends State<CharacterViewer>
           reduced = value['reducedMotion'];
           paused = value['paused'];
           autoRotate = value['autoRotate'];
+          canActivate = value['canActivate'];
+          currentRequestId = value['requestId'];
           if (value['front'] == true) {
             orientation = 0;
             currentOrientation = 0;
@@ -177,6 +183,18 @@ class _CharacterViewerState extends State<CharacterViewer>
     }
   }
 
+  void activate() {
+    if (!canActivate || paused) return;
+    html.window.parent?.postMessage(
+      jsonEncode({
+        'type': 'slop.character.activate',
+        'version': 1,
+        'requestId': currentRequestId,
+      }),
+      Uri.base.origin,
+    );
+  }
+
   @override
   void dispose() {
     turnTicker.dispose();
@@ -200,6 +218,12 @@ class _CharacterViewerState extends State<CharacterViewer>
               onKeyEvent: (node, event) {
                 if (event is! KeyDownEvent) return KeyEventResult.ignored;
                 final key = event.logicalKey;
+                if (canActivate &&
+                    (key == LogicalKeyboardKey.enter ||
+                        key == LogicalKeyboardKey.space)) {
+                  activate();
+                  return KeyEventResult.handled;
+                }
                 if (![
                   LogicalKeyboardKey.arrowLeft,
                   LogicalKeyboardKey.arrowRight,
@@ -226,6 +250,8 @@ class _CharacterViewerState extends State<CharacterViewer>
                 key: ValueKey(resetGeneration),
                 size: math.min(box.maxWidth, box.maxHeight),
                 look: look,
+                eyesAnimated: !reduced,
+                onActivate: canActivate ? activate : null,
                 orientationAngle: autoRotate && !reduced
                     ? autoAngle
                     : orientation,

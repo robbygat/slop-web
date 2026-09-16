@@ -1,0 +1,828 @@
+{
+  "source": "slop-mobile/lib/models/slop_look.dart",
+  "designVersion": 7,
+  "slots": {
+    "body": [
+      {
+        "id": "classic",
+        "label": "Bloom"
+      },
+      {
+        "id": "tall",
+        "label": "Pebble"
+      },
+      {
+        "id": "wide",
+        "label": "Clover"
+      },
+      {
+        "id": "droplet",
+        "label": "Pillow"
+      },
+      {
+        "id": "capsule",
+        "label": "Pill"
+      },
+      {
+        "id": "cloud",
+        "label": "Cloud"
+      },
+      {
+        "id": "star",
+        "label": "Sunbeam"
+      },
+      {
+        "id": "heart",
+        "label": "Sweetheart"
+      },
+      {
+        "id": "ghost",
+        "label": "Little ghost"
+      },
+      {
+        "id": "triangle",
+        "label": "Soft triangle"
+      }
+    ],
+    "eyes": [
+      {
+        "id": "round",
+        "label": "Round"
+      },
+      {
+        "id": "wide",
+        "label": "Wide"
+      },
+      {
+        "id": "sleepy",
+        "label": "Sleepy"
+      },
+      {
+        "id": "star",
+        "label": "Star"
+      },
+      {
+        "id": "wink",
+        "label": "Wink"
+      },
+      {
+        "id": "cyclops",
+        "label": "Cyclops"
+      },
+      {
+        "id": "dot",
+        "label": "Dot"
+      },
+      {
+        "id": "kawaii",
+        "label": "Kawaii"
+      },
+      {
+        "id": "heart",
+        "label": "Heart"
+      },
+      {
+        "id": "angry",
+        "label": "Angry"
+      },
+      {
+        "id": "sparkle",
+        "label": "Sparkle"
+      },
+      {
+        "id": "spiral",
+        "label": "Spiral"
+      },
+      {
+        "id": "visor",
+        "label": "Bubble Visor"
+      },
+      {
+        "id": "squint",
+        "label": "Squint"
+      },
+      {
+        "id": "three",
+        "label": "Three"
+      },
+      {
+        "id": "many",
+        "label": "Ten eyes"
+      },
+      {
+        "id": "liquid",
+        "label": "Liquid drops"
+      },
+      {
+        "id": "crescent",
+        "label": "Crescent"
+      },
+      {
+        "id": "velvetLash",
+        "label": "Velvet lash"
+      },
+      {
+        "id": "slopCyclops",
+        "label": "Living Slop Eye"
+      },
+      {
+        "id": "orbit",
+        "label": "Tiny planets"
+      }
+    ],
+    "eyeColor": [
+      {
+        "id": "ink",
+        "label": "Ink"
+      },
+      {
+        "id": "cocoa",
+        "label": "Cocoa"
+      },
+      {
+        "id": "sky",
+        "label": "Sky"
+      },
+      {
+        "id": "forest",
+        "label": "Forest"
+      },
+      {
+        "id": "amber",
+        "label": "Amber"
+      },
+      {
+        "id": "violet",
+        "label": "Violet"
+      },
+      {
+        "id": "crimson",
+        "label": "Crimson"
+      },
+      {
+        "id": "rose",
+        "label": "Rose"
+      },
+      {
+        "id": "teal",
+        "label": "Teal"
+      },
+      {
+        "id": "gold",
+        "label": "Gold"
+      },
+      {
+        "id": "silver",
+        "label": "Silver"
+      },
+      {
+        "id": "glow",
+        "label": "Glow"
+      }
+    ],
+    "mouth": [
+      {
+        "id": "smile",
+        "label": "Smile"
+      },
+      {
+        "id": "grin",
+        "label": "Grin"
+      },
+      {
+        "id": "cat",
+        "label": "Cat"
+      },
+      {
+        "id": "smirk",
+        "label": "Smirk"
+      },
+      {
+        "id": "oh",
+        "label": "Oh!"
+      },
+      {
+        "id": "fang",
+        "label": "Fang"
+      },
+      {
+        "id": "flat",
+        "label": "Flat"
+      },
+      {
+        "id": "wavy",
+        "label": "Wavy"
+      },
+      {
+        "id": "tongueOut",
+        "label": "Blep"
+      },
+      {
+        "id": "gasp",
+        "label": "Gasp"
+      },
+      {
+        "id": "teeth",
+        "label": "Teeth"
+      },
+      {
+        "id": "kiss",
+        "label": "Kiss"
+      },
+      {
+        "id": "zigzag",
+        "label": "Zigzag"
+      },
+      {
+        "id": "drool",
+        "label": "Drool"
+      },
+      {
+        "id": "laugh",
+        "label": "Laugh"
+      },
+      {
+        "id": "tinyFangs",
+        "label": "Twin fangs"
+      },
+      {
+        "id": "uwu",
+        "label": "UwU"
+      },
+      {
+        "id": "bubble",
+        "label": "Bubble gum"
+      },
+      {
+        "id": "jellyBean",
+        "label": "Jelly bean"
+      },
+      {
+        "id": "nibble",
+        "label": "Nibble"
+      },
+      {
+        "id": "glossySmile",
+        "label": "Glossy smile"
+      },
+      {
+        "id": "gooberBite",
+        "label": "Goober bite"
+      }
+    ],
+    "hat": [
+      {
+        "id": "none",
+        "label": "Bare"
+      },
+      {
+        "id": "antenna",
+        "label": "Antenna"
+      },
+      {
+        "id": "crown",
+        "label": "Crown"
+      },
+      {
+        "id": "cap",
+        "label": "Cap"
+      },
+      {
+        "id": "halo",
+        "label": "Halo"
+      },
+      {
+        "id": "horns",
+        "label": "Horns"
+      },
+      {
+        "id": "bow",
+        "label": "Bow"
+      },
+      {
+        "id": "beanie",
+        "label": "Beanie"
+      },
+      {
+        "id": "sprout",
+        "label": "Sprout"
+      },
+      {
+        "id": "propeller",
+        "label": "Propeller"
+      },
+      {
+        "id": "star",
+        "label": "Star"
+      },
+      {
+        "id": "headphones",
+        "label": "Headphones"
+      },
+      {
+        "id": "tuft",
+        "label": "Tuft"
+      },
+      {
+        "id": "mohawk",
+        "label": "Sprout Crest"
+      },
+      {
+        "id": "ponytail",
+        "label": "Comet Clip"
+      },
+      {
+        "id": "afro",
+        "label": "Paper Sail"
+      },
+      {
+        "id": "bangs",
+        "label": "Cloud Band"
+      },
+      {
+        "id": "curls",
+        "label": "Daisy Clips"
+      },
+      {
+        "id": "mushroom",
+        "label": "Mushroom cap"
+      },
+      {
+        "id": "chefPuff",
+        "label": "Maker’s toque"
+      },
+      {
+        "id": "ideaWizard",
+        "label": "Idea wizard"
+      },
+      {
+        "id": "satinBow",
+        "label": "Satin bow"
+      },
+      {
+        "id": "pearlTiara",
+        "label": "Pearl tiara"
+      },
+      {
+        "id": "blossomCrown",
+        "label": "Blossom crown"
+      },
+      {
+        "id": "butterflyClips",
+        "label": "Butterfly clips"
+      },
+      {
+        "id": "mintedBeret",
+        "label": "Minted beret"
+      },
+      {
+        "id": "itCouldBeWorse",
+        "label": "It Could Be Worse"
+      },
+      {
+        "id": "globalChampion",
+        "label": "Global Champion"
+      }
+    ],
+    "pattern": [
+      {
+        "id": "none",
+        "label": "Clean"
+      },
+      {
+        "id": "spots",
+        "label": "Spots"
+      },
+      {
+        "id": "stripes",
+        "label": "Stripes"
+      },
+      {
+        "id": "stars",
+        "label": "Stars"
+      },
+      {
+        "id": "swirl",
+        "label": "Swirl"
+      },
+      {
+        "id": "drips",
+        "label": "Drips"
+      },
+      {
+        "id": "bubbles",
+        "label": "Bubbles"
+      },
+      {
+        "id": "checker",
+        "label": "Checker"
+      },
+      {
+        "id": "sparkles",
+        "label": "Sparkles"
+      },
+      {
+        "id": "hearts",
+        "label": "Hearts"
+      },
+      {
+        "id": "camo",
+        "label": "Camo"
+      },
+      {
+        "id": "lavaLamp",
+        "label": "Lava lamp"
+      },
+      {
+        "id": "topographic",
+        "label": "Topographic"
+      },
+      {
+        "id": "confetti",
+        "label": "Confetti"
+      },
+      {
+        "id": "nebula",
+        "label": "Nebula"
+      },
+      {
+        "id": "kintsugi",
+        "label": "Kintsugi"
+      },
+      {
+        "id": "fruitSlices",
+        "label": "Jelly citrus"
+      },
+      {
+        "id": "gummyWorms",
+        "label": "Worm jar"
+      },
+      {
+        "id": "arcadeBits",
+        "label": "Arcade bits"
+      },
+      {
+        "id": "ginghamBloom",
+        "label": "Gingham bloom"
+      },
+      {
+        "id": "claimGrid",
+        "label": "Claim grid"
+      },
+      {
+        "id": "slopCode",
+        "label": "SLOP Code"
+      },
+      {
+        "id": "pixelPetal",
+        "label": "Lunar Glaze"
+      },
+      {
+        "id": "cloudQuilt",
+        "label": "Cloud Quilt"
+      },
+      {
+        "id": "itCouldBeWorseRobot",
+        "label": "It Could Be Worse Robot"
+      }
+    ],
+    "finish": [
+      {
+        "id": "jelly",
+        "label": "Living jelly"
+      },
+      {
+        "id": "gummy",
+        "label": "Soft gummy"
+      },
+      {
+        "id": "pearl",
+        "label": "Pearlescent"
+      },
+      {
+        "id": "galaxy",
+        "label": "Deep space"
+      },
+      {
+        "id": "molten",
+        "label": "Molten core"
+      },
+      {
+        "id": "chrome",
+        "label": "Liquid chrome"
+      },
+      {
+        "id": "hologram",
+        "label": "Hologel"
+      },
+      {
+        "id": "aurora",
+        "label": "Aurora gel"
+      },
+      {
+        "id": "crystal",
+        "label": "Prism crystal"
+      },
+      {
+        "id": "obsidian",
+        "label": "Void obsidian"
+      },
+      {
+        "id": "firstBatch",
+        "label": "First Batch"
+      },
+      {
+        "id": "clearGlass",
+        "label": "Clear glass"
+      },
+      {
+        "id": "gold",
+        "label": "Sunforge gold"
+      },
+      {
+        "id": "wildfire",
+        "label": "Wildfire gel"
+      },
+      {
+        "id": "celPop",
+        "label": "Cel pop"
+      },
+      {
+        "id": "tidepool",
+        "label": "Tidepool glass"
+      }
+    ],
+    "aura": [
+      {
+        "id": "none",
+        "label": "No aura"
+      },
+      {
+        "id": "bubbles",
+        "label": "Bubbles"
+      },
+      {
+        "id": "stardust",
+        "label": "Stardust"
+      },
+      {
+        "id": "embers",
+        "label": "Embers"
+      },
+      {
+        "id": "hearts",
+        "label": "Heart pop"
+      },
+      {
+        "id": "glitch",
+        "label": "Glitch"
+      },
+      {
+        "id": "orbit",
+        "label": "Mini orbit"
+      },
+      {
+        "id": "fireflies",
+        "label": "Fireflies"
+      },
+      {
+        "id": "lightning",
+        "label": "Lightning"
+      },
+      {
+        "id": "portal",
+        "label": "Gel portal"
+      },
+      {
+        "id": "prismatic",
+        "label": "Prismatic"
+      },
+      {
+        "id": "sloplings",
+        "label": "Tiny Slops"
+      },
+      {
+        "id": "petals",
+        "label": "Petal float"
+      },
+      {
+        "id": "ideaComets",
+        "label": "Idea comets"
+      },
+      {
+        "id": "soundRings",
+        "label": "Sound rings"
+      },
+      {
+        "id": "echoTrail",
+        "label": "Echo Slops"
+      },
+      {
+        "id": "ribbonTrail",
+        "label": "Ribbon trail"
+      },
+      {
+        "id": "coinChorus",
+        "label": "Coin chorus"
+      },
+      {
+        "id": "dewdrops",
+        "label": "Dewdrops"
+      },
+      {
+        "id": "moonMotes",
+        "label": "Moon motes"
+      }
+    ],
+    "accessory": [
+      {
+        "id": "none",
+        "label": "None"
+      },
+      {
+        "id": "glasses",
+        "label": "Glasses"
+      },
+      {
+        "id": "shades",
+        "label": "Shades"
+      },
+      {
+        "id": "freckles",
+        "label": "Freckles"
+      },
+      {
+        "id": "sticker",
+        "label": "Star sticker"
+      },
+      {
+        "id": "bandage",
+        "label": "Bandage"
+      },
+      {
+        "id": "monocle",
+        "label": "Monocle"
+      },
+      {
+        "id": "eyepatch",
+        "label": "Eyepatch"
+      },
+      {
+        "id": "mustache",
+        "label": "Mustache"
+      },
+      {
+        "id": "tear",
+        "label": "Tear"
+      },
+      {
+        "id": "mask",
+        "label": "Mask"
+      }
+    ],
+    "cape": [
+      {
+        "id": "none",
+        "label": "No tail"
+      },
+      {
+        "id": "petal",
+        "label": "Petal tail"
+      },
+      {
+        "id": "midnight",
+        "label": "Comet tail"
+      },
+      {
+        "id": "red",
+        "label": "Cherry curl"
+      },
+      {
+        "id": "satchel",
+        "label": "Bud tail"
+      }
+    ],
+    "palette": [
+      {
+        "id": "tangerine",
+        "label": "Tangerine",
+        "light": "#FFB13B",
+        "deep": "#F4561D"
+      },
+      {
+        "id": "grape",
+        "label": "Grape",
+        "light": "#C79BFF",
+        "deep": "#7431DC"
+      },
+      {
+        "id": "mint",
+        "label": "Mint",
+        "light": "#9BF3C6",
+        "deep": "#15B36D"
+      },
+      {
+        "id": "bubblegum",
+        "label": "Bubblegum",
+        "light": "#FFAAD0",
+        "deep": "#EF3B88"
+      },
+      {
+        "id": "blueberry",
+        "label": "Blueberry",
+        "light": "#93C6FF",
+        "deep": "#2B6BFF"
+      },
+      {
+        "id": "lime",
+        "label": "Lime",
+        "light": "#DDF97C",
+        "deep": "#7CBB10"
+      },
+      {
+        "id": "aqua",
+        "label": "Aqua",
+        "light": "#8AEBF7",
+        "deep": "#0E9ABB"
+      },
+      {
+        "id": "void",
+        "label": "Void",
+        "light": "#6E778C",
+        "deep": "#272C38"
+      },
+      {
+        "id": "peach",
+        "label": "Peach",
+        "light": "#FFC2A3",
+        "deep": "#EE6A45"
+      },
+      {
+        "id": "lavender",
+        "label": "Lavender",
+        "light": "#D4BEFF",
+        "deep": "#8E6BD6"
+      },
+      {
+        "id": "ember",
+        "label": "Ember",
+        "light": "#FF8B5E",
+        "deep": "#C42714"
+      },
+      {
+        "id": "butter",
+        "label": "Butter",
+        "light": "#FFEB8F",
+        "deep": "#E0AC00"
+      },
+      {
+        "id": "rose",
+        "label": "Rose",
+        "light": "#FFB3C6",
+        "deep": "#D34A72"
+      },
+      {
+        "id": "slate",
+        "label": "Slate",
+        "light": "#AEBDD1",
+        "deep": "#52627A"
+      },
+      {
+        "id": "toxic",
+        "label": "Toxic",
+        "light": "#B6FF4D",
+        "deep": "#4EA800"
+      },
+      {
+        "id": "ultraviolet",
+        "label": "Ultraviolet",
+        "light": "#B07BFF",
+        "deep": "#4A15A8"
+      },
+      {
+        "id": "seafoam",
+        "label": "Seafoam",
+        "light": "#A8F0DC",
+        "deep": "#27A98A"
+      },
+      {
+        "id": "cherry",
+        "label": "Cherry",
+        "light": "#FF8A8A",
+        "deep": "#C01F1F"
+      },
+      {
+        "id": "porcelain",
+        "label": "Porcelain",
+        "light": "#F3F1EC",
+        "deep": "#B9B3A6"
+      },
+      {
+        "id": "cocoa",
+        "label": "Cocoa",
+        "light": "#CBA37C",
+        "deep": "#6F4B31"
+      }
+    ]
+  }
+}

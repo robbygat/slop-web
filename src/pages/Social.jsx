@@ -5,6 +5,8 @@ import {supabase, result} from '../lib/supabase.js';
 import {useAuth} from '../auth.jsx';
 import {Button, Loading, Notice, Slop, useAsync, Modal} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
+import {PUBLIC_PROFILE_COLUMNS, profileBackdrop} from '../lib/profile-banners.js';
+import NativeEyePortrait from '../components/NativeEyePortrait.jsx';
 import {GameCard, GameDetail} from './Play.jsx';
 import './social.css';
 
@@ -29,14 +31,6 @@ const palettes = {
   ember: ['#ff8b5e', '#f4522e', '#751007'],
   slate: ['#aebdd1', '#7a8ca5', '#2c3646'],
   toxic: ['#b6ff4d', '#7be800', '#2a6100'],
-};
-const profileWorlds = {
-  'banner-living-gel': 'forest-habitat',
-  'banner-soft-orbit': 'cloud-city',
-  'banner-candy-horizon': 'canal-city',
-  'banner-neon-arcade': 'neon-arcade',
-  'banner-cosmic-bloom': 'cosmic-bloom',
-  'banner-lava-flow': 'lava-habitat',
 };
 const personName = person => person.display_name || person.username || 'Slop player';
 const handle = person => person.username ? `@${person.username}` : 'Slop player';
@@ -113,9 +107,9 @@ export default function Social() {
         </label>
       </div>
       <div className="circle-residents" aria-hidden="true">
-        <Slop body="heart" color="bubblegum" className="circle-resident resident-heart" alt=""/>
-        <Slop body="ghost" color="tangerine" className="circle-resident resident-ghost" alt=""/>
-        <Slop body="star" color="mint" className="circle-resident resident-star" alt=""/>
+        <NativeEyePortrait body="heart" color="bubblegum" className="circle-resident resident-heart" alt=""/>
+        <NativeEyePortrait body="ghost" color="tangerine" className="circle-resident resident-ghost" alt=""/>
+        <NativeEyePortrait body="star" color="mint" className="circle-resident resident-star" alt=""/>
       </div>
     </section>
 
@@ -146,7 +140,7 @@ function PersonRibbon({person, index, following, busy, own, onFollow, onOpen, tr
       <path fill={`url(#${paintId})`} d="M28 104 C10 104 5 120 8 144 C13 178 3 240 9 286 C12 314 30 326 58 326 L202 326 C230 326 248 314 251 286 C257 240 247 178 252 144 C255 120 250 104 232 104 L181 104 C164 104 161 90 156 75 C148 51 112 51 104 75 C99 90 96 104 79 104 Z"/>
     </svg>
     <button className="person-ribbon-open" onClick={onOpen} aria-label={`Open ${personName(person)}, ${handle(person)}`}>
-      <Slop look={person.slop_look} avatar={person.avatar_url} className="person-ribbon-slop" alt="" loading="lazy"/>
+      <NativeEyePortrait look={person.slop_look} avatar={person.avatar_url} className="person-ribbon-slop" alt="" loading="lazy"/>
       <span className="person-ribbon-identity"><span className="person-ribbon-name">{personName(person)}</span><span className="person-ribbon-handle">{handle(person)}</span></span>
       {person.bio && <span className="person-ribbon-bio">{person.bio}</span>}
       <span className="person-ribbon-enter"><span>View profile</span><Icon name="arrow" size={18}/></span>
@@ -170,18 +164,17 @@ async function profileStats(id) {
 }
 
 function PersonProfile({person, following, busy, own, onFollow, onClose, transition}) {
-  const details = useAsync(() => result(supabase.from('profiles').select('id,username,display_name,bio,avatar_url,slop_look,profile_banner_id').eq('id', person.id).single()), [person.id]);
+  const details = useAsync(() => result(supabase.from('profiles').select(PUBLIC_PROFILE_COLUMNS).eq('id', person.id).single()), [person.id]);
   const games = useAsync(() => loadGames({owner: person.id}), [person.id]);
   const stats = useAsync(() => profileStats(person.id), [person.id, following]);
   const [selected, setSelected] = useState(null);
   const profile = details.data || person;
-  const world = profileWorlds[profile.profile_banner_id];
-  const backdrop = world ? `/assets/mobile/worlds/${world}.webp` : '/assets/illustrations/desert-dusk.webp';
+  const backdrop = profileBackdrop(profile.profile_banner_id);
   return <Modal title={handle(profile)} onClose={onClose} className="circle-profile-modal">
     <div className="circle-profile-surface" style={{...personPalette(profile), viewTransitionName: transition ? 'slop-person-profile' : 'none'}}>
       <div className="circle-profile-scene">
         <img src={backdrop} alt="" className="circle-profile-world"/>
-        <Slop interactive look={profile.slop_look} controls className="circle-profile-character" alt={`${personName(profile)}'s Slop`}/>
+        <Slop interactive look={profile.slop_look} paused={!!selected} controls className="circle-profile-character" alt={`${personName(profile)}'s Slop`}/>
       </div>
       <div className="circle-profile-identity">
         <div><h2>{personName(profile)}</h2><p>{handle(profile)}</p></div>

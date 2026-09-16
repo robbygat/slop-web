@@ -7,6 +7,8 @@ import {createHash, randomBytes, randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {bundleIdentity} from '../src/lib/bundle-contracts.js';
 
+if(process.argv.includes('--slopcraft-controls')){await import('./curate-slopcraft-controls.mjs');process.exit(0);}
+
 const root = '/tmp/slop-web-redesign';
 // Keep the already published first batch immutable. The separately authorized
 // additional originals have their own source, media, plan and operation leases.
