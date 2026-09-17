@@ -9,9 +9,9 @@ function AndroidMark(){return <svg viewBox="0 0 24 24" aria-hidden="true"><path 
 
 export default function AppDownloadBar(){return <section className="home-app-download" aria-label="Download the Slop app">
  <span className="home-app-icon" aria-hidden="true"><img src="/assets/mobile/app-icon.png" alt=""/></span>
- <div className="home-app-copy"><span className="home-app-kicker">Play anywhere</span><strong>Download Slop.</strong><span>Your games and account on iPhone, iPad and Android.</span></div>
+ <div className="home-app-copy"><strong>Download Slop.</strong><span>For iPhone, iPad and Android.</span></div>
  <div className="home-app-actions">
-  <a href={appStore} target="_blank" rel="noreferrer" aria-label="Download Slop on the App Store"><AppleMark/><span><small>Download on the</small>App Store</span></a>
-  <a href={android} download="Slop-3.7.5-build-2051-universal.apk" aria-label="Download Slop APK for Android"><AndroidMark/><span><small>Download for</small>Android</span></a>
+  <a href={appStore} target="_blank" rel="noreferrer" aria-label="Download Slop on the App Store"><AppleMark/><span>App Store</span></a>
+  <a href={android} download="Slop-3.7.5-build-2051-universal.apk" aria-label="Download Slop APK for Android"><AndroidMark/><span>Android APK</span></a>
  </div>
 </section>}
