@@ -35,6 +35,43 @@ claude mcp add --transport stdio --scope user slop -- npx --yes --package=https:
 Restart Claude Code and run `/mcp` to check Slop.
 [Official Claude Code instructions](https://code.claude.com/docs/en/mcp).
 
+### OpenCode
+
+Merge this entry into your OpenCode configuration, keeping the rest of your
+settings:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "slop": {
+      "type": "local",
+      "command": [
+        "npx",
+        "--yes",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz",
+        "slop-mcp"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+Restart OpenCode and check that Slop is enabled in its MCP servers.
+[Official OpenCode instructions](https://opencode.ai/v2/docs/mcp-servers).
+
+### OpenChamber
+
+Open **Settings → MCP**, add a personal local server named `slop`, and use:
+
+```sh
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz slop-mcp
+```
+
+Save the server and leave it enabled.
+[Official OpenChamber instructions](https://docs.openchamber.dev/mcp/).
+
 ### Cursor and other local MCP clients
 
 Merge the Slop entry into `~/.cursor/mcp.json`, preserving your other servers,
@@ -63,14 +100,16 @@ desktop app cannot find `npx`, use its actual absolute executable path.
 ## Pair, send, play
 
 1. Ask your agent: **“Call slop_pair and show me the QR code and pairing link.”**
-2. Open **Slop → Build → Scan code** on your phone. Scan the computer's QR,
-   review the named agent, and allow draft access. You can also open the exact
-   pairing link on the website and approve it while signed in.
+2. Scan the computer's QR with your phone camera. Slop.game opens its secure
+   mobile review page; sign in, review the named agent, and allow draft access.
+   The scanner in the installed Slop app also accepts the same QR.
 3. Ask the agent to check `slop_connection_status`, then call `slop_game_template` and build a small game around its unchanged
    `slop.js`. Send the complete bundle with `slop_send_draft`.
 4. The draft appears in the same account's computer connection inbox on web and
    mobile. Select **Try on my phone** or **Playtest & publish** on the website.
-   A validated, immutable private preview opens after your approval.
+   Play the real build and record its required gameplay GIF. The publication
+   service rejects drafts without the recorded cover, GIF, dimensions, and
+   frame count. A validated, immutable private preview opens after approval.
 5. For another iteration, ask your agent to send the next revision. Review it
    separately. Disconnect the computer any time in Slop.
 
@@ -137,12 +176,14 @@ server secrets stay in server-only API headers. Rollback first disables the
 feature/endpoint, then revokes bridge entry points with [rollback.sql](rollback.sql).
 Retain private source and idempotency records instead of dropping data.
 
-Start game work with `slop_game_template`. It returns the native mobile runtime
+Start every game with `slop_game_template`. It returns the native mobile runtime
 and a working canvas example. Keep the returned slop.js unchanged; preserve
 ready-after-first-frame, score, finished, restart, pause and touch integration.
-The owner can playtest and record a cover/clip in the website draft inbox, then
-explicitly submit the game through the same review process used by the app.
-The coding agent has no publishing permission.
+For cross-platform games, implement both keyboard/mouse and touch controls
+around that lifecycle. The owner must playtest and record a real cover and GIF
+in the website draft inbox before explicitly submitting the game through the
+same review process used by the app. The coding agent has no publishing
+permission and cannot bypass the GIF requirement.
 
 The returned `authorization_uri` starts on `api.slop.game` and redirects to the
 fixed Slop account review page while keeping the short-lived challenge in the
