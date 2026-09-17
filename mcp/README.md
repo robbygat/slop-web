@@ -20,7 +20,7 @@ pinned runtime dependencies are resolved by npm.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -29,7 +29,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -49,10 +49,11 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz",
         "slop-mcp"
       ],
-      "enabled": true
+      "enabled": true,
+      "timeout": 60000
     }
   }
 }
@@ -66,11 +67,15 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
 [Official OpenChamber instructions](https://docs.openchamber.dev/mcp/).
+OpenChamber uses the OpenCode MCP registry, so one `slop` entry is enough for
+both. The server intentionally writes nothing until its host sends an MCP
+handshake. If the desktop app cannot resolve `npx`, replace it with the absolute
+path printed by `command -v npx` and allow a 60-second startup timeout.
 
 ### Cursor and other local MCP clients
 
@@ -85,7 +90,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.2.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz",
         "slop-mcp"
       ]
     }
@@ -97,19 +102,31 @@ then enable Slop in Cursor's MCP settings:
 their own local MCP configuration with the same command and arguments. If a
 desktop app cannot find `npx`, use its actual absolute executable path.
 
+### Any local model or agent
+
+The model does not authenticate directly. Run it in any MCP-compatible host and
+add the same local STDIO configuration above. This works with local models such
+as Qwen because the host launches the Slop adapter and exposes its six tools to
+the model. After one browser approval, the adapter keeps a private, narrow
+30-day credential and can deliver new private drafts headlessly. It cannot
+publish publicly, spend coins, or change the account.
+
 ## Pair, send, play
 
 1. Ask your agent: **“Call slop_pair and show me the QR code and pairing link.”**
 2. Scan the computer's QR with your phone camera. Slop.game opens its secure
    mobile review page; sign in, review the named agent, and allow draft access.
    The scanner in the installed Slop app also accepts the same QR.
-3. Ask the agent to check `slop_connection_status`, then call `slop_game_template` and build a small game around its unchanged
-   `slop.js`. Send the complete bundle with `slop_send_draft`.
+3. Choose `mobile`, `desktop`, or `cross-platform`. Ask the agent to check
+   `slop_connection_status`, call `slop_game_template` with that
+   `target_platform`, and build around its unchanged `slop.js`. Send the
+   complete bundle with `slop_send_draft` and the same target.
 4. The draft appears in the same account's computer connection inbox on web and
    mobile. Select **Try on my phone** or **Playtest & publish** on the website.
-   Play the real build and record its required gameplay GIF. The publication
-   service rejects drafts without the recorded cover, GIF, dimensions, and
-   frame count. A validated, immutable private preview opens after approval.
+   Play the real build and record its required gameplay GIF. The recorder
+   captures 12 timed frames and refuses a static sequence; publication parses
+   the encoded GIF and rejects missing, malformed, untimed, or lost frames.
+   A validated, immutable private preview opens after approval.
 5. For another iteration, ask your agent to send the next revision. Review it
    separately. Disconnect the computer any time in Slop.
 
@@ -176,11 +193,13 @@ server secrets stay in server-only API headers. Rollback first disables the
 feature/endpoint, then revokes bridge entry points with [rollback.sql](rollback.sql).
 Retain private source and idempotency records instead of dropping data.
 
-Start every game with `slop_game_template`. It returns the native mobile runtime
+Start every game with `slop_game_template`. It returns the native Slop runtime
 and a working canvas example. Keep the returned slop.js unchanged; preserve
 ready-after-first-frame, score, finished, restart, pause and touch integration.
-For cross-platform games, implement both keyboard/mouse and touch controls
-around that lifecycle. The owner must playtest and record a real cover and GIF
+For desktop games implement keyboard and mouse controls; for cross-platform
+games implement equivalent keyboard/mouse and touch controls around one game
+state. The selected target is sealed into `slop-platform.json` and becomes the
+published game's platform metadata. The owner must playtest and record a real cover and GIF
 in the website draft inbox before explicitly submitting the game through the
 same review process used by the app. The coding agent has no publishing
 permission and cannot bypass the GIF requirement.

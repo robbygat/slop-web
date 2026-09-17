@@ -60,6 +60,15 @@ export async function validateDraft(input) {
   const name = boundedText(input.name, 80);
   const description = boundedText(input.description ?? "", 240, true);
   const files = object(input.files);
+  let target_platform = "mobile";
+  if (Object.hasOwn(files, "slop-platform.json")) {
+    let metadata;
+    try { metadata = object(JSON.parse(files["slop-platform.json"])); }
+    catch (error) { if (error instanceof BridgeError) throw error; throw new BridgeError("invalid_platform"); }
+    requireValue(Object.keys(metadata).length === 1 &&
+      ["mobile", "desktop", "cross-platform"].includes(metadata.target_platform), "invalid_platform");
+    target_platform = metadata.target_platform;
+  }
   const paths = Object.keys(files).sort();
   requireValue(
     paths.length > 0 && paths.length <= 64 &&
@@ -111,6 +120,7 @@ export async function validateDraft(input) {
       revision: input.revision,
       name,
       description,
+      target_platform,
       digest,
     }),
   );
@@ -120,6 +130,7 @@ export async function validateDraft(input) {
     revision: input.revision,
     name,
     description,
+    target_platform,
     files,
     manifest,
     digest,

@@ -233,6 +233,7 @@ export function createHandler(deps, config = {}) {
         });
         return json({
           ...result,
+          target_platform: validated.target_platform,
           preview_url: preview.url,
           preview_expires_at: preview.expires_at,
         });

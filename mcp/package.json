@@ -1,6 +1,6 @@
 {
   "name": "@slop-game/mcp-bridge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Send private mobile game drafts from your coding agent to Slop on web and mobile.",
   "license": "UNLICENSED",
   "type": "module",

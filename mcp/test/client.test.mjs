@@ -88,6 +88,9 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
       "slop_draft_status",
       "slop_disconnect",
     ]);
+    assert.deepEqual(listed.tools.find(t=>t.name==="slop_game_template").inputSchema.properties.target_platform.enum,["mobile","desktop","cross-platform"]);
+    assert.ok(listed.tools.find(t=>t.name==="slop_send_draft").inputSchema.required.includes("target_platform"));
+    const template=await client.callTool({name:"slop_game_template",arguments:{target_platform:"desktop"}});assert.equal(JSON.parse(template.content[0].text).target_platform,"desktop");
     const result = await client.callTool({
       name: "slop_connection_status",
       arguments: {},
@@ -101,6 +104,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
         project_id: "11111111-1111-4111-8111-111111111111",
         request_id: "22222222-2222-4222-8222-222222222222",
         revision: 1,
+        target_platform: "cross-platform",
         name: "test",
         files: { "index.html": "<canvas/>" },
       },
@@ -164,4 +168,11 @@ test("STDIO pairs through REST but never presents pending approval as connected"
     http.close();
     await rm(dir, { recursive: true, force: true });
   }
+});
+test("an approved local agent sends its chosen platform headlessly and cannot choose public publication",async()=>{
+ const dir=await mkdtemp(join(tmpdir(),"slop-mcp-headless-")),credentials=join(dir,"credentials.json"),token="slop_mcp_"+"a".repeat(64);let received;
+ const http=createServer(async(req,res)=>{let raw="";for await(const part of req)raw+=part;res.setHeader("content-type","application/json");if(req.url==="/agent/drafts"){assert.equal(req.headers.authorization,`Bearer ${token}`);received=JSON.parse(raw);res.end(JSON.stringify({status:"awaiting_confirmation",submission_id:"11111111-1111-4111-8111-111111111111"}));}else res.end(JSON.stringify({status:"active"}));});
+ http.listen(0,"127.0.0.1");await once(http,"listening");const base=`http://127.0.0.1:${http.address().port}`;await writeFile(credentials,JSON.stringify({base,token}),{mode:0o600});const client=new Client({name:"local-model",version:"1.0.0"});
+ try{await client.connect(new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL("../cli.mjs",import.meta.url))],env:{SLOP_MCP_CREDENTIALS:credentials,SLOP_MCP_URL:base},stderr:"pipe"}));const sent=await client.callTool({name:"slop_send_draft",arguments:{project_id:"11111111-1111-4111-8111-111111111111",request_id:"22222222-2222-4222-8222-222222222222",revision:1,target_platform:"desktop",name:"Desktop proof",files:{"index.html":"<canvas></canvas>","slop.js":"runtime"}}});assert.equal(JSON.parse(sent.content[0].text).status,"awaiting_confirmation");assert.equal(JSON.parse(received.files["slop-platform.json"]).target_platform,"desktop");assert.equal(Object.hasOwn(received,"publish"),false);}
+ finally{await client.close();http.close();await rm(dir,{recursive:true,force:true});}
 });

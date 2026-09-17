@@ -5,6 +5,9 @@ import {uploadMedia} from './creator.js';
 import {validCaptureDimensions} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
 import {mcpPublicationReceipt} from './mcp-publication-contracts.js';
+import {mcpCatalogPlatform,mcpTargetFromFiles} from './mcp-platform.js';
+import {platformValues} from './game-platforms.js';
+import {requireAnimatedGif} from './gif-contracts.js';
 const stateFields='id,owner_id,slug,status,review_submission_id,published_bundle_path,bundle_digest,bundle_manifest';
 function assertCurrent(expected){if(!expected||getSession()?.epoch!==expected.epoch)throw new SlopError('account_changed');}
 function validPreview(p,owner){return p?.owner_id===owner&&UUID.test(p.submission_id)&&UUID.test(p.game_id)&&DIGEST.test(p.digest)&&/^mcp-[a-f0-9]{32}$/.test(p.slug)&&p.status==='ready'&&trustedEntry(p.preview_url,{preview:true,slug:p.slug});}
@@ -28,8 +31,9 @@ export async function inspectMcpPublication(preview){
 export async function prepareMcpPublication({preview,title,tagline,cover,gif,frameCount,width,height,onStage}){
  const expected=getSession();if(!validPreview(preview,expected?.user.id))throw new SlopError('account_changed');
  if(!title?.trim()||title.length>80||typeof tagline!=='string'||tagline.length>240||!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40||!validCaptureDimensions(width,height))throw new Error('Add a title and record a gameplay preview before submitting.');
+ requireAnimatedGif(gif,frameCount);
  onStage?.('Checking the version you played…');const checked=await inspectMcpPublication(preview);assertCurrent(expected);if(checked.receipt)return checked;
- const {identity}=checked,slug=preview.slug;
+ const {identity}=checked,slug=preview.slug,target=mcpTargetFromFiles(checked.files),platforms=platformValues(mcpCatalogPlatform(target));if(preview.target_platform&&preview.target_platform!==target)throw new Error('The game target changed. Reopen the latest draft before publishing.');
  await asOwner(async(owner,client)=>{
   const game=await gameState(client,owner,preview);if(game.status!=='draft')throw new Error('The draft changed. Reopen it before submitting.');assertCurrent(expected);
   const coverPath=`${slug}/1.0.0/covers/${game.id}/${identity.buildId}-c3-${(await sha256(cover)).slice(0,32)}/cover.jpg`;
@@ -38,6 +42,7 @@ export async function prepareMcpPublication({preview,title,tagline,cover,gif,fra
   const clipPath=`${slug}/1.0.0/previews/${game.id}/${identity.buildId}-c3-${(await sha256(gif)).slice(0,32)}/preview.gif`;
   onStage?.('Saving your gameplay clip…');await uploadMedia(client,owner,slug,clipPath,gif,'image/gif');assertCurrent(expected);
   const clip=await result(client.rpc('record_game_preview',{p_slug:slug,p_version:'1.0.0',p_build_id:identity.buildId,p_path:clipPath,p_width:width,p_height:height,p_frame_count:frameCount,p_bytes:gif.length}));if(clip?.saved!==true||clip.slug!==slug||clip.path!==clipPath||clip.build_id!==identity.buildId||clip.bytes!==gif.length)throw new SlopError('invalid_response');assertCurrent(expected);
+  const platform=await result(client.rpc('set_game_supported_platforms',{p_owner:owner,p_game_slug:slug,p_platforms:platforms}));if(platform?.owner_id!==owner||platform.game_slug!==slug||JSON.stringify(platform.supported_platforms)!==JSON.stringify(platforms))throw new SlopError('invalid_response');assertCurrent(expected);
   await result(client.from('games').update({name:title.trim(),description:tagline.trim(),prompt:'Created with a connected coding app',html:checked.files['index.html']}).eq('id',game.id).eq('owner_id',owner).eq('status','draft').select('id').single());assertCurrent(expected);
  });return {owner_id:expected.user.id,game_id:preview.game_id,slug,build_id:identity.buildId,digest:identity.digest,status:'draft'};
 }

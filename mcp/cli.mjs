@@ -16,7 +16,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.2.0" });
+const server = new McpServer({ name: "slop", version: "0.3.0" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -54,19 +54,20 @@ tool(
   () => bridge.status(),
   { readOnlyHint: true },
 );
-tool("slop_game_template", "Get the canonical mobile Slop runtime and a tiny working canvas game. Use before building any Slop game so ready, score, finish, restart, touch and pause work on web/iOS/Android. No account or connection required.", {}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
+tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
 tool(
   "slop_send_draft",
-  "Use slop_game_template first and include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
+  "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
   {
     project_id: z.string().uuid(),
     request_id: z.string().uuid(),
     revision: z.number().int().min(1).max(1_000_000),
+    target_platform: z.enum(['mobile','desktop','cross-platform']),
     name: z.string().min(1).max(80),
     description: z.string().max(240).optional(),
     files: z.record(z.string()),
   },
-  (args) => bridge.authorized("/agent/drafts", args),
+  (args) => bridge.authorized("/agent/drafts", {...args,files:{...args.files,'slop-platform.json':JSON.stringify({target_platform:args.target_platform})}}),
   { idempotentHint: true },
 );
 tool(

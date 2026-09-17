@@ -14,7 +14,7 @@ const draftInput = {
   request_id: id,
   revision: 1,
   name: "Pocket bounce",
-  files: { "index.html": "<canvas></canvas>", "game.js": "const score=0;" },
+  files: { "index.html": "<canvas></canvas>", "game.js": "const score=0;", "slop-platform.json": '{"target_platform":"cross-platform"}' },
 };
 const request = (path, { token = "phone.jwt", body, headers = {} } = {}) =>
   new Request(`https://api.slop.game/functions/v1/slop-mcp${path}`, {
@@ -28,6 +28,8 @@ const request = (path, { token = "phone.jwt", body, headers = {} } = {}) =>
   });
 test("canonical digest matches exact versioned UTF-8 manifest; rejects traversal, oversized and malformed source", async () => {
   const valid = await validateDraft(draftInput);
+  assert.equal(valid.target_platform, "cross-platform");
+  await assert.rejects(() => validateDraft({...draftInput,files:{...draftInput.files,"slop-platform.json":'{"target_platform":"console"}'}}),/invalid_platform/);
   await assert.rejects(
     () =>
       validateDraft({
@@ -44,7 +46,7 @@ test("canonical digest matches exact versioned UTF-8 manifest; rejects traversal
   );
   const reverse = await validateDraft({
     ...draftInput,
-    files: { "game.js": "const score=0;", "index.html": "<canvas></canvas>" },
+    files: { "slop-platform.json": '{"target_platform":"cross-platform"}', "game.js": "const score=0;", "index.html": "<canvas></canvas>" },
   });
   assert.equal(valid.digest, reverse.digest);
   for (
@@ -188,7 +190,7 @@ test("confirmed preview uses same JWT, exact digest, lease checks; only private 
     }),
   );
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).preview_url, preview.url);
+  const confirmed=await response.json();assert.equal(confirmed.preview_url, preview.url);assert.equal(confirmed.target_platform,"cross-platform");
   assert.deepEqual(calls.map((c) => c[0]), [
     "verify",
     "claim_draft",
