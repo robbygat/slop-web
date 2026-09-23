@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Slop} from './ui.jsx';
 import {lookSignature} from '../lib/slop-native-atlas.js';
-import catalog from '../../public/assets/mobile/eye-motion/catalog.json';
+import catalog from '../data/mobile/eye-motion-catalog.json';
 
 const portraits = new Map(catalog.map(entry => [entry.signature, entry]));
 

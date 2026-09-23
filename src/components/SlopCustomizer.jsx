@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {appearance} from '../lib/appearance.js';
 import {lookChoice,lookOptions,normalizedLook} from '../lib/appearance-contracts.js';
-import catalog from '../../public/assets/mobile/cosmetics/catalog.json' with {type:'json'};
+import catalog from '../data/mobile/cosmetics-catalog.json' with {type:'json'};
 import {Button,Loading,Modal,Notice,Slop,useAsync} from './ui.jsx';
 import './slop-customizer.css';
 

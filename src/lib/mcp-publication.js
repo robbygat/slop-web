@@ -2,7 +2,7 @@ import {asOwner,result,getSession,mcpRequest,request} from './supabase.js';
 import {SlopError,UUID,DIGEST,trustedEntry} from './contracts.js';
 import {bundleIdentity,sha256} from './bundle-contracts.js';
 import {uploadMedia} from './creator.js';
-import {validCaptureDimensions} from './capture-contracts.js';
+import {validCaptureDimensions,validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
 import {mcpPublicationReceipt} from './mcp-publication-contracts.js';
 import {mcpCatalogPlatform,mcpTargetFromFiles} from './mcp-platform.js';
@@ -33,7 +33,7 @@ export async function prepareMcpPublication({preview,title,tagline,cover,gif,fra
  if(!title?.trim()||title.length>80||typeof tagline!=='string'||tagline.length>240||!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40||!validCaptureDimensions(width,height))throw new Error('Add a title and record a gameplay preview before submitting.');
  requireAnimatedGif(gif,frameCount);
  onStage?.('Checking the version you played…');const checked=await inspectMcpPublication(preview);assertCurrent(expected);if(checked.receipt)return checked;
- const {identity}=checked,slug=preview.slug,target=mcpTargetFromFiles(checked.files),platforms=platformValues(mcpCatalogPlatform(target));if(preview.target_platform&&preview.target_platform!==target)throw new Error('The game target changed. Reopen the latest draft before publishing.');
+ const {identity}=checked,slug=preview.slug,target=mcpTargetFromFiles(checked.files),platforms=platformValues(mcpCatalogPlatform(target));if(preview.target_platform&&preview.target_platform!==target)throw new Error('The game target changed. Reopen the latest draft before publishing.');if(!validCaptureDimensionsForTarget(width,height,target))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
  await asOwner(async(owner,client)=>{
   const game=await gameState(client,owner,preview);if(game.status!=='draft')throw new Error('The draft changed. Reopen it before submitting.');assertCurrent(expected);
   const coverPath=`${slug}/1.0.0/covers/${game.id}/${identity.buildId}-c3-${(await sha256(cover)).slice(0,32)}/cover.jpg`;

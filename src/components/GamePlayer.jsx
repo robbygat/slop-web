@@ -108,8 +108,8 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
  if(desktopRequired)return <div ref={container} className="game-player desktop-required">
   <svg width="44" height="44" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="3" y="4" width="26" height="18" rx="3"/><path d="M16 22v6m-6 0h12"/></svg>
   <h2>This is a desktop game.</h2><p>Open {title} on your computer to play.</p>
-  <input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
-  <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button>
+  {!preview&&game?.slug&&<><input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
+  <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button></>}
  </div>;
  return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${format.orientation}`} style={{'--game-aspect':format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>

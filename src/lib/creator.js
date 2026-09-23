@@ -2,7 +2,10 @@ import {asOwner,result,request,getSession,ownRpc} from './supabase.js';
 import {SlopError,UUID,trustedEntry} from './contracts.js';
 import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
 import {futureExpiry,publicationReceipt} from './creator-contracts.js';
-import {validCaptureDimensions} from './capture-contracts.js';
+import {validCaptureDimensionsForTarget} from './capture-contracts.js';
+import {mcpRuntimeProblem} from './mcp-runtime.js';
+import {gameTargetFromFiles,supportedPlatformsForTarget} from './game-target-contract.js';
+import {requireAnimatedGif} from './gif-contracts.js';
 export const creator=(path,body,options={})=>request('slop-creator',path,{body,...options});
 function verify(expected){if(getSession()?.epoch!==expected.epoch)throw new SlopError('account_changed');}
 async function reserve(client,owner,slug,objects){
@@ -51,12 +54,13 @@ export async function uploadMedia(client,owner,slug,path,bytes,type){
 }
 export async function publishRevision({project,revision,title,tagline,prompt,cover,gif,frameCount,width,height,onStage}){
  const expected=getSession();if(!expected||project.owner_id!==expected.user.id||project.head_revision_id!==revision.id||revision.project_id!==project.id)throw new Error('Finish playtesting the latest version before publishing.');
- if(!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||frameCount<3||frameCount>40||!validCaptureDimensions(width,height))throw new Error('Record a cover and a short gameplay clip before publishing.');
+ if(!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40)throw new Error('Record a cover and a short gameplay clip before publishing.');
  if(!UUID.test(project.id)||!UUID.test(revision.id))throw new SlopError('invalid_response');
  const files=Object.freeze({...revision.files});
- const doc=new DOMParser().parseFromString(files['index.html']||'','text/html');
- if(!doc.head.querySelector('meta[name="slop-runtime"][content="creator-v1"]')||!files['slop.js']?.trim())throw new Error('This version has no verified creator runtime. Rebuild it before publishing.');
- const identity=await bundleIdentity(files);verify(expected);const slug=`creator-release-${revision.id}`;
+ const identity=await bundleIdentity(files),runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html']),target=gameTargetFromFiles(files);verify(expected);
+ if(runtimeError)throw new Error('This version does not contain the unchanged Slop.js runtime. Rebuild it before publishing.');
+ if(!validCaptureDimensionsForTarget(width,height,target))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
+ requireAnimatedGif(gif,frameCount);const slug=`creator-release-${revision.id}`;
  const parameters={p_project_id:project.id,p_revision_id:revision.id,p_build_id:identity.buildId,p_title:title,p_tagline:tagline,p_prompt:prompt};
  const prepare=async()=>{verify(expected);const receipt=await ownRpc('prepare_creator_game_publication',parameters);verify(expected);return receipt;};
  onStage?.('Preparing your game…');const prepared=await prepare();verify(expected);
@@ -74,6 +78,8 @@ export async function publishRevision({project,revision,title,tagline,prompt,cov
   onStage?.('Saving your gameplay clip…');await uploadMedia(client,owner,slug,clipPath,gif,'image/gif');verify(expected);
   const clip=await result(client.rpc('record_game_preview',{p_slug:slug,p_version:'1.0.0',p_build_id:identity.buildId,p_path:clipPath,p_width:width,p_height:height,p_frame_count:frameCount,p_bytes:gif.length}));verify(expected);
   if(clip?.saved!==true||clip.slug!==slug||clip.path!==clipPath||clip.build_id!==identity.buildId||clip.bytes!==gif.length)throw new SlopError('invalid_response');
+  const platforms=supportedPlatformsForTarget(target),platform=await result(client.rpc('set_game_supported_platforms',{p_owner:owner,p_game_slug:slug,p_platforms:platforms}));verify(expected);
+  if(platform?.owner_id!==owner||platform.game_slug!==slug||JSON.stringify(platform.supported_platforms)!==JSON.stringify(platforms))throw new SlopError('invalid_response');
   await result(client.from('games').update({name:title,description:tagline,prompt,html:files['index.html'],draft_of:project.game_slug,...(project.remix_of_slug?{remix_of:project.remix_of_slug}:{}),...(project.root_game_slug?{root_game_slug:project.root_game_slug}:{})}).eq('slug',slug).eq('owner_id',owner).eq('status','draft').select('id').single());verify(expected);
  });
  onStage?.('Sending to Slop for review…');

@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import SlopMotion from './SlopMotion.jsx';
 import {nativePortrait} from '../lib/slop-avatar.js';
 import {nativeCharacterMessage,nativeCharacterReady,nativeCharacterPerformance,nativeCharacterRendered,nativeCharacterActivated} from '../lib/native-character-contracts.js';
-import nativeViewer from '../../public/native-character/version.json';
+import nativeViewer from '../data/native-character-version.json';
 import './slop-toon.css';
 export function NativeSlop({look,body='ghost',color='tangerine',className='',alt='Your Slop',controls=true,autoRotate=false,paused=false,onActivate}){
  const frame=useRef(null),host=useRef(null),state=useRef({ready:false,visible:true,reducedMotion:false,requestId:0,autoRotate,paused}),[ready,setReady]=useState(false);

@@ -1,6 +1,6 @@
 // Every portrait comes from the mobile Flutter painter. The small appearance
 // catalog covers current public looks without starting an engine for each card.
-import catalog from '../../public/assets/mobile/portraits/catalog.json' with {type:'json'};
+import catalog from '../data/mobile/portraits-catalog.json' with {type:'json'};
 import {lookSignature} from './slop-native-atlas.js';
 const portraits=new Map();
 const equippedPortraits=new Map(catalog.map(entry=>[entry.signature,entry.url]));

@@ -1,4 +1,4 @@
-import catalog from '../../public/assets/mobile/turntables/catalog.json' with {type:'json'};
+import catalog from '../data/mobile/turntables-catalog.json' with {type:'json'};
 const fields=['body','palette','eyes','eyeColor','mouth','hat','pattern','finish','aura','accessory','cape','blush'];
 const defaults={body:'ghost',palette:'tangerine',eyes:'cyclops',eyeColor:'ink',mouth:'smile',hat:'none',pattern:'none',finish:'jelly',aura:'bubbles',accessory:'none',cape:'none',blush:true};
 export const lookSignature=look=>JSON.stringify(fields.map(key=>look?.[key]??defaults[key]));
