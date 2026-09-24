@@ -1,6 +1,61 @@
 import { createHash, randomBytes } from "node:crypto";
-import { chmod, lstat, mkdir, open, readFile, rename } from "node:fs/promises";
-import { dirname } from "node:path";
+import { execFile } from "node:child_process";
+import { constants } from "node:fs";
+import { lstat, mkdir, open, rename, rm } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { promisify } from "node:util";
+
+const runFile = promisify(execFile);
+const privateFileError = () => new Error(
+  "Slop credentials must be a private regular file (0600 on Unix; owner-only ACL on Windows).",
+);
+// Node's Windows mode bits do not describe NTFS permissions. Protect the empty
+// temporary file before writing secrets, and inspect its real DACL on reads.
+// No path or credential is interpolated into executable PowerShell source.
+const windowsAclScript = `
+$ErrorActionPreference = 'Stop'
+$file = New-Object IO.FileInfo($env:SLOP_MCP_ACL_PATH)
+if (!$file.Exists -or ($file.Attributes -band [IO.FileAttributes]::Directory) -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Not a regular file' }
+$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+if ($env:SLOP_MCP_ACL_ACTION -eq 'protect') {
+  $acl = New-Object Security.AccessControl.FileSecurity
+  # The owner can restrict a DACL without WRITE_OWNER. Avoid requesting that
+  # extra right when an inherited Modify grant already created our own file.
+  if ($file.GetAccessControl().GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value) { $acl.SetOwner($sid) }
+  $acl.SetAccessRuleProtection($true, $false)
+  $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'Allow')
+  $acl.AddAccessRule($rule)
+  $file.SetAccessControl($acl)
+}
+$acl = $file.GetAccessControl()
+if (!$acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value) { throw 'Unprotected owner' }
+$ownerCanRead = $false
+foreach ($rule in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+  if ($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow) {
+    if ($rule.IdentityReference.Value -ne $sid.Value -or $rule.IsInherited) { throw 'Non-private access' }
+    if ($rule.FileSystemRights -band [Security.AccessControl.FileSystemRights]::ReadData) { $ownerCanRead = $true }
+  }
+}
+if (!$ownerCanRead) { throw 'No owner access' }
+`;
+async function windowsAcl(path, action) {
+  try {
+    await runFile(join(process.env.SystemRoot || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe"), [
+      "-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand",
+      Buffer.from(windowsAclScript, "utf16le").toString("base64"),
+    ], {
+      env: { ...process.env, SLOP_MCP_ACL_PATH: path, SLOP_MCP_ACL_ACTION: action },
+      windowsHide: true,
+      timeout: 15_000,
+    });
+  } catch {
+    // Fail closed on unsupported filesystems or unavailable ACL tooling.
+    throw privateFileError();
+  }
+}
+function regularFile(info) {
+  if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1) throw privateFileError();
+}
 
 export function bridgeUrl(raw) {
   const url = new URL(raw);
@@ -17,30 +72,55 @@ export class LocalCredentials {
     this.path = path;
   }
   async read() {
+    let file;
     try {
       const info = await lstat(this.path);
-      if (!info.isFile() || info.isSymbolicLink() || (info.mode & 0o077)) {
-        throw new Error(
-          "Slop credentials must be a private regular file (0600).",
-        );
-      }
-      return JSON.parse(await readFile(this.path, "utf8"));
+      regularFile(info);
+      file = await open(this.path, constants.O_RDONLY | (constants.O_NOFOLLOW || 0));
+      const opened = await file.stat();
+      regularFile(opened);
+      if (info.dev !== opened.dev || info.ino !== opened.ino) throw privateFileError();
+      if (process.platform === "win32") await windowsAcl(this.path, "verify");
+      else if (opened.mode & 0o077) throw privateFileError();
+      // Recheck the path after ACL inspection before reading from the handle.
+      const checked = await lstat(this.path);
+      regularFile(checked);
+      if (checked.dev !== opened.dev || checked.ino !== opened.ino) throw privateFileError();
+      return JSON.parse(await file.readFile("utf8"));
     } catch (error) {
       if (error.code === "ENOENT") return null;
       throw error;
+    } finally {
+      await file?.close();
     }
   }
   async save(value) {
     await mkdir(dirname(this.path), { recursive: true, mode: 0o700 });
-    const temporary = `${this.path}.${randomBytes(8).toString("hex")}.tmp`;
-    const file = await open(temporary, "wx", 0o600);
     try {
-      await file.writeFile(JSON.stringify(value));
-    } finally {
-      await file.close();
+      regularFile(await lstat(this.path));
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
     }
-    await rename(temporary, this.path);
-    await chmod(this.path, 0o600);
+    const temporary = `${this.path}.${randomBytes(8).toString("hex")}.tmp`;
+    let file;
+    let created = false;
+    try {
+      file = await open(temporary, "wx", 0o600);
+      created = true;
+      if (process.platform === "win32") await windowsAcl(temporary, "protect");
+      const opened = await file.stat(), protectedFile = await lstat(temporary);
+      regularFile(opened);
+      regularFile(protectedFile);
+      if (opened.dev !== protectedFile.dev || opened.ino !== protectedFile.ino) throw privateFileError();
+      await file.writeFile(JSON.stringify(value));
+      await file.sync();
+      await file.close();
+      file = null;
+      await rename(temporary, this.path);
+    } finally {
+      await file?.close();
+      if (created) await rm(temporary, { force: true });
+    }
   }
 }
 export class SlopBridge {

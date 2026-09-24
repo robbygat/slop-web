@@ -4,3 +4,9 @@
 public/native-character/** -whitespace
 # Unified diffs require a literal context prefix on blank lines.
 tools/native-character/profile-face-clock.patch -whitespace
+# The game authority verifies the runtime's exact bytes on every platform.
+mcp/runtime/creator-v1.js text eol=lf
+# The renderer version hashes these exact generated assets.
+public/native-character/index.html text eol=lf
+public/native-character/flutter_bootstrap.js text eol=lf
+public/native-character/main.dart.js text eol=lf

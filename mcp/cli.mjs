@@ -16,7 +16,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.3.0" });
+const server = new McpServer({ name: "slop", version: "0.3.1" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }

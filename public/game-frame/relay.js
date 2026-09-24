@@ -7,6 +7,10 @@
   let blocked = false;
   const maxMessageChars = 2100000;
   const send = (message) => parent.postMessage(message, '*');
+  // The host focuses this outer relay. Hand that focus to the actual game so
+  // native keydown/keyup (including a release after a hostKey) reach its code.
+  const focusGame = () => { if (game && loaded && !blocked) game.contentWindow.focus(); };
+  addEventListener('focus', focusGame);
 
   addEventListener('message', (event) => {
     if (event.source === parent && parent !== window) {
@@ -27,6 +31,7 @@
           if (blocked) return;
           if (!loaded) {
             loaded = true;
+            if (document.hasFocus()) focusGame();
             send('slop-player-loaded-v1');
             return;
           }

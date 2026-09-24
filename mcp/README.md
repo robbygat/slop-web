@@ -20,7 +20,7 @@ pinned runtime dependencies are resolved by npm.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.1.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -29,7 +29,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.1.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -49,7 +49,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.3.1.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -67,7 +67,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.3.1.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -90,7 +90,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.3.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.3.1.tgz",
         "slop-mcp"
       ]
     }
@@ -177,8 +177,18 @@ The adapter speaks MCP on standard input/output. An idle terminal is expected.
 `SLOP_MCP_URL` can override the default deployed REST bridge
 `https://api.slop.game/functions/v1/slop-mcp`; this is not a remote MCP URL.
 `SLOP_MCP_CREDENTIALS` can select an isolated credential file. The default is
-`~/.config/slop/mcp.json`, mode 0600. It stores only this adapter's limited grant
-and pairing poll secret. Never add it to version control.
+`~/.config/slop/mcp.json`. On Unix it requires mode 0600; on Windows it uses a
+protected, owner-only file ACL, created through the bundled Windows PowerShell.
+Every read verifies those permissions and rejects links or directories. Storage
+that cannot enforce private permissions is rejected. It stores only this
+adapter's limited grant and pairing poll secret. Never add it to version control.
+
+If an older Windows release left a credential file with inherited permissions,
+the updated adapter rejects it. Set `SLOP_MCP_CREDENTIALS` in your MCP host's
+environment to a new, unused file path, restart the host, and call `slop_pair`
+again. Approve the new connection in Slop, revoke any previous connection there,
+then remove its old credential file. The adapter does not silently trust or
+repair an unsafe existing credential file.
 
 [Mobile/web HTTP contract](MOBILE-CONTRACT.md) and
 [release verification](../docs/mcp-release-2026-09-16.md) describe deployment and
