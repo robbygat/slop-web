@@ -8,7 +8,7 @@ const publicKey='sb_publishable_hR6MXJRNM9VuADkU8z-2mg_K9t7FBQL';
 const fallbackImage='https://slop.game/assets/mobile/slop.png';
 const slug=/^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$/;
 const publicName=/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-const reserved=new Set('home feed play games g r build studio social shop you activity settings connect download open invite profile mcp assets api auth privacy terms tos support help about newsite releases bridge 404 index favicon robots sitemap admin login signup logout account billing uploads downloads game-frame native-character native-wasm appearance service-worker sw'.split(' '));
+const reserved=new Set('home feed play games g r build studio social shop you activity settings connect download open invite profile mcp assets api auth privacy terms tos support delete-account help about newsite releases bridge 404 index favicon robots sitemap admin login signup logout account billing uploads downloads game-frame native-character native-wasm appearance service-worker sw'.split(' '));
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
 function replaceMeta(html,game,canonical){
