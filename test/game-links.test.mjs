@@ -6,6 +6,10 @@ import {canonicalGameUrl,gameNameFromPath,suggestGameName,validGameName} from '.
 import {gameFormat} from '../src/lib/game-format.js';
 const routeSource=readFileSync(new URL('../public/route.js',import.meta.url),'utf8');
 function legacyRoute(pathname,search=''){let target=null;runInNewContext(routeSource,{URLSearchParams,location:{pathname,search,hash:'',replace:value=>{target=value;}}});return target;}
+test('account-deletion page cannot be replaced by a game route',()=>{
+ assert.equal(validGameName('delete-account'),false);
+ assert.equal(gameNameFromPath('/delete-account/'),null);
+});
 test('public names preserve exact existing slugs, prefer claimed names and never shadow reserved routes',()=>{
  assert.equal(canonicalGameUrl({slug:'voxel-drift-ace-9s5l'}),'https://slop.game/voxel-drift-ace-9s5l');assert.equal(canonicalGameUrl({slug:'voxel-drift-ace-9s5l',public_name:'night-drift'}),'https://slop.game/night-drift');assert.equal(canonicalGameUrl({slug:'home'}),'https://slop.game/g/home');
  assert.equal(gameNameFromPath('/night-drift/'),'night-drift');for(const p of ['/home','/mcp/pair','/assets/app.js','/%2Ffake','//evil.test','/../../game'])assert.equal(gameNameFromPath(p),null);
