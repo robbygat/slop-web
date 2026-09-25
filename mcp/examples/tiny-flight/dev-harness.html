@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Flight development harness</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
+  #events { position: fixed; z-index: 2; top: 4px; right: 4px; max-width: 48%; margin: 0; padding: 5px; background: #06192dde; color: white; font: 10px/1.35 monospace; white-space: pre-wrap; }
+</style>
+<pre id="events">loading</pre>
+<iframe src="index.html" title="Tiny Flight"></iframe>
+<script>
+  const frame = document.querySelector('iframe');
+  const output = document.querySelector('#events');
+  addEventListener('message', event => {
+    if (event.source === frame.contentWindow) output.textContent += `\n${JSON.stringify(event.data)}`;
+  });
+</script>
