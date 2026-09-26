@@ -13,7 +13,7 @@ try{
  // enabling a shell would make paths with spaces/metacharacters unsafe.
  const [result]=JSON.parse(execFileSync(process.execPath,[npmCli,'pack','--json','--ignore-scripts','--pack-destination',staging],{cwd:root,encoding:'utf8',windowsHide:true}));
  if(basename(result.filename)!==result.filename)throw new Error('Unexpected package path.');
- const expected=['README.md','cli.mjs','client.mjs','game-template.mjs','package.json','pairing-display.mjs','runtime/creator-v1.js'];
+ const expected=['README.md','bundle-check.mjs','cli.mjs','client.mjs','game-template.mjs','package.json','pairing-display.mjs','runtime/creator-v1.js'];
  if(JSON.stringify(result.files.map(f=>f.path).sort())!==JSON.stringify(expected))throw new Error('Unexpected package file; download was not written.');
  const out=fileURLToPath(new URL('../public/downloads/',import.meta.url));await mkdir(out,{recursive:true});
  const name=`slop-game-mcp-${pkg.version}.tgz`;await copyFile(join(staging,result.filename),join(out,name));

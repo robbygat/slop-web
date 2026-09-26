@@ -18,7 +18,7 @@ export async function loadDocument(url,{signal,preview=false}={}){
  const policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';policy.content=csp;
  const baseEl=doc.createElement('base');baseEl.href=base;
  const referrer=doc.createElement('meta');referrer.name='referrer';referrer.content='no-referrer';
- const boot=doc.createElement('script');boot.textContent=`(${installGameStorage.toString()})();\n(${installLegacyKeyboard.toString()})(${JSON.stringify(legacyControlSpec(url))});\n${bootstrap}`;
+ const boot=doc.createElement('script');boot.textContent=`${preview?'window.__slopPreviewCapture=true;\n':''}(${installGameStorage.toString()})();\n(${installLegacyKeyboard.toString()})(${JSON.stringify(legacyControlSpec(url))});\n${bootstrap}`;
  const view=doc.createElement('meta');view.name='viewport';view.content='width=device-width,initial-scale=1,viewport-fit=cover';
  const cursorCss=auditedCursorStyle(url);if(cursorCss){const style=doc.createElement('style');style.textContent=cursorCss;doc.head.append(style);}
  doc.head.prepend(policy,baseEl,referrer,view,boot);

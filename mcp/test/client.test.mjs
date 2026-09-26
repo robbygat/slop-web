@@ -165,6 +165,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
       "slop_connection_status",
       "slop_game_template",
       "slop_send_draft",
+      "slop_check_bundle",
       "slop_draft_status",
       "slop_disconnect",
     ]);
@@ -175,9 +176,14 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
       name: "slop_connection_status",
       arguments: {},
     });
-    assert.deepEqual(JSON.parse(result.content[0].text), {
-      status: "not_paired",
+    const unpaired = JSON.parse(result.content[0].text);
+    assert.equal(unpaired.status, "not_paired");
+    assert.match(unpaired.next_step, /slop_pair/);
+    const checked = await client.callTool({
+      name: "slop_check_bundle",
+      arguments: { target_platform: "desktop", files: JSON.parse(template.content[0].text).files },
     });
+    assert.equal(JSON.parse(checked.content[0].text).ok, true);
     const send = await client.callTool({
       name: "slop_send_draft",
       arguments: {
@@ -274,4 +280,39 @@ test("an approved local agent sends its chosen platform headlessly and cannot ch
  http.listen(0,"127.0.0.1");await once(http,"listening");const base=`http://127.0.0.1:${http.address().port}`;await new LocalCredentials(credentials).save({base,token});const client=new Client({name:"local-model",version:"1.0.0"});
  try{await client.connect(new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL("../cli.mjs",import.meta.url))],env:{SLOP_MCP_CREDENTIALS:credentials,SLOP_MCP_URL:base},stderr:"pipe"}));const sent=await client.callTool({name:"slop_send_draft",arguments:{project_id:"11111111-1111-4111-8111-111111111111",request_id:"22222222-2222-4222-8222-222222222222",revision:1,target_platform:"desktop",name:"Desktop proof",files:{"index.html":"<canvas></canvas>","slop.js":"runtime"}}});assert.equal(JSON.parse(sent.content[0].text).status,"awaiting_confirmation");assert.equal(JSON.parse(received.files["slop-platform.json"]).target_platform,"desktop");assert.equal(Object.hasOwn(received,"publish"),false);}
  finally{await client.close();http.close();await rm(dir,{recursive:true,force:true});}
+});
+
+test("a vanished pairing falls through to the real token and ends in an honest next step", async () => {
+  const seen = [];
+  const bridge = new SlopBridge({
+    base: "https://api.slop.game",
+    credentials: {
+      read: async () => ({ base: "https://api.slop.game", token: "t", pairing_id: "11111111-1111-4111-8111-111111111111", poll_token: "p" }),
+      save: async () => {},
+    },
+    fetcher: async (url) => {
+      seen.push(new URL(url).pathname);
+      const code = url.includes("/pair/status") ? "invalid_pairing" : "invalid_connection";
+      return Response.json({ ok: false, code }, { status: 403 });
+    },
+  });
+  const status = await bridge.status();
+  assert.deepEqual(seen, ["/pair/status", "/agent/status"]);
+  assert.equal(status.status, "not_connected");
+  assert.match(status.next_step, /slop_pair/);
+  await assert.rejects(() => bridge.authorized("/agent/drafts"), (error) =>
+    error.code === "invalid_connection" && /Slop request failed: invalid_connection\. .*slop_pair/.test(error.message));
+});
+test("an approved token still reports active after its pairing row is cleaned up", async () => {
+  const bridge = new SlopBridge({
+    base: "https://api.slop.game",
+    credentials: {
+      read: async () => ({ base: "https://api.slop.game", token: "t", pairing_id: "11111111-1111-4111-8111-111111111111", poll_token: "p" }),
+      save: async () => {},
+    },
+    fetcher: async (url) => url.includes("/pair/status")
+      ? Response.json({ ok: false, code: "invalid_pairing" }, { status: 403 })
+      : Response.json({ status: "active", connection_id: "c" }),
+  });
+  assert.equal((await bridge.status()).status, "active");
 });

@@ -6,6 +6,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { LocalCredentials, SlopBridge } from "./client.mjs";
 import { gameTemplate } from "./game-template.mjs";
+import { checkBundle } from "./bundle-check.mjs";
 import { pairingResult } from "./pairing-display.mjs";
 
 const bridge = new SlopBridge({
@@ -16,7 +17,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.3.1" });
+const server = new McpServer({ name: "slop", version: "0.4.0" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -67,8 +68,24 @@ tool(
     description: z.string().max(240).optional(),
     files: z.record(z.string()),
   },
-  (args) => bridge.authorized("/agent/drafts", {...args,files:{...args.files,'slop-platform.json':JSON.stringify({target_platform:args.target_platform})}}),
+  async (args) => {
+    const files = {...args.files,'slop-platform.json':JSON.stringify({target_platform:args.target_platform})};
+    // Advisory only: the server stays the authority on what it accepts.
+    const local_check = await checkBundle(files, { target_platform: args.target_platform });
+    const sent = await bridge.authorized("/agent/drafts", {...args, files});
+    return local_check.ok && !local_check.warnings.length ? sent : { ...sent, local_check };
+  },
   { idempotentHint: true },
+);
+tool(
+  "slop_check_bundle",
+  "Check a game bundle locally before slop_send_draft: file names, sizes, the unchanged slop.js runtime, required meta tags and script order, and sandbox rules Slop enforces (no storage or network, WebGL needs preserveDrawingBuffer:true so covers are not black). Returns problems (will be rejected or broken) and warnings. No account, connection or network needed.",
+  {
+    target_platform: z.enum(['mobile','desktop','cross-platform']).optional(),
+    files: z.record(z.string()),
+  },
+  (args) => checkBundle(args.files, { target_platform: args.target_platform }),
+  { readOnlyHint: true, openWorldHint: false },
 );
 tool(
   "slop_draft_status",

@@ -1,6 +1,10 @@
 // Platform-owned code, injected before any untrusted game scripts.
 (()=>{
  'use strict';
+ // Publishing captures WebGL games too. Without a preserved back buffer the
+ // browser clears it after compositing and every cover/GIF frame reads black.
+ // Like the app's Cover Studio, only private publish playtests pay this cost.
+ if(window.__slopPreviewCapture){try{const getContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,attributes){if(typeof type==='string'&&/webgl/i.test(type))attributes={...(attributes&&typeof attributes==='object'?attributes:{}),preserveDrawingBuffer:true};return getContext.call(this,type,attributes);};}catch{}}
  const send=value=>parent.postMessage(JSON.stringify(value),'*');
  let frames=0;
  const errors=[];
@@ -27,14 +31,20 @@
   }
   if(value.type!=='webCapture' || typeof value.request!=='string')return;
   try {
-   const canvas=[...document.querySelectorAll('canvas')].filter(c=>c.width>0&&c.height>0).sort((a,b)=>b.width*b.height-a.width*a.height)[0];
+   // Same choice as the app: the declared playfield first, never SDK-owned UI.
+   const usable=list=>[...list].filter(c=>c.width>0&&c.height>0&&!c.closest('[data-slop-owned-ui]')).sort((a,b)=>b.width*b.height-a.width*a.height)[0];
+   const stage=document.querySelector('[data-slop-playfield]');
+   const canvas=(stage&&usable(stage.querySelectorAll('canvas')))||usable(document.querySelectorAll('canvas'));
    if(!canvas)throw new Error('No game canvas is available to capture yet.');
    const output=document.createElement('canvas');const scale=Math.min(1,960/Math.max(canvas.width,canvas.height));
    output.width=Math.round(canvas.width*scale);output.height=Math.round(canvas.height*scale);
    output.getContext('2d').drawImage(canvas,0,0,output.width,output.height);
    const data=output.toDataURL('image/jpeg',.78);
    if(data.length>700000)throw new Error('This captured frame is too large.');
-   send({type:'webCaptureResult',request:value.request,data,width:output.width,height:output.height,frames,errors:[...errors]});
+   // Letterbox space is painted in the game's own background (as in the app),
+   // not a foreign dark bar baked into every published clip.
+   let background=null;for(const node of [canvas.parentElement,document.body,document.documentElement]){const color=node&&getComputedStyle(node).backgroundColor;if(color&&color!=='transparent'&&color!=='rgba(0, 0, 0, 0)'){background=color;break;}}
+   send({type:'webCaptureResult',request:value.request,data,width:output.width,height:output.height,frames,errors:[...errors],background});
   }catch(error){send({type:'webCaptureError',request:value.request,message:String(error.message).slice(0,800)});}
  });
 })();

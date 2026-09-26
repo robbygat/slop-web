@@ -123,6 +123,45 @@ export class LocalCredentials {
     }
   }
 }
+const PAIR_AGAIN =
+  "Call slop_pair for a new pairing link, then ask the owner to approve it.";
+// Server codes are stable; agents need the next action, not only the code.
+const HINTS = {
+  invalid_pairing: "This pairing request no longer exists. " + PAIR_AGAIN,
+  pairing_expired: "The ten-minute pairing request expired. " + PAIR_AGAIN,
+  invalid_connection:
+    "This computer is not connected (never approved, expired or revoked). " +
+    PAIR_AGAIN,
+  connection_limit:
+    "The account already has ten connections. Ask the owner to disconnect one in Slop.",
+  request_conflict:
+    "That request_id was already used with different content. Use a new request_id for a new revision.",
+  revision_conflict:
+    "That revision number was already used. Send the next higher revision.",
+  revision_superseded:
+    "A newer revision of this project exists. Send a higher revision.",
+  rate_limited: "Too many requests. Wait a minute, then retry.",
+  project_limit:
+    "The account has twenty projects. Reuse an existing project_id for new revisions.",
+  bundle_too_large:
+    "The bundle is too large: at most 512 KB per file and 2 MB in total.",
+  request_too_large:
+    "The bundle is too large: at most 512 KB per file and 2 MB in total.",
+  invalid_bundle:
+    "Include index.html and at most 64 files. Run slop_check_bundle first.",
+  invalid_path:
+    "File names may only use letters, digits, _ and - with one html/js/css/json/svg/txt extension. Run slop_check_bundle first.",
+  empty_file: "Every file needs content. Remove empty files.",
+  empty_entry_point: "index.html is empty.",
+  store_assets_not_supported:
+    "File names that look like Store asset manifests (containing 'asset' or 'entitlement' with 'slop' or 'manifest') are reserved. Rename the file.",
+  invalid_platform:
+    "target_platform must be mobile, desktop or cross-platform.",
+  invalid_request:
+    "Slop rejected the request. Run slop_check_bundle to find the problem.",
+  service_unavailable: "Slop is temporarily unavailable. Retry shortly.",
+  upstream_unavailable: "Slop is temporarily unavailable. Retry shortly.",
+};
 export class SlopBridge {
   constructor({ base, credentials, fetcher = fetch }) {
     this.base = bridgeUrl(base);
@@ -143,13 +182,15 @@ export class SlopBridge {
     });
     const result = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new Error(
-        `Slop request failed: ${
-          typeof result?.code === "string" && /^[a-z_]{1,60}$/.test(result.code)
-            ? result.code
-            : "service_unavailable"
-        }`,
+      const code =
+        typeof result?.code === "string" && /^[a-z_]{1,60}$/.test(result.code)
+          ? result.code
+          : "service_unavailable";
+      const error = new Error(
+        `Slop request failed: ${code}` + (HINTS[code] ? `. ${HINTS[code]}` : ""),
       );
+      error.code = code;
+      throw error;
     }
     return result;
   }
@@ -202,15 +243,36 @@ export class SlopBridge {
   }
   async status() {
     const config = await this.config();
-    if (!config) return { status: "not_paired" };
+    if (!config) return { status: "not_paired", next_step: PAIR_AGAIN };
     if (config.poll_token) {
-      const pair = await this.request(
-        `/pair/status?pairing_id=${encodeURIComponent(config.pairing_id)}`,
-        config.poll_token,
-      );
-      if (pair.status !== "approved") return pair;
+      let pair = null;
+      try {
+        pair = await this.request(
+          `/pair/status?pairing_id=${encodeURIComponent(config.pairing_id)}`,
+          config.poll_token,
+        );
+      } catch (error) {
+        // The pairing row is gone. The token below is the real authority, so
+        // fall through to it instead of reporting a dead end.
+        if (error.code !== "invalid_pairing") throw error;
+      }
+      if (pair?.status === "pending") {
+        return {
+          ...pair,
+          next_step:
+            "Waiting for the owner to approve this computer at slop.game or in the Slop app.",
+        };
+      }
+      if (pair && pair.status !== "approved") {
+        return { ...pair, next_step: PAIR_AGAIN };
+      }
     }
-    return this.request("/agent/status", config.token);
+    try {
+      return await this.request("/agent/status", config.token);
+    } catch (error) {
+      if (error.code !== "invalid_connection") throw error;
+      return { status: "not_connected", next_step: PAIR_AGAIN };
+    }
   }
   async authorized(path, body) {
     const config = await this.config();
