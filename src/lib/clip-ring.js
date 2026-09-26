@@ -15,7 +15,9 @@ export function createClipRing(capacity = CAPACITY) {
   });
   return {
     push(data, background = null) {
-      if (typeof data === 'string' && data.startsWith('data:image/jpeg;base64,')) {
+      // A paused or finished game repeats one frame; never let it evict the
+      // gameplay the owner just played while they fill in the title.
+      if (typeof data === 'string' && data.startsWith('data:image/jpeg;base64,') && frames.at(-1)?.data !== data) {
         frames.push({ data, background: typeof background === 'string' ? background : null });
         if (frames.length > capacity) frames = frames.slice(frames.length - capacity);
       }

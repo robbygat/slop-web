@@ -33,3 +33,13 @@ test('only an opaque computed rgb color from the game can paint the letterbox', 
     assert.equal(captureBackground(bad), '#101215', String(bad));
   }
 });
+
+test('a paused game cannot push the played clip out of the ring', () => {
+  const ring = createClipRing(20);
+  for (let i = 0; i < 15; i++) ring.push(frame(i));
+  let state;
+  for (let i = 0; i < 200; i++) state = ring.push(frame('paused'));
+  assert.equal(ring.frames().length, 16);
+  assert.ok(clipWindow(ring.frames()));
+  assert.equal(state.poster, frame('paused'));
+});
