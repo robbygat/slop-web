@@ -39,6 +39,7 @@ async function request(
   body?: unknown,
   extra: Record<string, string> = {},
   apiKey = anon,
+  timeoutMs = 30_000,
 ) {
   const response = await fetch(`${base}${path}`, {
     method,
@@ -50,7 +51,7 @@ async function request(
       ...(body == null ? {} : { "content-type": "application/json" }),
     },
     body: body == null ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok) {
@@ -197,7 +198,9 @@ const deps = {
     );
     if (failure) throw failure;
   },
+  // Verifying and snapshotting a large bundle can take well over 30 s; a
+  // premature abort left the draft leased and the owner saw "busy" retries.
   preview: (token: string, input: unknown) =>
-    request("/functions/v1/game-bundle", token, "POST", input),
+    request("/functions/v1/game-bundle", token, "POST", input, {}, anon, 120_000),
 };
 Deno.serve(createHandler(deps));

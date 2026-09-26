@@ -85,7 +85,7 @@ export function createOwnerScope({getSession,clientFactory}) {
   };
 }
 export function ownerRequest({getSession, fetcher = fetch, base = `${API}/functions/v1`}) {
-  return async (service,path,{body,signal,ownerReceipt=true}={}) => {
+  return async (service,path,{body,signal,ownerReceipt=true,timeout=60_000}={}) => {
     if(!['slop-mcp','slop-creator','game-bundle','stripe-checkout','stripe-portal','billing-status','gif-proxy'].includes(service) || !/^\/[A-Za-z0-9/?=&_%-]*$/.test(path)) throw new SlopError('invalid_request');
     const owner=getSession();
     if(!owner?.user?.id || owner.user.is_anonymous || !owner.access_token) throw new SlopError('authentication_required');
@@ -94,7 +94,7 @@ export function ownerRequest({getSession, fetcher = fetch, base = `${API}/functi
       const response=await fetcher(`${base}/${service}${path}`,{
         method:body==null?'GET':'POST',redirect:'error',credentials:'omit',cache:'no-store',
         headers:{Authorization:`Bearer ${owner.access_token}`,'Content-Type':'application/json',Accept:'application/json'},
-        body:body==null?undefined:JSON.stringify(body),signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(60_000)]) : AbortSignal.timeout(60_000),
+        body:body==null?undefined:JSON.stringify(body),signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
       });
       assertOwner(); const data=await boundedJson(response);assertOwner();
       if(!response.ok || data?.ok===false) throw new SlopError(data?.code || data?.error || 'service_unavailable',undefined,response.status);
