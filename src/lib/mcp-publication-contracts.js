@@ -16,3 +16,12 @@ export async function mcpPublicationReceipt(row,preview){
  if(!source.some(file=>file.path==='1.0.0/index.html')||await digest(source)!==preview.digest)return null;
  return {...identity,review_submission_id:null,release_root:row.published_bundle_path,digest:row.bundle_digest};
 }
+// How the MCP inbox treats a game row. A draft that still carries a release,
+// or the cover and clip a publish uploaded (withdrawing a live game to update
+// it clears the release pointer but keeps both), is a live game mid-update:
+// the next revision must update it, never publish a duplicate beside it.
+// A fresh MCP draft is only a placeholder row with neither.
+export function mcpInboxState(row){
+ if(row?.status!=='draft')return row?.status;
+ return row.published_bundle_path||(row.thumb&&row.preview_url)?'updating':'draft';
+}
