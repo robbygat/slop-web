@@ -2,6 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {GamePlayer} from './GamePlayer.jsx';
 import {Button,Modal,Notice} from './ui.jsx';
 import {encodeCapture} from '../lib/capture.js';
+import {captureStageAspect} from '../lib/capture-contracts.js';
 import {CLIP_FRAMES,clipWindow,createClipRing} from '../lib/clip-ring.js';
 import {submitMcpPublication} from '../lib/mcp-publication.js';
 import {claimGameName,myGameName,previewGameName} from '../lib/game-name-claims.js';
@@ -13,7 +14,7 @@ import './mcp-draft-review.css';
 // Publishing an agent-made game works like publishing in the app: you play,
 // Slop quietly keeps the last few seconds of real gameplay (Cover Studio's
 // rolling clip), and one Publish turns that clip into the cover and GIF.
-const FRAME_MS=200;
+const FRAME_MS=80;
 export function McpDraftReview({preview,onClose,onPublished}){
  const player=useRef(null),pending=useRef(null),alive=useRef(true),ring=useRef(createClipRing()),capturing=useRef(false);
  const[busy,setBusy]=useState(false),[error,setError]=useState(null),[stage,setStage]=useState(''),[ready,setReady]=useState(false),[clip,setClip]=useState({frames:0,moving:false,poster:null}),[title,setTitle]=useState(preview.name||''),[description,setDescription]=useState(preview.description||''),[gameName,setGameName]=useState(''),[claimed,setClaimed]=useState(false),[nameEdited,setNameEdited]=useState(false),[nameLoading,setNameLoading]=useState(true),[details,setDetails]=useState(false);
@@ -29,7 +30,9 @@ export function McpDraftReview({preview,onClose,onPublished}){
   let stopped=false,timer;
   const tick=async()=>{
    if(stopped||capturing.current)return;
-   if(!document.hidden){capturing.current=true;try{const frame=await capture();if(!stopped&&alive.current&&!frame.errors?.length){const state=ring.current.push(frame.data,frame.background);setClip(state);}}catch{}finally{capturing.current=false;}}
+   // Earlier script errors are the game's business (the player shows fatal
+   // ones); they must not block the clip, which is how recording used to fail.
+   if(!document.hidden){capturing.current=true;const at=performance.now();try{const frame=await capture();if(!stopped&&alive.current){const state=ring.current.push(frame.data,frame.background,at);setClip(state);}}catch{}finally{capturing.current=false;}}
    if(!stopped)timer=setTimeout(tick,FRAME_MS);
   };
   timer=setTimeout(tick,FRAME_MS);
@@ -56,8 +59,8 @@ export function McpDraftReview({preview,onClose,onPublished}){
  }
  const status=busy?stage:!ready?'Starting your game…':clipReady?'Clip ready. Publish whenever you like.':clip.frames>=CLIP_FRAMES?'Keep playing. Slop needs a moment where something moves.':'Play for a few seconds. Slop is capturing your clip.';
  return <Modal title={preview.name||'Your game'} onClose={()=>{if(!busy)onClose();}} className="mcp-playtest-modal">
-  <div className="mcp-playtest-layout">
-   <GamePlayer ref={player} url={preview.preview_url} game={previewGameForTarget(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
+  <div className={`mcp-playtest-layout ${preview.target_platform==='desktop'?'is-desktop':''}`}>
+   <GamePlayer ref={player} url={preview.preview_url} game={previewGameForTarget(preview.target_platform||'mobile')} stageAspect={captureStageAspect(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
    <div className="mcp-publication">
     <div className="mcp-publish-head"><span className="mcp-target-chip">{mcpTargetLabel(preview.target_platform)}</span><span className="fine">Version {preview.revision}</span></div>
     <label>Title<input value={title} onChange={e=>setTitle(e.target.value)} maxLength={80} disabled={busy}/></label>

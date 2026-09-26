@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {captureDimensions,validCaptureDimensions,validCaptureDimensionsForTarget} from '../src/lib/capture-contracts.js';
+import {captureDimensions,captureStageAspect,validCaptureDimensions,validCaptureDimensionsForTarget} from '../src/lib/capture-contracts.js';
 import {visibleFrameChange} from '../src/lib/capture.js';
 test('preview dimensions preserve portrait, landscape and square games',()=>{
  assert.deepEqual(captureDimensions(360,640),{width:360,height:640});
@@ -21,4 +21,12 @@ test('moving capture requires visible canvas pixel changes',()=>{
 });
 test('invalid captured sizes cannot become publication metadata',()=>{
  for(const size of [[0,640],[640,-1],[961,540],[360.5,640],[NaN,640]])assert.throws(()=>captureDimensions(...size));
+});
+test('anything that plays on phones gets the 9:16 clip the app feed expects',()=>{
+ assert.deepEqual(captureDimensions(960,540,'cross-platform'),{width:360,height:640});
+ assert.deepEqual(captureDimensions(800,800,'cross-platform'),{width:360,height:640});
+ assert.equal(validCaptureDimensionsForTarget(360,640,'cross-platform'),true);
+ assert.equal(validCaptureDimensionsForTarget(640,360,'cross-platform'),false);
+ assert.equal(validCaptureDimensionsForTarget(640,640,'cross-platform'),false);
+ assert.equal(captureStageAspect('mobile'),9/16);assert.equal(captureStageAspect('cross-platform'),9/16);assert.equal(captureStageAspect('desktop'),16/9);assert.equal(captureStageAspect(undefined),9/16);
 });

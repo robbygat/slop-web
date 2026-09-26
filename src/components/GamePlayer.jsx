@@ -13,7 +13,7 @@ import {useAuth} from '../auth.jsx';
 import {Loading,Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
-export function GamePlayer({url,game,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game'}){
+export function GamePlayer({url,game,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game',stageAspect=null}){
  const {profile}=useAuth();
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),heldKeys=useRef(new Set());callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
@@ -111,7 +111,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
   {!preview&&game?.slug&&<><input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
   <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button></>}
  </div>;
- return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${format.orientation}`} style={{'--game-aspect':format.playerAspect}}>
+ return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
    <div className={`player-loading ${ready&&!error?'hidden':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
