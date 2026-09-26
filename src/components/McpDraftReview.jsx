@@ -21,6 +21,8 @@ export function McpDraftReview({preview,onClose,onPublished}){
  const clipReady=clip.frames>=CLIP_FRAMES&&clip.moving;
  useEffect(()=>{if(claimed||nameEdited)return;let active=true;setNameLoading(true);const timer=setTimeout(()=>{myGameName(preview.slug).then(name=>name||previewGameName(preview.slug,title)).then(name=>{if(active&&name){setGameName(name.name);setClaimed(name.claimed===true);}}).catch(e=>{if(active)setError(e);}).finally(()=>{if(active)setNameLoading(false);});},200);return()=>{active=false;clearTimeout(timer);};},[preview.slug,title,claimed,nameEdited]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;if(pending.current){clearTimeout(pending.current.timer);pending.current.reject(new Error('Playtest closed.'));pending.current=null;}};},[]);
+ // A game that never announces ready still gets its clip captured.
+ useEffect(()=>{const timer=setTimeout(()=>{if(alive.current)setReady(true);},4000);return()=>clearTimeout(timer);},[]);
  function capture(){return new Promise((resolve,reject)=>{const request=crypto.randomUUID(),timer=setTimeout(()=>{pending.current=null;reject(new Error('The game did not return a frame.'));},6000);pending.current={request,timer,resolve,reject};player.current?.capture(request);});}
  // One capture in flight at a time, every FRAME_MS, only while the game runs
  // and nothing is being published. Failures are transient (a game still
