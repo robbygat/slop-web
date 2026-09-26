@@ -87,8 +87,16 @@ export async function submitMcpUpdate({preview,target,title,tagline,cover,gif,fr
   const live=await result(client.from('games').select('id,owner_id,slug,status').eq('id',target.game_id).eq('slug',slug).eq('owner_id',owner).single());assertCurrent(expected);
   if(live.status==='pending_review')throw new Error('An update to this game is already waiting for review.');
   if(!['published','draft','private'].includes(live.status))throw new Error('This game can no longer be updated here.');
+  // Only the bundle authority may take a live game out of published: it
+  // stages the current release into drafts atomically (the app's "open for
+  // editing" path). The new bytes then replace that staged copy below.
+  if(live.status==='published'){
+   onStage?.('Opening your live game for the update…');
+   const opened=await request('game-bundle','/',{ownerReceipt:false,body:{action:'withdraw_public',slug,target_status:'editable'}});
+   if(opened?.ok!==true)throw new SlopError('invalid_response');assertCurrent(expected);
+  }
   onStage?.('Preparing your update…');
-  await result(client.from('games').update({status:'draft',name:title.trim(),description:tagline.trim(),prompt:'Created with a connected coding app',html:files['index.html']}).eq('id',live.id).eq('owner_id',owner).select('id').single());assertCurrent(expected);
+  await result(client.from('games').update({name:title.trim(),description:tagline.trim(),prompt:'Created with a connected coding app',html:files['index.html']}).eq('id',live.id).eq('owner_id',owner).in('status',['draft','private']).select('id').single());assertCurrent(expected);
   const entries=Object.entries(files);
   const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:new TextEncoder().encode(body).length,content_type:mime(path)})));assertCurrent(expected);
   onStage?.('Uploading the new version…');
