@@ -4,7 +4,7 @@ import {Button,Modal,Notice} from './ui.jsx';
 import {encodeCapture} from '../lib/capture.js';
 import {captureStageAspect} from '../lib/capture-contracts.js';
 import {CLIP_FRAMES,clipWindow,createClipRing} from '../lib/clip-ring.js';
-import {submitMcpPublication} from '../lib/mcp-publication.js';
+import {submitMcpPublication,submitMcpUpdate} from '../lib/mcp-publication.js';
 import {claimGameName,myGameName,previewGameName} from '../lib/game-name-claims.js';
 import {validGameName} from '../lib/game-links.js';
 import {mcpTargetLabel} from '../lib/mcp-platform.js';
@@ -18,7 +18,7 @@ const FRAME_MS=80;
 export function McpDraftReview({preview,onClose,onPublished}){
  const player=useRef(null),pending=useRef(null),alive=useRef(true),ring=useRef(createClipRing()),capturing=useRef(false);
  const[busy,setBusy]=useState(false),[error,setError]=useState(null),[stage,setStage]=useState(''),[ready,setReady]=useState(false),[clip,setClip]=useState({frames:0,moving:false,poster:null}),[title,setTitle]=useState(preview.name||''),[description,setDescription]=useState(preview.description||''),[gameName,setGameName]=useState(''),[claimed,setClaimed]=useState(false),[nameEdited,setNameEdited]=useState(false),[nameLoading,setNameLoading]=useState(true),[details,setDetails]=useState(false);
- const clipReady=clip.frames>=CLIP_FRAMES&&clip.moving;
+ const clipReady=clip.frames>=CLIP_FRAMES&&clip.moving,update=preview.update_target||null;
  useEffect(()=>{if(claimed||nameEdited)return;let active=true;setNameLoading(true);const timer=setTimeout(()=>{myGameName(preview.slug).then(name=>name||previewGameName(preview.slug,title)).then(name=>{if(active&&name){setGameName(name.name);setClaimed(name.claimed===true);}}).catch(e=>{if(active)setError(e);}).finally(()=>{if(active)setNameLoading(false);});},200);return()=>{active=false;clearTimeout(timer);};},[preview.slug,title,claimed,nameEdited]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;if(pending.current){clearTimeout(pending.current.timer);pending.current.reject(new Error('Playtest closed.'));pending.current=null;}};},[]);
  // A game that never announces ready still gets its clip captured.
@@ -53,14 +53,19 @@ export function McpDraftReview({preview,onClose,onPublished}){
    setStage('Making your cover and clip…');
    const recorded=await encodeCapture(picked.frames,preview.target_platform||'mobile',{background:picked.background});
    if(!alive.current)return;
-   if(!claimed){setStage('Reserving your game link…');await claimGameName(preview.slug,gameName);if(!alive.current)return;setClaimed(true);}
-   const receipt=await submitMcpPublication({preview,title:title.trim(),tagline:description.trim(),...recorded,onStage:value=>{if(alive.current)setStage(value);}});
+   const onStage=value=>{if(alive.current)setStage(value);};
+   let receipt;
+   if(update){receipt=await submitMcpUpdate({preview,target:update,title:title.trim(),tagline:description.trim(),...recorded,onStage});}
+   else{
+    if(!claimed){setStage('Reserving your game link…');await claimGameName(preview.slug,gameName);if(!alive.current)return;setClaimed(true);}
+    receipt=await submitMcpPublication({preview,title:title.trim(),tagline:description.trim(),...recorded,onStage});
+   }
    if(alive.current)onPublished(receipt);
   }catch(e){if(alive.current){setError(e);setStage('');}}
   finally{if(alive.current)setBusy(false);}
  }
  const status=busy?stage:!ready?'Starting your game…':clipReady?'Clip ready. Publish whenever you like.':clip.frames>=CLIP_FRAMES?'Keep playing. Slop needs a moment where something moves.':'Play for a few seconds. Slop is capturing your clip.';
- return <Modal title={preview.name||'Your game'} onClose={()=>{if(!busy)onClose();}} className="mcp-playtest-modal">
+ return <Modal title={update?`Update ${update.name}`:preview.name||'Your game'} onClose={()=>{if(!busy)onClose();}} className="mcp-playtest-modal">
   <div className={`mcp-playtest-layout ${preview.target_platform==='desktop'?'is-desktop':''}`}>
    <GamePlayer ref={player} url={preview.preview_url} game={previewGameForTarget(preview.target_platform||'mobile')} stageAspect={captureStageAspect(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
    <div className="mcp-publication">
@@ -71,9 +76,9 @@ export function McpDraftReview({preview,onClose,onPublished}){
      {clip.poster?<img src={clip.poster} alt="The latest frame of your gameplay clip"/>:<span className="mcp-clip-empty" aria-hidden="true"/>}
      <p>{status}</p>
     </div>
-    <Button icon="share" disabled={busy||nameLoading||!clipReady||!title.trim()||!validGameName(gameName)} onClick={publish}>{busy?'Publishing…':'Publish'}</Button>
-    <button type="button" className="text-button mcp-details-toggle" aria-expanded={details} onClick={()=>setDetails(v=>!v)}>{details?'Hide link':'Game link'}: slop.game/{gameName||'…'}</button>
-    {details&&<label>Your permanent game link<div className="mcp-game-name"><span>slop.game/</span><input aria-label="Unique game name" value={gameName} onChange={e=>{setNameEdited(true);setGameName(e.target.value.toLowerCase());}} minLength={3} maxLength={50} disabled={claimed||nameLoading||busy} placeholder="your-game-name"/></div></label>}
+    <div className="mcp-publish-bar"><Button icon="share" disabled={busy||!clipReady||!title.trim()||(!update&&(nameLoading||!validGameName(gameName)))} onClick={publish}>{busy?'Publishing…':update?'Publish update':'Publish'}</Button></div>
+    {update?<p className="fine">This replaces {update.name} for everyone. Its link, plays and likes stay.</p>:<button type="button" className="text-button mcp-details-toggle" aria-expanded={details} onClick={()=>setDetails(v=>!v)}>{details?'Hide link':'Game link'}: slop.game/{gameName||'…'}</button>}
+    {!update&&details&&<label>Your permanent game link<div className="mcp-game-name"><span>slop.game/</span><input aria-label="Unique game name" value={gameName} onChange={e=>{setNameEdited(true);setGameName(e.target.value.toLowerCase());}} minLength={3} maxLength={50} disabled={claimed||nameLoading||busy} placeholder="your-game-name"/></div></label>}
     <p className="fine">Your clip and cover come from the last few seconds you played, in the same shape as games made in the app. Publishing sends it to review like any Slop game.</p>
     <Notice error={error}/>
    </div>

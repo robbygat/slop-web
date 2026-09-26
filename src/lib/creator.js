@@ -8,7 +8,7 @@ import {gameTargetFromFiles,supportedPlatformsForTarget} from './game-target-con
 import {requireAnimatedGif} from './gif-contracts.js';
 export const creator=(path,body,options={})=>request('slop-creator',path,{body,...options});
 function verify(expected){if(getSession()?.epoch!==expected.epoch)throw new SlopError('account_changed');}
-async function reserve(client,owner,slug,objects){
+export async function reserve(client,owner,slug,objects){
  const r=await result(client.rpc('reserve_game_draft_upload',{p_slug:slug,p_objects:objects}));
  if(r?.owner_id!==owner||r.slug!==slug||r.object_count!==objects.length||!UUID.test(r.upload_id)||!futureExpiry(r.expires_at,11*60_000))throw new SlopError('invalid_response');
  return {slop_upload_id:r.upload_id};
