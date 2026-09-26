@@ -1,7 +1,7 @@
 import {asOwner,result,getSession,mcpRequest,request} from './supabase.js';
 import {SlopError,UUID,DIGEST,trustedEntry} from './contracts.js';
-import {bundleIdentity,sha256} from './bundle-contracts.js';
-import {uploadMedia} from './creator.js';
+import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
+import {reserve,uploadMedia} from './creator.js';
 import {validCaptureDimensions,validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
 import {mcpPublicationReceipt} from './mcp-publication-contracts.js';
@@ -58,5 +58,54 @@ export async function submitMcpPublication(input){
 }
 export async function mcpGameStates(submissions){
  const ids=submissions.filter(s=>UUID.test(s.game_id)).map(s=>s.game_id);if(!ids.length)return {};
- return asOwner(async(owner,client)=>{const rows=await result(client.from('games').select('id,status').eq('owner_id',owner).in('id',ids));return Object.fromEntries(rows.filter(r=>ids.includes(r.id)).map(r=>[r.id,r.status]));});
+ // A released game sitting in draft is mid-update: keep treating it as the
+ // live game so a retried update never publishes a duplicate.
+ return asOwner(async(owner,client)=>{const rows=(await result(client.from('games').select('id,status,published_bundle_path,bundle_digest').eq('owner_id',owner).in('id',ids))).filter(r=>ids.includes(r.id));
+  // Digests of what each game currently serves, so a revision that was
+  // applied as an update to an older game reads as live, not as pending.
+  const states=Object.fromEntries(rows.map(r=>[r.id,r.status==='draft'&&r.published_bundle_path?'updating':r.status]));
+  Object.defineProperty(states,'digests',{value:Object.fromEntries(rows.map(r=>[r.id,r.bundle_digest||null])),enumerable:false});
+  return states;});
+}
+
+// A later revision of an agent project can replace the game it already
+// published, like updating a game in the app: same permanent link, plays,
+// likes and comments. The verified revision's bytes are copied onto the live
+// game's slug, which returns to draft (the only writable state) and is
+// resubmitted; staff games are re-approved immediately.
+const MCP_SLUG=/^mcp-[a-f0-9]{32}$/;
+export async function submitMcpUpdate({preview,target,title,tagline,cover,gif,frameCount,width,height,onStage}){
+ const expected=getSession();if(!validPreview(preview,expected?.user.id)||!MCP_SLUG.test(target?.slug??'')||!UUID.test(target?.game_id??'')||target.slug===preview.slug)throw new SlopError('account_changed');
+ if(!title?.trim()||title.length>80||typeof tagline!=='string'||tagline.length>240||!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40||!validCaptureDimensions(width,height))throw new Error('Play the game for a few seconds so Slop can capture its clip, then publish.');
+ requireAnimatedGif(gif,frameCount);
+ onStage?.('Checking the version you played…');
+ const checked=await inspectMcpPublication(preview);assertCurrent(expected);
+ if(checked.receipt)throw new Error('This version is already published.');
+ const {files,identity}=checked,slug=target.slug,fileTarget=mcpTargetFromFiles(files),platforms=platformValues(mcpCatalogPlatform(fileTarget));
+ if(!validCaptureDimensionsForTarget(width,height,fileTarget))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
+ await asOwner(async(owner,client)=>{
+  const live=await result(client.from('games').select('id,owner_id,slug,status').eq('id',target.game_id).eq('slug',slug).eq('owner_id',owner).single());assertCurrent(expected);
+  if(live.status==='pending_review')throw new Error('An update to this game is already waiting for review.');
+  if(!['published','draft','private'].includes(live.status))throw new Error('This game can no longer be updated here.');
+  onStage?.('Preparing your update…');
+  await result(client.from('games').update({status:'draft',name:title.trim(),description:tagline.trim(),prompt:'Created with a connected coding app',html:files['index.html']}).eq('id',live.id).eq('owner_id',owner).select('id').single());assertCurrent(expected);
+  const entries=Object.entries(files);
+  const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:new TextEncoder().encode(body).length,content_type:mime(path)})));assertCurrent(expected);
+  onStage?.('Uploading the new version…');
+  for(let i=0;i<entries.length;i+=4){assertCurrent(expected);await Promise.all(entries.slice(i,i+4).map(([path,body])=>result(client.storage.from('game-drafts').upload(`${slug}/1.0.0/${path}`,new TextEncoder().encode(body),{contentType:mime(path),metadata,upsert:true,cacheControl:'0'}))));}
+  assertCurrent(expected);
+  const verified=await request('game-bundle','/',{ownerReceipt:false,body:{action:'preview',slug,version:'1.0.0',expected_bundle_digest:identity.digest,expected_bundle_manifest:identity.manifest}});
+  if(verified.ok!==true||!trustedEntry(verified.url,{preview:true,slug}))throw new SlopError('invalid_response');assertCurrent(expected);
+  const coverPath=`${slug}/1.0.0/covers/${live.id}/${identity.buildId}-c3-${(await sha256(cover)).slice(0,32)}/cover.jpg`;
+  onStage?.('Saving your gameplay cover…');await uploadMedia(client,owner,slug,coverPath,cover,'image/jpeg');assertCurrent(expected);
+  const savedCover=await result(client.rpc('record_game_cover',{p_slug:slug,p_version:'1.0.0',p_path:coverPath,p_bytes:cover.length}));if(savedCover!==coverPath)throw new SlopError('invalid_response');assertCurrent(expected);
+  const clipPath=`${slug}/1.0.0/previews/${live.id}/${identity.buildId}-c3-${(await sha256(gif)).slice(0,32)}/preview.gif`;
+  onStage?.('Saving your gameplay clip…');await uploadMedia(client,owner,slug,clipPath,gif,'image/gif');assertCurrent(expected);
+  const clip=await result(client.rpc('record_game_preview',{p_slug:slug,p_version:'1.0.0',p_build_id:identity.buildId,p_path:clipPath,p_width:width,p_height:height,p_frame_count:frameCount,p_bytes:gif.length}));if(clip?.saved!==true||clip.slug!==slug||clip.path!==clipPath)throw new SlopError('invalid_response');assertCurrent(expected);
+  const platform=await result(client.rpc('set_game_supported_platforms',{p_owner:owner,p_game_slug:slug,p_platforms:platforms}));if(platform?.owner_id!==owner||platform.game_slug!==slug)throw new SlopError('invalid_response');
+ });
+ assertCurrent(expected);onStage?.('Sending your update for review…');
+ const receipt=await request('game-bundle','/',{ownerReceipt:false,body:{action:'submit_review',slug}});
+ if(receipt.ok!==true||!['pending_review','published'].includes(receipt.status))throw new SlopError('invalid_response');
+ return {owner_id:expected.user.id,game_id:target.game_id,slug,status:receipt.status,updated:true};
 }

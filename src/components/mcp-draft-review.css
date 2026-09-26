@@ -6,3 +6,4 @@
 .mcp-details-toggle{align-self:flex-start;font-size:13px;color:var(--soft);padding:0;background:none;border:0;cursor:pointer;text-align:left}
 @keyframes mcp-clip-pulse{from{opacity:.35}to{opacity:.8}}@media(prefers-reduced-motion:reduce){.mcp-clip-empty{animation:none}}
 .mcp-playtest-layout.is-desktop{grid-template-columns:1fr}.mcp-playtest-layout.is-desktop .game-player{max-height:none;width:min(100%,960px);margin:0 auto}.mcp-playtest-layout.is-desktop .mcp-publication{max-width:620px}
+@media(max-width:700px){.mcp-publish-bar{position:sticky;bottom:0;z-index:2;padding:10px 0 calc(10px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--surface) 70%,transparent)}.mcp-publish-bar .button{width:100%;min-height:52px}}
