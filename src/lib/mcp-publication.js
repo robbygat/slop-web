@@ -4,7 +4,7 @@ import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
 import {reserve,uploadMedia} from './creator.js';
 import {validCaptureDimensions,validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
-import {mcpPublicationReceipt} from './mcp-publication-contracts.js';
+import {mcpInboxState,mcpPublicationReceipt} from './mcp-publication-contracts.js';
 import {mcpCatalogPlatform,mcpTargetFromFiles} from './mcp-platform.js';
 import {platformValues} from './game-platforms.js';
 import {requireAnimatedGif} from './gif-contracts.js';
@@ -60,7 +60,7 @@ export async function mcpGameStates(submissions){
  const ids=submissions.filter(s=>UUID.test(s.game_id)).map(s=>s.game_id);if(!ids.length)return {};
  // A released game sitting in draft is mid-update: keep treating it as the
  // live game so a retried update never publishes a duplicate.
- return asOwner(async(owner,client)=>{const rows=(await result(client.from('games').select('id,status,published_bundle_path,bundle_manifest').eq('owner_id',owner).in('id',ids))).filter(r=>ids.includes(r.id));
+ return asOwner(async(owner,client)=>{const rows=(await result(client.from('games').select('id,status,published_bundle_path,bundle_manifest,thumb,preview_url').eq('owner_id',owner).in('id',ids))).filter(r=>ids.includes(r.id));
   // The source digest each game serves (its release manifest without the
   // captured covers/previews, the same bytes an MCP submission digests), so a
   // revision applied as an update to an older game reads as live.
@@ -70,7 +70,7 @@ export async function mcpGameStates(submissions){
    const source=r.bundle_manifest.filter(f=>f&&typeof f.path==='string'&&!/^1\.0\.0\/(covers|previews)\//.test(f.path)).sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
    if(source.some(f=>f.path==='1.0.0/index.html'))digests[r.id]=await sha256(source.map(f=>`${f.path}:${f.bytes}:${f.sha256}`).join('\n'));
   }
-  const states=Object.fromEntries(rows.map(r=>[r.id,r.status==='draft'&&r.published_bundle_path?'updating':r.status]));
+  const states=Object.fromEntries(rows.map(r=>[r.id,mcpInboxState(r)]));
   Object.defineProperty(states,'digests',{value:digests,enumerable:false});
   return states;});
 }
