@@ -53,7 +53,7 @@ function manifestOf(files) {
 // and speeds up as variants are cached. Warm-up waits for a steady rate.
 const WARMUP_FRAMES = 8, WARMUP_FPS = 1.5, WARMUP_MS = 20000, ENOUGH_FRAMES = 24;
 
-export async function recordGame(files, { seconds = 9, maxSeconds = 45, diagnostics = {} } = {}) {
+export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeconds = 70, diagnostics = {} } = {}) {
   if (!files?.["index.html"]) throw new RecorderFailure("runtime_invalid");
   if (mcpRuntimeProblem(manifestOf(files), files["index.html"])) throw new RecorderFailure("runtime_invalid");
   let target;
@@ -81,7 +81,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, diagnost
   const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#101215;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style>
 <script>${recorder}</script></head><body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
 <script>(()=>{const f=document.getElementById('game');window.__events=[];addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(m&&typeof m.type==='string'){if(m.type==='webCaptureResult'||m.type==='webCaptureError'){(window.__pending?.[m.request])?.(m);return;}window.__events.push({type:m.type,at:performance.now()});}});
-      window.__capture=()=>new Promise((resolve)=>{const request='r'+Math.random().toString(36).slice(2);const t=setTimeout(()=>{delete window.__pending[request];resolve(null)},6000);window.__pending=window.__pending||{};window.__pending[request]=m=>{clearTimeout(t);delete window.__pending[request];resolve(m.type==='webCaptureResult'?m:null)};f.contentWindow.postMessage(JSON.stringify({type:'webCapture',request}),'*');});
+      window.__capture=()=>new Promise((resolve)=>{const request='r'+Math.random().toString(36).slice(2);const t=setTimeout(()=>{delete window.__pending[request];resolve(null)},15000);window.__pending=window.__pending||{};window.__pending[request]=m=>{clearTimeout(t);delete window.__pending[request];resolve(m.type==='webCaptureResult'?m:null)};f.contentWindow.postMessage(JSON.stringify({type:'webCapture',request}),'*');});
       window.__ring=SlopRecorder.createClipRing();
       // Lay the frame out before the game loads: a game whose first script runs
       // in a not-yet-sized frame reads innerWidth 0 and can keep a 1x1 canvas.
@@ -176,6 +176,8 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, diagnost
       if (now.frames - first >= WARMUP_FRAMES && past && (now.frames - past.frames) * 1000 / (at - past.at) >= WARMUP_FPS) break;
     }
     diagnostics.nudges = nudges;
+    // A scene that never reached a steady rate gets the longer budget.
+    const slow = Date.now() - warmStart >= WARMUP_MS;
     diagnostics.warmupMs = Date.now() - warmStart;
 
     // Play while the ring captures every ~80 ms, exactly like the web publish flow.
@@ -221,20 +223,24 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, diagnost
     if (desktop) await s.send("Input.dispatchMouseEvent", { type: "mousePressed", x: cx, y: cy, button: "left", clickCount: 1, buttons: 1 })
       .then(() => s.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: cx, y: cy, button: "left", clickCount: 1 }));
     let lit = 0, captured = 0, distinct = 0;
-    const began = Date.now(), end = began + seconds * 1000, hardEnd = began + Math.max(seconds, maxSeconds) * 1000;
+    const began = Date.now(), end = began + seconds * 1000, hardEnd = began + Math.max(seconds, slow ? slowSeconds : maxSeconds) * 1000;
     // Input runs on its own clock: each dispatched event waits for the page to
     // handle it, which on a slow scene can take a frame, and must not hold up
     // the captures.
     let playing = true;
     const driver = (async () => { for (let i = 0; playing; i++) { await input(i); await sleep(120); } })().catch(() => {});
     while (Date.now() < end || (distinct < ENOUGH_FRAMES && Date.now() < hardEnd)) {
-      const frame = await evaluate(`(async()=>{const at=performance.now();const m=await window.__capture();if(!m)return null;window.__ring.push(m.data,m.background,at);window.__rafs=m.frames;
-        const img=await createImageBitmap(await (await fetch(m.data)).blob());const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.drawImage(img,0,0,48,48);const d=x.getImageData(0,0,48,48).data;let min=765,max=0;for(let k=0;k<d.length;k+=4){const v=d[k]+d[k+1]+d[k+2];if(v<min)min=v;if(v>max)max=v;}return {range:max-min,distinct:window.__ring.frames().length};})()`);
-      if (frame) { captured++; distinct = frame.distinct; if (frame.range > 24) lit++; }
+      // Only the capture itself runs per frame. The game shares the host's main
+      // thread, so on a scene that takes seconds per frame every extra task
+      // here (decoding, measuring) would cost another whole frame.
+      const frame = await evaluate(`(async()=>{const at=performance.now();const m=await window.__capture();if(!m)return null;window.__ring.push(m.data,m.background,at);window.__rafs=m.frames;return {distinct:window.__ring.frames().length};})()`);
+      if (frame) { captured++; distinct = frame.distinct; }
       await sleep(80);
     }
     playing = false;
     await driver;
+    // A frame is lit when it has visible contrast; the ring keeps each distinct frame.
+    if (captured) lit = await evaluate(`(async()=>{let lit=0;for(const f of window.__ring.frames()){const img=await createImageBitmap(await (await fetch(f.data)).blob());const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.drawImage(img,0,0,48,48);const d=x.getImageData(0,0,48,48).data;let min=765,max=0;for(let k=0;k<d.length;k+=4){const v=d[k]+d[k+1]+d[k+2];if(v<min)min=v;if(v>max)max=v;}if(max-min>24)lit++;}return lit;})()`);
     if (drag) await touch("touchEnd");
     if (process.env.SLOP_RECORDER_DEBUG) {
       const { data } = await s.send("Page.captureScreenshot", { format: "png" });
