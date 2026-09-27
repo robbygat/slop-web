@@ -166,6 +166,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
       "slop_game_template",
       "slop_send_draft",
       "slop_check_bundle",
+      "slop_publish",
       "slop_draft_status",
       "slop_disconnect",
     ]);

@@ -20,7 +20,7 @@ pinned runtime dependencies are resolved by npm.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -29,7 +29,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -49,7 +49,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -67,7 +67,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -90,7 +90,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz",
         "slop-mcp"
       ]
     }
@@ -136,7 +136,20 @@ Pairing challenges expire after ten minutes; approved connections last thirty
 days unless revoked sooner. Publishing is a separate Slop action.
 
 Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
-`slop_check_bundle`, `slop_send_draft`, `slop_draft_status`, and `slop_disconnect`.
+`slop_check_bundle`, `slop_send_draft`, `slop_publish`, `slop_draft_status`, and `slop_disconnect`.
+
+### Auto-publish (no browser)
+
+Switch on **Auto-publish** for a connected app at slop.game/#/connect. The agent
+can then call `slop_publish` with a `submission_id` (or pass `publish: true` to
+`slop_send_draft`). Slop's server playtests the latest revision in a headless
+browser, records the 9:16 (or 16:9 desktop) feed GIF and cover with the
+website's own capture code, and publishes it: staff accounts go live
+immediately, everyone else goes to review. A later revision of an already
+published project updates that game. `slop_draft_status` reports each
+revision's `publication` (`requested`, `recording`, `publishing`, `published`,
+`pending_review`, or `failed` with a `failure_code` such as `no_motion`,
+`blank_canvas` or `boot_error`). The recorder runs every five minutes.
 `slop_check_bundle` runs the same file, runtime and sandbox rules locally, so an
 agent can fix a bundle before the owner is asked to review it.
 

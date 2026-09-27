@@ -159,6 +159,12 @@ const HINTS = {
     "target_platform must be mobile, desktop or cross-platform.",
   invalid_request:
     "Slop rejected the request. Run slop_check_bundle to find the problem.",
+  auto_publish_disabled:
+    "Auto-publish is off for this connection. Ask the owner to switch on Auto-publish for this app at slop.game/#/connect, or to publish it there.",
+  submission_not_found: "That submission_id does not belong to this connection. Check slop_draft_status.",
+  publish_in_progress: "Another revision of this project is already being published. Wait for it to finish (slop_draft_status).",
+  target_pending_review: "This project's game is waiting for review. Wait for the decision before publishing another update.",
+  already_published: "This revision is already published.",
   service_unavailable: "Slop is temporarily unavailable. Retry shortly.",
   upstream_unavailable: "Slop is temporarily unavailable. Retry shortly.",
 };

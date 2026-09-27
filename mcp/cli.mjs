@@ -17,7 +17,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.4.1" });
+const server = new McpServer({ name: "slop", version: "0.5.0" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -67,13 +67,16 @@ tool(
     name: z.string().min(1).max(80),
     description: z.string().max(240).optional(),
     files: z.record(z.string()),
+    publish: z.boolean().optional().describe("Also ask Slop to publish this revision (needs Auto-publish on for this connection at slop.game/#/connect)."),
   },
-  async (args) => {
+  async ({publish, ...args}) => {
     const files = {...args.files,'slop-platform.json':JSON.stringify({target_platform:args.target_platform})};
     // Advisory only: the server stays the authority on what it accepts.
     const local_check = await checkBundle(files, { target_platform: args.target_platform });
     const sent = await bridge.authorized("/agent/drafts", {...args, files});
-    return local_check.ok && !local_check.warnings.length ? sent : { ...sent, local_check };
+    const publication = publish ? await bridge.authorized("/agent/publish", { submission_id: sent.submission_id }).catch((error) => ({ error: error.message })) : undefined;
+    const result = publication ? { ...sent, publication } : sent;
+    return local_check.ok && !local_check.warnings.length ? result : { ...result, local_check };
   },
   { idempotentHint: true },
 );
@@ -88,8 +91,15 @@ tool(
   { readOnlyHint: true, openWorldHint: false },
 );
 tool(
+  "slop_publish",
+  "Publish a draft revision without a browser: Slop's server playtests it, records the feed GIF and cover with slop.game's own capture, and publishes it (staff accounts go live immediately; everyone else goes to review). Needs the owner to switch on Auto-publish for this connection at slop.game/#/connect. Only the project's latest revision can be published; a later revision of an already-published project updates that game. Poll slop_draft_status for publication status (requested, recording, publishing, published, pending_review, failed with a reason).",
+  { submission_id: z.string().uuid() },
+  (args) => bridge.authorized("/agent/publish", { submission_id: args.submission_id }),
+  { idempotentHint: true },
+);
+tool(
   "slop_draft_status",
-  "List this connection’s private draft revisions and whether the owner has confirmed a validated preview. Private preview URLs are delivered only to the signed-in owner, never to the agent.",
+  "List this connection’s private draft revisions, whether the owner has confirmed a validated preview, and each revision’s auto-publish state (publication). Private preview URLs are delivered only to the signed-in owner, never to the agent.",
   {},
   () => bridge.authorized("/agent/drafts"),
   { readOnlyHint: true },

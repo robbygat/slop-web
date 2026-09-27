@@ -44,7 +44,7 @@ function manifestOf(files) {
   });
 }
 
-export async function recordGame(files, { seconds = 9 } = {}) {
+export async function recordGame(files, { seconds = 9, diagnostics = {} } = {}) {
   if (!files?.["index.html"]) throw new RecorderFailure("runtime_invalid");
   if (mcpRuntimeProblem(manifestOf(files), files["index.html"])) throw new RecorderFailure("runtime_invalid");
   let target;
@@ -113,9 +113,9 @@ export async function recordGame(files, { seconds = 9 } = {}) {
       await sleep(200);
     }
     if (events.includes("loadError")) throw new RecorderFailure("boot_error");
-    if (!events.includes("ready")) {
-      throw new RecorderFailure(events.includes("webGameError") ? "boot_error" : "not_ready", !events.includes("webGameError"));
-    }
+    // Like the website's publish playtest, a game that never announces ready
+    // is still recorded; it fails only if nothing usable is captured below.
+    const announced = events.includes("ready");
     await sleep(600);
 
     // Play while the ring captures every ~80 ms, exactly like the web publish flow.
@@ -148,12 +148,23 @@ export async function recordGame(files, { seconds = 9 } = {}) {
     const end = Date.now() + seconds * 1000;
     for (let i = 0; Date.now() < end; i++) {
       await input(i);
-      const frame = await evaluate(`(async()=>{const at=performance.now();const m=await window.__capture();if(!m)return null;window.__ring.push(m.data,m.background,at);
+      const frame = await evaluate(`(async()=>{const at=performance.now();const m=await window.__capture();if(!m)return null;window.__ring.push(m.data,m.background,at);window.__rafs=m.frames;
         const img=await createImageBitmap(await (await fetch(m.data)).blob());const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');x.drawImage(img,0,0,48,48);const d=x.getImageData(0,0,48,48).data;let min=765,max=0;for(let k=0;k<d.length;k+=4){const v=d[k]+d[k+1]+d[k+2];if(v<min)min=v;if(v>max)max=v;}return {range:max-min};})()`);
       if (frame) { captured++; if (frame.range > 24) lit++; }
       await sleep(80);
     }
-    if (!captured) throw new RecorderFailure("blank_canvas", true);
+    if (process.env.SLOP_RECORDER_DEBUG) {
+      const { data } = await s.send("Page.captureScreenshot", { format: "png" });
+      (await import("node:fs")).writeFileSync(process.env.SLOP_RECORDER_DEBUG, Buffer.from(data, "base64"));
+      console.error(JSON.stringify({ captured, lit, events: await evaluate("window.__events.map(e=>e.type).slice(0,40)") }));
+    }
+    // Safe diagnostics only: platform event names/counts, never game text.
+    diagnostics.ready = announced;
+    diagnostics.captured = captured;
+    diagnostics.lit = lit;
+    diagnostics.rafs = await evaluate("window.__rafs??null");
+    diagnostics.errors = (await evaluate("window.__events.filter(e=>e.type==='webGameError').length"));
+    if (!captured) throw new RecorderFailure(announced ? "blank_canvas" : diagnostics.errors ? "boot_error" : "not_ready", !diagnostics.errors);
     if (!lit) throw new RecorderFailure("blank_canvas");
     const result = await evaluate(`(async()=>{const picked=SlopRecorder.clipWindow(window.__ring.frames());if(!picked)return{error:'no_motion'};
       let rec;try{rec=await SlopRecorder.encodeCapture(picked.frames,${JSON.stringify(target)},{background:picked.background});}catch(e){return{error:/too large/i.test(e.message)?'capture_too_large':/move/i.test(e.message)?'no_motion':'recorder_error'}}
