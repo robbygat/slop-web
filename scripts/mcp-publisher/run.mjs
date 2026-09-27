@@ -61,3 +61,5 @@ for (let n = 0; n < MAX_JOBS; n++) {
   }
 }
 console.log(`published ${published}, in review ${review}, failed ${failed}`);
+// Never let a stray handle from a failed recording keep the workflow alive.
+process.exit(process.exitCode ?? 0);
