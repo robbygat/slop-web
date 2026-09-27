@@ -38,7 +38,8 @@ for (let n = 0; n < MAX_JOBS; n++) {
   if (!job) break;
   const path = `/publisher/jobs/${job.job_id}`;
   try {
-    const media = await recordGame(job.files);
+    var diagnostics = {};
+    const media = await recordGame(job.files, { diagnostics });
     for (const [kind, bytes, type] of [["cover", media.cover, "image/jpeg"], ["gif", media.gif, "image/gif"]]) {
       const up = await call(`${path}/media?kind=${kind}`, job.lease, { bytes, type });
       if (up.status !== 200) throw new RecorderFailure("recorder_error", true);
@@ -55,7 +56,7 @@ for (let n = 0; n < MAX_JOBS; n++) {
     const code = error instanceof RecorderFailure ? error.code : "recorder_error";
     const retryable = error instanceof RecorderFailure ? error.retryable : true;
     failed++;
-    console.log(`job ${n + 1}: ${code}`);
+    console.log(`job ${n + 1}: ${code} ${JSON.stringify(diagnostics ?? {})}`);
     await call(`${path}/fail`, job.lease, { json: { failure_code: code, retryable } }).catch(() => {});
   }
 }

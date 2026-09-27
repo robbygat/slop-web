@@ -29,6 +29,12 @@ export async function launchChrome({ gpu = process.platform === "darwin" && proc
     "--disable-default-apps",
     "--metrics-recording-only",
     "--no-pings",
+    // Network allowlist for untrusted games, enforced in Chrome's network
+    // service for every frame: only the local bundle server and the one CDN
+    // host whose single three.js build the player CSP permits.
+    "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE cdnjs.cloudflare.com",
+    // Sandboxed games are cross-origin frames; never throttle their frames.
+    "--disable-features=ThrottleDisplayNoneAndVisibilityHiddenCrossOriginIframes,IntensiveWakeUpThrottling,PaintHolding",
     "--ignore-gpu-blocklist",
     "--enable-webgl",
     ...(gpu ? ["--use-angle=metal"] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
