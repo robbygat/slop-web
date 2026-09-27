@@ -110,6 +110,9 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     if (r.exceptionDetails) throw new RecorderFailure("recorder_error", true);
     return r.result.value;
   };
+  // The input driver must stop on every exit path: a live driver's timers
+  // would keep the publisher process (and the workflow) running forever.
+  let playing = false;
   try {
     // Block everything that is not this local server or the one allowed CDN build.
     await s.send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
@@ -227,7 +230,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     // Input runs on its own clock: each dispatched event waits for the page to
     // handle it, which on a slow scene can take a frame, and must not hold up
     // the captures.
-    let playing = true;
+    playing = true;
     const driver = (async () => { for (let i = 0; playing; i++) { await input(i); await sleep(120); } })().catch(() => {});
     while (Date.now() < end || (distinct < ENOUGH_FRAMES && Date.now() < hardEnd)) {
       // Only the capture itself runs per frame. The game shares the host's main
@@ -266,6 +269,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     const gif = Buffer.from(result.gif, "base64"), cover = Buffer.from(result.cover, "base64");
     return { target, gif, cover, frameCount: result.frameCount, width: result.width, height: result.height };
   } finally {
+    playing = false;
     await chrome.close();
     server.close();
   }
