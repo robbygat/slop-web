@@ -1,5 +1,6 @@
 import { BridgeError, mime, requireValue, UUID, VERSION } from "./contract.mjs";
 import { createHandler } from "./handler.mjs";
+import { createOidcVerifier } from "./publisher.mjs";
 
 const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
 function platformKey(mapName: string, legacyName: string): string {
@@ -31,6 +32,14 @@ const knownCodes = new Set([
   "confirmation_busy",
   "confirmation_expired",
   "version_changed",
+  "auto_publish_disabled",
+  "submission_not_found",
+  "publish_in_progress",
+  "target_pending_review",
+  "already_published",
+  "invalid_lease",
+  "lease_expired",
+  "media_invalid",
 ]);
 async function request(
   path: string,
@@ -203,4 +212,50 @@ const deps = {
   preview: (token: string, input: unknown) =>
     request("/functions/v1/game-bundle", token, "POST", input, {}, anon, 120_000),
 };
-Deno.serve(createHandler(deps));
+// game-bundle admits publish_mcp_job only for its own injected service-role
+// key; both functions run in this project, so send exactly that value.
+const bundleServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const publisherDeps = {
+  verifyPublisher: createOidcVerifier(),
+  stageMedia: async (path: string, bytes: Uint8Array, type: string) => {
+    const response = await fetch(
+      `${base}/storage/v1/object/mcp-publisher-staging/${path}`,
+      {
+        method: "POST",
+        redirect: "error",
+        headers: {
+          apikey: service,
+          ...(service.startsWith("sb_secret_") ? {} : { Authorization: `Bearer ${service}` }),
+          "content-type": type,
+          "x-upsert": "true",
+          "cache-control": "no-store",
+        },
+        body: bytes as unknown as BodyInit,
+        signal: AbortSignal.timeout(30_000),
+      },
+    );
+    await response.body?.cancel();
+    if (!response.ok) throw new BridgeError("upstream_unavailable", 503);
+  },
+  publishJob: async (input: { job_id: string; lease_hash: string }) => {
+    requireValue(bundleServiceKey, "publisher_unavailable", 503);
+    const response = await fetch(`${base}/functions/v1/game-bundle`, {
+      method: "POST",
+      redirect: "error",
+      headers: {
+        Authorization: `Bearer ${bundleServiceKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ action: "publish_mcp_job", ...input }),
+      signal: AbortSignal.timeout(145_000),
+    });
+    const result = await response.json().catch(() => null);
+    // Relay only the fixed receipt fields game-bundle defines.
+    const body = result?.ok === true
+      ? { ok: true, status: result.status, slug: result.slug, update: result.update === true }
+      : { ok: false, code: typeof result?.error === "string" && /^[a-z_]{1,40}$/.test(result.error) ? result.error : "publish_failed",
+          retryable: result?.retryable === true };
+    return { status: response.ok ? 200 : response.status === 429 ? 429 : 409, body };
+  },
+};
+Deno.serve(createHandler({ ...deps, ...publisherDeps }));

@@ -12,6 +12,7 @@ import {
   validateDraft,
   VERSION,
 } from "./contract.mjs";
+import { FAILURE_CODES, LEASE, validateMedia } from "./publisher.mjs";
 
 const JSON_HEADERS = {
   "content-type": "application/json",
@@ -61,6 +62,39 @@ async function readBody(req) {
   }
 }
 
+async function readBinary(req, type, max) {
+  requireValue(
+    req.headers.get("content-type")?.split(";")[0].trim().toLowerCase() === type,
+    "media_type_required",
+    415,
+  );
+  const reader = req.body?.getReader();
+  requireValue(reader, "invalid_request");
+  let total = 0;
+  const chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > max) {
+      await reader.cancel();
+      throw new BridgeError("request_too_large", 413);
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return bytes;
+}
+const MEDIA = {
+  cover: { type: "image/jpeg", max: 716_800, file: "cover.jpg" },
+  gif: { type: "image/gif", max: 2_097_152, file: "preview.gif" },
+};
+
 /** Dependencies contain only server-owned clients. No caller supplies an owner. */
 export function createHandler(deps, config = {}) {
   const origins = config.previewOrigins ??
@@ -92,12 +126,61 @@ export function createHandler(deps, config = {}) {
         "method_not_allowed",
         405,
       );
-      const input = req.method === "POST"
-        ? await readBody(req)
-        : Object.fromEntries(url.searchParams);
       const bearer = req.headers.get("authorization")?.match(
         /^Bearer ([^\s]{1,4096})$/i,
       )?.[1];
+      // Recorder routes. /publisher/claim takes a GitHub Actions OIDC token
+      // for the pinned workflow; every later call takes the per-job lease it
+      // was exchanged for. Game source, owner and media never leave the queue
+      // except to that one leased recorder.
+      if (path.startsWith("/publisher/")) {
+        requireValue(req.method === "POST", "method_not_allowed", 405);
+        requireValue(deps.verifyPublisher, "route_not_found", 404);
+        requireValue(bearer, "authentication_required", 401);
+        if (path === "/publisher/claim") {
+          await deps.verifyPublisher(bearer);
+          const lease = `slop_lease_${secret(32)}`;
+          const claimed = await deps.service("publisher_claim", {
+            lease_hash: await sha256(lease),
+          });
+          return json({ job: claimed?.job ? { ...claimed.job, lease } : null });
+        }
+        const route = path.match(
+          /^\/publisher\/jobs\/([0-9a-f-]{36})\/(media|finish|fail)$/,
+        );
+        requireValue(route && UUID.test(route[1]), "route_not_found", 404);
+        requireValue(LEASE.test(bearer), "invalid_lease", 401);
+        const job_id = route[1], lease_hash = await sha256(bearer);
+        if (route[2] === "media") {
+          const kind = url.searchParams.get("kind");
+          const media = MEDIA[kind];
+          requireValue(media, "invalid_request");
+          const bytes = await readBinary(req, media.type, media.max);
+          const size = validateMedia(kind, bytes);
+          // Record (lease-checked) before writing, so no unleased caller can
+          // ever place bytes in staging. The publisher re-hashes on load.
+          const sha = await sha256(bytes);
+          await deps.service("publisher_media", {
+            job_id, lease_hash, kind, sha256: sha, bytes: bytes.length,
+            width: size.width, height: size.height, frame_count: size.frame_count,
+          });
+          await deps.stageMedia(`jobs/${job_id}/${media.file}`, bytes, media.type);
+          return json({ ok: true, kind, bytes: bytes.length, sha256: sha, ...size });
+        }
+        const input = await readBody(req);
+        if (route[2] === "fail") {
+          requireValue(FAILURE_CODES.has(input.failure_code), "invalid_request");
+          return json(await deps.service("publisher_fail", {
+            job_id, lease_hash, failure_code: input.failure_code,
+            retryable: input.retryable === true,
+          }));
+        }
+        const published = await deps.publishJob({ job_id, lease_hash });
+        return json(published.body, published.status);
+      }
+      const input = req.method === "POST"
+        ? await readBody(req)
+        : Object.fromEntries(url.searchParams);
       if (path === "/pair/start" && req.method === "POST") {
         const clientName = boundedText(input.client_name, 60);
         requireValue(HASH.test(input.access_token_hash ?? ""));
@@ -146,6 +229,15 @@ export function createHandler(deps, config = {}) {
         if (path === "/agent/drafts" && req.method === "GET") {
           return json(await deps.service("agent_drafts", { token_hash }));
         }
+        if (path === "/agent/publish") {
+          // Publishing needs the owner's per-connection opt-in (Connect page).
+          // Without it the queue refuses with auto_publish_disabled.
+          requireValue(UUID.test(input.submission_id ?? ""));
+          return json(await deps.service(
+            req.method === "POST" ? "request_publish" : "publish_status",
+            { token_hash, submission_id: input.submission_id },
+          ));
+        }
         if (path === "/agent/revoke" && req.method === "POST") {
           return json(await deps.service("agent_revoke", { token_hash }));
         }
@@ -180,6 +272,15 @@ export function createHandler(deps, config = {}) {
         requireValue(UUID.test(input.connection_id ?? ""));
         return json(
           await phone("revoke", { connection_id: input.connection_id }),
+        );
+      }
+      if (path === "/connections/auto-publish" && req.method === "POST") {
+        requireValue(UUID.test(input.connection_id ?? "") && typeof input.enabled === "boolean");
+        return json(
+          await phone("set_auto_publish", {
+            connection_id: input.connection_id,
+            enabled: input.enabled,
+          }),
         );
       }
       if (path === "/drafts" && req.method === "GET") {
@@ -250,7 +351,7 @@ export function createHandler(deps, config = {}) {
   const webOrigins = new Set(config.webOrigins ?? ["https://slop.game"]);
   const browserRoutes = new Set([
     "/health", "/authorize", "/pair/review", "/pair/confirm", "/connections",
-    "/connections/revoke", "/drafts", "/drafts/confirm",
+    "/connections/revoke", "/connections/auto-publish", "/drafts", "/drafts/confirm",
   ]);
   return async (req) => {
     const origin = req.headers.get("origin");
