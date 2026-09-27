@@ -63,6 +63,8 @@ export async function launchChrome({ gpu = process.platform === "darwin" && proc
   const session = await connect(page.webSocketDebuggerUrl);
   return {
     session,
+    // SwiftShader renders WebGL on the CPU; the recorder sizes the scene for it.
+    software: !gpu,
     async close() {
       try { session.close(); } catch {}
       proc.kill("SIGKILL");
