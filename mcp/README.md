@@ -20,7 +20,7 @@ pinned runtime dependencies are resolved by npm.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -29,7 +29,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -49,7 +49,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.4.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -67,7 +67,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -90,7 +90,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.4.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.4.1.tgz",
         "slop-mcp"
       ]
     }
@@ -139,6 +139,18 @@ Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
 `slop_check_bundle`, `slop_send_draft`, `slop_draft_status`, and `slop_disconnect`.
 `slop_check_bundle` runs the same file, runtime and sandbox rules locally, so an
 agent can fix a bundle before the owner is asked to review it.
+
+## Feed framing and HUD
+
+Every phone clip is 9:16, and phones are taller (~9:19.5), so the For You feed
+can trim the clip's sides. Keep the player, targets and HUD inside the centered
+~80% of the width, and frame the camera or playfield slightly wide, not tight.
+
+Keep the HUD tiny: one big score or number near top-center, plus at most one or
+two small icons. No sentences and no `SCORE:` / `LEVEL:` labels. A control hint
+is four words or fewer and disappears on the first input. Callouts such as
+`+10` or `PERFECT` are one or two words. `slop_game_template` returns these
+rules to the agent with the template.
 
 ## Bundle contract
 

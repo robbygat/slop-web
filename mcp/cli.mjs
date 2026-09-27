@@ -17,7 +17,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.4.0" });
+const server = new McpServer({ name: "slop", version: "0.4.1" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -55,7 +55,7 @@ tool(
   () => bridge.status(),
   { readOnlyHint: true },
 );
-tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
+tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. Its instructions include the feed framing and terse-HUD rules. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
 tool(
   "slop_send_draft",
   "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
