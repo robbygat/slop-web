@@ -7,6 +7,8 @@
 // contract the server recorder produces. Where WebCodecs H.264 is missing the
 // capture reports unsupported and the server video pass records the game.
 import {Muxer,ArrayBufferTarget} from 'mp4-muxer';
+import {assertPreviewClip,measurePreviewMotion} from './preview-recording.js';
+import {SlopError,boundedJson} from './contracts.js';
 
 export const VIDEO_FPS=30;
 const KEY_EVERY=VIDEO_FPS; // one keyframe per second
@@ -30,7 +32,8 @@ export async function createVideoCapture({target='mobile',requestFrame}){
  if(!config)return {supported:false,start(){},stop(){},async finish(){return null;},close(){}};
  const stage=new OffscreenCanvas(W,H),ctx=stage.getContext('2d');
  let chunks=[],decoderConfig=null,frames=0,running=false,closed=false,loop=null,origin=null,failed=false;
- const posters=new Map();
+ const posters=new Map(),samples=[];
+ const probe=new OffscreenCanvas(24,40),probeCtx=probe.getContext("2d",{willReadFrequently:true});let previous=null;
  const encoder=new VideoEncoder({
   output(chunk,meta){
    if(meta?.decoderConfig)decoderConfig=meta.decoderConfig;
@@ -61,7 +64,13 @@ export async function createVideoCapture({target='mobile',requestFrame}){
     const timestamp=Math.round((now-origin)*1000);
     const key=frames%KEY_EVERY===0;
     const video=new VideoFrame(stage,{timestamp,duration:Math.round(1e6/VIDEO_FPS)});
-    if(encoder.encodeQueueSize<8)encoder.encode(video,{keyFrame:key});
+    if(encoder.encodeQueueSize<8){
+     encoder.encode(video,{keyFrame:key});
+     probeCtx.drawImage(stage,0,0,24,40);const rgba=probeCtx.getImageData(0,0,24,40).data,luma=new Uint8Array(960);
+     for(let i=0;i<luma.length;i++)luma[i]=Math.round(.299*rgba[i*4]+.587*rgba[i*4+1]+.114*rgba[i*4+2]);
+     samples.push({timestamp,...measurePreviewMotion(luma,previous)});previous=luma;
+     while(samples.length&&timestamp-samples[0].timestamp>KEEP_US+1e6)samples.shift();
+    }
     video.close();
     if(key)stage.convertToBlob({type:'image/jpeg',quality:.86}).then(b=>posters.set(timestamp,b)).catch(()=>{});
     frames++;
@@ -92,7 +101,8 @@ export async function createVideoCapture({target='mobile',requestFrame}){
    let poster=posters.get(picked[0].timestamp);
    if(!poster){const nearest=[...posters.keys()].sort((a,b)=>Math.abs(a-base)-Math.abs(b-base))[0];poster=posters.get(nearest);}
    if(!poster)return null;
-   return {video,poster:new Uint8Array(await poster.arrayBuffer()),width:W,height:H,durationMs:Math.round((end-base)/1000)};
+   const measured=samples.filter(s=>s.timestamp>=base&&s.timestamp<end);
+   return {video,poster:new Uint8Array(await poster.arrayBuffer()),width:W,height:H,durationMs:Math.round((end-base)/1000),quality:{frames:measured.length,moving:measured.filter(s=>s.moving).length,lit:measured.filter(s=>s.lit).length}};
   },
   close(){closed=true;running=false;try{encoder.close();}catch{}},
  };
@@ -100,13 +110,21 @@ export async function createVideoCapture({target='mobile',requestFrame}){
 
 // Uploads a finished clip for the owner's just-published game through
 // slop-mcp's owner route (validated server side, stored content-addressed).
-export async function uploadPreviewVideo({gameId,clip,accessToken,base='https://api.slop.game/functions/v1/slop-mcp'}){
- if(!clip||!/^[0-9a-f-]{36}$/.test(gameId||'')||!accessToken)return false;
- const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',clip.video));
- const key=[...digest].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,32);
- const send=(query,body,type)=>fetch(`${base}/videos/${gameId}/media?${new URLSearchParams(query)}`,{method:'POST',redirect:'error',credentials:'omit',headers:{authorization:`Bearer ${accessToken}`,'content-type':type},body}).then(r=>r.json().catch(()=>null).then(b=>({ok:r.ok,body:b})));
+export async function uploadPreviewVideo({gameId,releaseKey,clip,accessToken,assertCurrent=()=>{},fetcher=fetch,base='https://api.slop.game/functions/v1/slop-mcp'}){
+ assertPreviewClip(clip);assertCurrent();
+ if(!/^[0-9a-f-]{36}$/.test(gameId||'')||!accessToken||typeof releaseKey!=='string'||releaseKey.length<3||releaseKey.length>300)throw new Error('The recorded game release is missing. Reopen the game and record again.');
+ const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',clip.video));assertCurrent();
+ const key=[...digest].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,32),folder=`${gameId}/v1-${key}`;
+ const send=async(query,body,type)=>{
+  assertCurrent();
+  const response=await fetcher(`${base}/videos/${gameId}/media?${new URLSearchParams({...query,release_key:releaseKey})}`,{method:'POST',redirect:'error',credentials:'omit',headers:{authorization:`Bearer ${accessToken}`,'content-type':type},body,signal:AbortSignal.timeout(45000)});
+  assertCurrent();const receipt=await boundedJson(response,65536);assertCurrent();
+  if(!response.ok||receipt?.ok!==true)throw new SlopError(receipt?.code||receipt?.error||'service_unavailable',undefined,response.status);
+  return receipt;
+ };
  const poster=await send({kind:'poster',key},clip.poster,'image/jpeg');
- if(!poster.ok)return false;
+ if(poster.kind!=='poster'||poster.bytes!==clip.poster.length||poster.width!==clip.width||poster.height!==clip.height)throw new SlopError('invalid_response');
  const video=await send({kind:'video',key,poster_bytes:String(clip.poster.length)},clip.video,'video/mp4');
- return video.ok&&video.body?.ok===true;
+ if(video.game_id!==gameId||video.video_path!==`${folder}/preview.mp4`||video.poster_path!==`${folder}/poster.jpg`)throw new SlopError('invalid_response');
+ return true;
 }

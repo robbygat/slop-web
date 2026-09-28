@@ -1,0 +1,25 @@
+.modal.manual-preview-modal{width:min(960px,calc(100vw - 32px));max-width:min(960px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
+.manual-preview-modal[open]{display:flex;flex-direction:column}
+.manual-preview-modal>.modal-top{flex:0 0 auto;align-items:flex-start}
+.manual-preview-modal>.modal-top h2{min-width:0;overflow-wrap:anywhere}
+.manual-preview-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);gap:24px;align-items:start;min-height:0;overflow:auto;overscroll-behavior:contain}
+.manual-preview-stage{--recording-stage-height:65dvh;position:relative;min-width:0;background:#101215;border-radius:16px;overflow:hidden}
+.manual-preview-stage .game-player:not(.is-expanded){width:100%;max-width:none}
+/* Match the player's full selector so its default 90dvh stage cannot override
+   this dialog's viewport budget. Encoding remains at the canonical video size. */
+.manual-preview-stage .game-player:not(.is-expanded) .player-surface .player-frame{height:auto;max-height:var(--recording-stage-height);width:min(100%,calc(var(--recording-stage-height) * var(--game-aspect)));margin:auto;aspect-ratio:var(--game-aspect)}
+.manual-preview-stage .player-controls{padding:6px 12px;color:#fff}
+.manual-preview-stage .player-controls .fine{color:#fff}
+.manual-preview-review{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#101215}
+.manual-preview-tools{display:grid;gap:16px;min-width:0}
+.manual-preview-tools>p{font-size:14px}
+.manual-preview-tools>.fine{font-size:12px}
+.manual-preview-status{font-weight:650}
+.manual-preview-actions{display:flex;gap:8px;flex-wrap:wrap}
+.manual-preview-tools .notice{margin:0}
+@media(max-width:700px){
+ .modal.manual-preview-modal{width:calc(100vw - 24px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:16px}
+ .manual-preview-layout{grid-template-columns:minmax(0,1fr);gap:16px}
+ .manual-preview-stage{--recording-stage-height:min(45dvh,max(160px,calc(100dvh - 420px)))}
+ .manual-preview-tools{gap:12px}
+}

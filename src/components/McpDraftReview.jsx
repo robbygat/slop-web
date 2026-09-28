@@ -63,7 +63,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
     if(!claimed){setStage('Reserving your game link…');await claimGameName(preview.slug,gameName);if(!alive.current)return;setClaimed(true);}
     receipt=await submitMcpPublication({preview,title:title.trim(),tagline:description.trim(),...recorded,onStage});
    }
-   if(receipt?.status==='published'){setStage('Attaching your video preview…');await video.attach(receipt.slug||preview.slug);}
+   if(receipt?.status==='published'){setStage('Attaching your video preview…');await video.attach(receipt.slug||preview.slug,{sourceDigest:preview.digest,expectedReleaseKey:receipt.release_root||null});}
    if(alive.current)onPublished(receipt);
   }catch(e){if(alive.current){setError(e);setStage('');}}
   finally{if(alive.current)setBusy(false);}
