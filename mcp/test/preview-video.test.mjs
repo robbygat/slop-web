@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sha256 } from "../../supabase/functions/slop-mcp/contract.mjs";
+import { sha256, BridgeError } from "../../supabase/functions/slop-mcp/contract.mjs";
 import { createHandler } from "../../supabase/functions/slop-mcp/handler.mjs";
 import { mp4Info, validateVideo } from "../../supabase/functions/slop-mcp/publisher.mjs";
 
@@ -68,4 +68,28 @@ test("recorder and owner uploads store content-addressed media and record the re
   assert.deepEqual(calls.at(-1), { action: "fail", input: { game_id: id, failure_code: "no_motion" } });
   r = await post("/publisher/videos/claim", "{}", "application/json", "nope");
   assert.notEqual(r.status, 200);
+});
+
+
+test("retry cutoff is validated after recorder authentication and forwarded unchanged", async () => {
+  const calls = [];
+  const handler = createHandler({
+    verifyPublisher: async token => { if (token !== "oidc") throw new BridgeError("invalid_publisher",401); },
+    storeVideo: async () => {},
+    videoService: async (action, input) => { calls.push({action,input}); return {games:[],retry_before:input.retry_before}; },
+  });
+  const post = (input, token="oidc") => handler(new Request("https://x/functions/v1/slop-mcp/publisher/videos/claim", {
+    method:"POST", headers:{authorization:`Bearer ${token}`,"content-type":"application/json"}, body:JSON.stringify(input),
+  }));
+  const cutoff = "2026-09-28T05:00:00.123456+00:00";
+  const response = await post({retry_failed:true,retry_before:cutoff,limit:1});
+  assert.equal(response.status,200);
+  assert.equal((await response.json()).retry_before,cutoff);
+  assert.equal(calls[0].input.retry_before,cutoff);
+  for (const invalid of [null,42,[],{},"tomorrow","2026-99-99T00:00:00Z","x".repeat(41)]) {
+    assert.equal((await post({retry_failed:true,retry_before:invalid})).status,400);
+  }
+  assert.equal((await post({retry_failed:false,retry_before:cutoff})).status,400);
+  assert.equal((await post({retry_failed:true,retry_before:cutoff},"wrong")).status,401);
+  assert.equal(calls.length,1,'invalid or unauthenticated claims cannot reach the private service');
 });

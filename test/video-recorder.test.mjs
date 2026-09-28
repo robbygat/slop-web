@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkApiHealth, ApiHealthFailure, retryFailedForClaim } from '../scripts/mcp-publisher/safety.mjs';
+import { checkApiHealth, ApiHealthFailure, createVideoRetryPass } from '../scripts/mcp-publisher/safety.mjs';
 import { installRecorderInput, mobileInputFrame } from '../scripts/mcp-publisher/input.mjs';
 
 test('background recorder stops for slow response bodies, HTTP errors and network errors', async () => {
@@ -25,10 +25,19 @@ test('background recorder accepts a complete fast healthy response', async () =>
   await checkApiHealth({ fetchImpl: async () => ({ ok: true, arrayBuffer: async () => { elapsed = 190; } }), now: () => elapsed });
 });
 
-test('forced failures are eligible only for the first claim of a pass', () => {
-  assert.equal(retryFailedForClaim(true, 0), true);
-  assert.equal(retryFailedForClaim(true, 1), false);
-  assert.equal(retryFailedForClaim(false, 0), false);
+test('forced retry pass keeps one server cutoff and refuses missing or changed receipts', () => {
+  const pass = createVideoRetryPass(true);
+  assert.deepEqual(pass.claimInput(), { retry_failed: true });
+  assert.throws(() => pass.acceptClaim({ games: [] }), /video_retry_cutoff_invalid/);
+  const cutoff = '2026-09-28T05:00:00.123456+00:00';
+  pass.acceptClaim({ retry_before: cutoff });
+  assert.deepEqual(pass.claimInput(), { retry_failed: true, retry_before: cutoff });
+  pass.acceptClaim({ retry_before: cutoff });
+  assert.throws(() => pass.acceptClaim({ retry_before: '2026-09-28T05:00:01+00:00' }), /video_retry_cutoff_invalid/);
+  assert.deepEqual(pass.claimInput(), { retry_failed: true, retry_before: cutoff });
+  const ordinary = createVideoRetryPass(false);
+  ordinary.acceptClaim({ games: [] });
+  assert.deepEqual(ordinary.claimInput(), { retry_failed: false });
 });
 
 test('start bridge returns only visible unobstructed play controls and ignores foreign messages', () => {

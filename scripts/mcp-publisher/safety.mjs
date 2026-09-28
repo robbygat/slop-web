@@ -15,6 +15,21 @@ export async function checkApiHealth({ fetchImpl = fetch, now = () => performanc
     if (!response.ok || now() - started >= timeoutMs) throw new ApiHealthFailure();
   } catch { throw new ApiHealthFailure(); }
 }
-// The service has no per-run exclusion list. Force only the first claim so a
-// permanently failing popular game cannot be reclaimed for the whole budget.
-export function retryFailedForClaim(requested, claimed) { return requested && claimed === 0; }
+// A server-issued snapshot retries old failures once each. Reuse it on every
+// claim so fresh failures (including an initial first failure) stay excluded.
+export function createVideoRetryPass(requested) {
+  let retryBefore;
+  return {
+    claimInput: () => requested
+      ? { retry_failed: true, ...(retryBefore ? { retry_before: retryBefore } : {}) }
+      : { retry_failed: false },
+    acceptClaim(result) {
+      if (!requested) return;
+      const received = result?.retry_before;
+      if (typeof received !== "string" || received.length > 40 ||
+          !/^\d{4}-\d{2}-\d{2}T/.test(received) || !Number.isFinite(Date.parse(received)) ||
+          (retryBefore && received !== retryBefore)) throw new Error("video_retry_cutoff_invalid");
+      retryBefore = received;
+    },
+  };
+}
