@@ -17,7 +17,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.5.0" });
+const server = new McpServer({ name: "slop", version: "0.5.1" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -58,7 +58,7 @@ tool(
 tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. Its instructions include the feed framing and terse-HUD rules. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
 tool(
   "slop_send_draft",
-  "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Does not publish or charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
+  "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private text game bundle for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Private by default; publish:true requests publication only with owner-enabled Auto-publish. Does not charge credits. index.html is required; max 64 files / 2 MB total. No paid Store assets in this bridge.",
   {
     project_id: z.string().uuid(),
     request_id: z.string().uuid(),
@@ -92,7 +92,7 @@ tool(
 );
 tool(
   "slop_publish",
-  "Publish a draft revision without a browser: Slop's server playtests it, records the feed GIF and cover with slop.game's own capture, and publishes it (staff accounts go live immediately; everyone else goes to review). Needs the owner to switch on Auto-publish for this connection at slop.game/#/connect. Only the project's latest revision can be published; a later revision of an already-published project updates that game. Poll slop_draft_status for publication status (requested, recording, publishing, published, pending_review, failed with a reason).",
+  "Publish a draft revision without a browser: Slop's server playtests it, records a moving H.264 MP4 feed video plus a poster and legacy GIF/cover, and publishes it only after video recording succeeds (staff accounts go live immediately; everyone else goes to review). Needs the owner to switch on Auto-publish for this connection at slop.game/#/connect. Only the project's latest revision can be published; a later revision of an already-published project updates that game. Poll slop_draft_status for publication status (requested, recording, publishing, published, pending_review, failed with a reason).",
   { submission_id: z.string().uuid() },
   (args) => bridge.authorized("/agent/publish", { submission_id: args.submission_id }),
   { idempotentHint: true },

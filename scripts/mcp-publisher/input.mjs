@@ -1,0 +1,23 @@
+// Recorder-only bridge: locate visible authored start/retry buttons, then let
+// CDP send a trusted click at the returned point. Never change game state.
+export function installRecorderInput(target = window) {
+  target.addEventListener("message", (event) => {
+    if (event.source !== target.parent || typeof event.data !== "string" || event.data.length > 512) return;
+    let message; try { message = JSON.parse(event.data); } catch { return; }
+    if (message?.type !== "slopRecorderControls") return;
+    const label = /^(?:start|play|start game|play game|play now|tap to play|tap to start|continue|resume|retry|try again|play again|scramble again|keep playing)[!\s.>…]*$/i;
+    const points = [];
+    for (const element of target.document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]')) {
+      if (element.disabled || !label.test((element.textContent || element.value || element.getAttribute("aria-label") || "").trim())) continue;
+      const rect = element.getBoundingClientRect(), style = target.getComputedStyle(element);
+      const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      if (rect.width <= 0 || rect.height <= 0 || style.visibility !== "visible" || style.display === "none" || Number(style.opacity) === 0) continue;
+      if (x < 0 || y < 0 || x >= target.innerWidth || y >= target.innerHeight) continue;
+      const hit = target.document.elementFromPoint(x, y);
+      if (hit !== element && !element.contains(hit)) continue;
+      points.push({ x, y });
+      break;
+    }
+    target.parent.postMessage(JSON.stringify({ type: "slopRecorderControlsResult", points }), "*");
+  });
+}

@@ -20,6 +20,7 @@ import { launchChrome } from "./cdp.mjs";
 import { installGameStorage } from "../../src/lib/player-storage.js";
 import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-input.js";
 import { installRecorderClock } from "./clock.js";
+import { installRecorderInput } from "./input.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -160,11 +161,13 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
     "object-src 'none'", "frame-src 'none'", "form-action 'none'", `base-uri ${base()}`].join("; ");
   let softGL = false;
   const noMsaa = "try{const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(typeof t==='string'&&/webgl/i.test(t))a={...(a&&typeof a==='object'?a:{}),antialias:false};return g.call(this,t,a);};}catch{}";
-  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
+  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
   const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#000;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style></head>
 <body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
-<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__acks=new Map();
+<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__errors=[];window.__controls=[];window.__acks=new Map();
 addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(!m||typeof m.type!=='string')return;
+ if(m.type==='webGameError'&&window.__errors.length<12)window.__errors.push(String(m.message||'').slice(0,800));
+ if(m.type==='slopRecorderControlsResult'){window.__controls=m.points;return;}
  if(m.type==='slopClockAck'){const r=window.__acks.get(m.seq);if(r){window.__acks.delete(m.seq);r();}return;}
  if(m.type==='webCaptureResult'||m.type==='webCaptureError')return;window.__events.push({type:m.type,at:performance.now()});});
 let seq=0;window.__clock=(op,dt)=>new Promise(resolve=>{const s=++seq;const t=setTimeout(()=>{window.__acks.delete(s);resolve(false)},20000);window.__acks.set(s,()=>{clearTimeout(t);resolve(true)});f.contentWindow.postMessage(JSON.stringify({type:'slopClock',op,dt,seq:s}),'*');});
@@ -181,7 +184,9 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       if (fromFiles) body = Object.hasOwn(source.files, rel) ? Buffer.from(source.files[rel], "utf8") : null;
       else body = await fetchRemote(rel);
       if (!body) { res.writeHead(404); return res.end(); }
-      const headers = { "content-type": contentType(rel), "cache-control": "no-store" };
+      // Sandboxed game frames have an opaque origin; local ES module imports
+      // require CORS even though every asset comes from this one proxy.
+      const headers = { "content-type": contentType(rel), "cache-control": "no-store", "access-control-allow-origin": "*" };
       if (rel === "index.html") {
         let html = body.toString("utf8");
         html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + inject()) : inject() + html;
@@ -257,14 +262,18 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
         if (drag) {
           if (drag.left-- > 0) {
             drag.x = Math.min(W - 24, Math.max(24, drag.x + drag.dx));
-            drag.y = Math.min(H - 24, Math.max(H * 0.25, drag.y + r(-6, 6)));
+            drag.y = Math.min(H - 24, Math.max(H * 0.25, drag.y + drag.dy));
             await touch("touchMove", drag.x, drag.y);
           } else { await touch("touchEnd"); drag = null; }
         } else if (f === 0) {
           const x = r(70, W - 70), y = r(H * 0.35, H * 0.85);
           await touch("touchStart", x, y); await touch("touchEnd");
         } else if (f === 10) {
-          drag = { x: r(90, W - 90), y: r(H * 0.5, H * 0.8), dx: (rand() < 0.5 ? -1 : 1) * r(4, 9), left: 12 };
+          // Cover upward/downward swipes as well as steering; some games
+          // ignore taps and require a real upward flick to begin moving.
+          const direction = [[0, -1], [1, 0], [0, 1], [-1, 0]][Math.floor(frame / FPS) % 4];
+          const speed = r(5, 9);
+          drag = { x: r(90, W - 90), y: r(H * 0.5, H * 0.8), dx: direction[0] * speed, dy: direction[1] * speed, left: 12 };
           await touch("touchStart", drag.x, drag.y);
         }
       } else {
@@ -275,7 +284,27 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
         if (f === 24 && frame % (FPS * 2) === 24) await click(W / 2 + r(-100, 100), H * 0.6);
       }
     };
-    if (desktop) await click(W / 2, H * 0.6);
+    let controlClicks = 0;
+    const activateStart = async () => {
+      if (controlClicks >= 4) return;
+      await evaluate("window.__controls=null;window.__send({type:'slopRecorderControls'})");
+      for (let tries = 0; tries < 20; tries++) {
+        const points = await evaluate("window.__controls");
+        if (Array.isArray(points)) {
+          const point = points[0];
+          if (Number.isFinite(point?.x) && Number.isFinite(point?.y) && point.x >= 0 && point.x < W && point.y >= 0 && point.y < H) {
+            await click(point.x, point.y); controlClicks++;
+          }
+          return;
+        }
+        await sleep(10);
+      }
+    };
+    // A short game may already have ended while textures/shaders settled.
+    // Restart through the normal host lifecycle before collecting its clip.
+    await evaluate("window.__send({type:'restart',request:'video-start'})");
+    await activateStart();
+    if (desktop && !controlClicks) await click(W / 2, H * 0.6);
 
     // Settle a few virtual frames (games often spawn on their first update),
     // then record. A game over restarts the game (as the feed card would).
@@ -283,6 +312,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     let seen = await evaluate("window.__events.length");
     let restarts = 0, frames = 0, stepMs = 0;
     for (let i = 0; i < settle + total; i++) {
+      if (i && i % FPS === 0) await activateStart();
       await input(i);
       const t0 = Date.now();
       if (!(await evaluate(`window.__clock('step',${1000 / FPS})`))) throw new VideoFailure("clock_unavailable", true);
@@ -303,6 +333,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     if (drag) await touch("touchEnd").catch(() => {});
     diagnostics.frames = frames;
     diagnostics.restarts = restarts;
+    diagnostics.controlClicks = controlClicks;
     diagnostics.stepMs = Math.round(stepMs / Math.max(1, settle + total));
     diagnostics.errors = await evaluate("window.__events.filter(e=>e.type==='webGameError').length");
     const stats = await motionStats(dir, frames);
@@ -316,6 +347,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       durationMs: Math.round((encoded.frames / FPS) * 1000), fps: FPS,
     };
   } finally {
+    if (process.env.SLOP_VIDEO_DEBUG) diagnostics.gameErrors = await evaluate("window.__errors || []").catch(() => []);
     await chrome.close();
     server.close();
     if (!process.env.SLOP_VIDEO_KEEP) await rm(dir, { recursive: true, force: true }).catch(() => {});
