@@ -39,7 +39,7 @@ export const followPerson=(id,follow)=>asOwner((owner,client)=>result(follow?cli
 // failed ranked cursor into an unrelated chronological cursor.
 export async function loadDiscoveryPage({cursor=null,order='popular',platform='all',limit=12}={}){
  const metric=order==='popular'?'qualified_play_count':'created_at';
- let query=supabase.from('games').select(columns+',qualified_play_count,preview_url,preview_status')
+ let query=supabase.from('games').select(columns+',qualified_play_count,preview_url,preview_status,preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)')
   .eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
  query=filterPlatform(query,platform);
  if(cursor){
