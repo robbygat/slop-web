@@ -55,10 +55,9 @@ jobs:
   # release has none: new MCP, website and app publishes on the schedule, the
   # whole catalog on a backfill dispatch. Logs carry counts and codes only.
   videos:
-    # Runs after the publish job so a just-published game gets its video in
-    # the same run; a backfill skips publishing and still runs.
-    if: always() && github.ref == 'refs/heads/main'
-    needs: publish
+    # Independent of the publish job (which may queue behind another run):
+    # a game published by this run is picked up by the next scheduled run.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.videos == 'backfill' && 75 || 25 }}
     strategy:
