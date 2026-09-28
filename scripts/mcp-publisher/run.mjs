@@ -5,13 +5,14 @@
 //
 // THE REPOSITORY IS PUBLIC. Log only counts and fixed status/failure codes:
 // never game names, source, owner or submission ids, leases or media.
+import { attachPublishedVideo, completePublisherJob, publisherMaxJobs } from "./completion.mjs";
 import { recordGame, RecorderFailure } from "./record.mjs";
 import { recordVideo, VideoFailure } from "./video.mjs";
 import { checkApiHealth, ApiHealthFailure, PUBLISHABLE_KEY, createVideoRetryPass } from "./safety.mjs";
 
 const API = process.env.SLOP_MCP_URL ?? "https://api.slop.game/functions/v1/slop-mcp";
 const AUDIENCE = "https://api.slop.game/functions/v1/slop-mcp";
-const MAX_JOBS = Number(process.env.SLOP_PUBLISHER_MAX_JOBS ?? 8);
+const MAX_JOBS = publisherMaxJobs(process.env.SLOP_PUBLISHER_MAX_JOBS ?? 8);
 // "publish" claims MCP publish jobs; "videos" records feed videos for
 // published games that have none for their current release.
 const MODE = process.env.SLOP_PUBLISHER_MODE ?? "publish";
@@ -62,19 +63,24 @@ for (let n = 0; n < MAX_JOBS && Date.now() < publishDeadline; n++) {
       const up = await call(`${path}/media?kind=${kind}`, job.lease, { bytes, type });
       if (up.status !== 200) throw new RecorderFailure("recorder_error", true);
     }
-    const done = await call(`${path}/finish`, job.lease);
-    if (done.body?.ok === true) {
-      done.body.status === "published" ? published++ : review++;
-      // Attach the video to the release that just went live (seconds later).
-      // A game held for review gets its video from the video pass once approved.
-      if (done.body.status === "published") {
-        const attached = await attachVideo(done.body.slug, clip).catch(() => false);
-        console.log(`job ${n + 1}: video ${attached ? "attached" : "deferred to the video pass"}`);
-      }
-      console.log(`job ${n + 1}: ${done.body.status}${done.body.update ? " (update)" : ""} ${media.width}x${media.height} ${media.frameCount} frames`);
+    const completion = await completePublisherJob({
+      finish: () => call(`${path}/finish`, job.lease),
+      attachVideo: slug => attachVideo(slug, clip, job.digest),
+      fail: json => call(`${path}/fail`, job.lease, {json}),
+    });
+    if (completion.status === 'published') {
+      published++;
+      console.log(`job ${n + 1}: published with video${completion.update ? " (update)" : ""} ${media.width}x${media.height} ${media.frameCount} frames`);
+    } else if (completion.status === 'pending_review') {
+      review++;
+      console.log(`job ${n + 1}: pending_review`);
     } else {
       failed++;
-      console.log(`job ${n + 1}: publish failed: ${done.body?.code ?? done.status}`);
+      process.exitCode = 1;
+      console.log(`job ${n + 1}: ${completion.code}`);
+      // Never immediately reclaim a fresh failure or consume all attempts in
+      // one pass. An already-public game with missing video is not republished.
+      break;
     }
   } catch (error) {
     const code = error instanceof RecorderFailure ? error.code : "recorder_error";
@@ -82,6 +88,8 @@ for (let n = 0; n < MAX_JOBS && Date.now() < publishDeadline; n++) {
     failed++;
     console.log(`job ${n + 1}: ${code} ${JSON.stringify(diagnostics ?? {})}`);
     await call(`${path}/fail`, job.lease, { json: { failure_code: code, retryable } }).catch(() => {});
+    process.exitCode = 1;
+    break;
   }
 }
 console.log(`published ${published}, in review ${review}, failed ${failed}`);
@@ -94,27 +102,31 @@ if (MODE === "videos") {
   }
 }
 
-async function attachVideo(slug, clip) {
-  if (typeof slug !== "string" || !/^[a-z0-9-]{3,120}$/.test(slug)) return false;
+async function attachVideo(slug, clip, sourceDigest) {
   const { createHash } = await import("node:crypto");
   const key = createHash("sha256").update(clip.video).digest("hex").slice(0, 32);
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt) await new Promise((r) => setTimeout(r, 3000 * attempt));
-    // Public catalog read: the published row's id and current release.
-    const rows = await fetch(`https://api.slop.game/rest/v1/games?slug=eq.${slug}&status=eq.published&select=id,slug,published_bundle_path`, {
-      headers: { apikey: PUBLISHABLE_KEY }, signal: AbortSignal.timeout(20_000),
-    }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
-    const game = rows?.[0];
-    if (!game?.id) continue;
-    const token = await oidcToken(), path = `/publisher/videos/${game.id}/media`;
-    const poster = await call(`${path}?kind=poster&key=${key}`, token, { bytes: clip.poster, type: "image/jpeg" });
-    if (poster.status !== 200) continue;
-    const query = new URLSearchParams({ kind: "video", key, poster_bytes: String(clip.poster.length),
-      release_key: game.published_bundle_path || `legacy/${game.slug}` });
-    const video = await call(`${path}?${query}`, token, { bytes: clip.video, type: "video/mp4" });
-    if (video.status === 200 && video.body?.ok === true) return true;
-  }
-  return false;
+  return attachPublishedVideo({
+    slug, sourceDigest,
+    delay: ms => new Promise(resolve => setTimeout(resolve, ms)),
+    readGame: async slug => {
+      await checkApiHealth();
+      const rows = await fetch(`https://api.slop.game/rest/v1/games?slug=eq.${slug}&status=eq.published&select=id,owner_id,slug,status,published_bundle_path,bundle_digest,bundle_manifest`, {
+        headers: { apikey: PUBLISHABLE_KEY }, signal: AbortSignal.timeout(20_000), redirect: "error",
+      }).then(r => r.ok ? r.json() : []);
+      return rows?.[0] ?? null;
+    },
+    upload: async receipt => {
+      await checkApiHealth();
+      const token = await oidcToken(), path = `/publisher/videos/${receipt.game_id}/media`;
+      const posterQuery = new URLSearchParams({kind:"poster",key,release_key:receipt.release_root});
+      const poster = await call(`${path}?${posterQuery}`, token, {bytes:clip.poster,type:"image/jpeg"});
+      if (poster.status !== 200) return false;
+      await checkApiHealth();
+      const query = new URLSearchParams({kind:"video",key,poster_bytes:String(clip.poster.length),release_key:receipt.release_root});
+      const video = await call(`${path}?${query}`, token, {bytes:clip.video,type:"video/mp4"});
+      return video.status === 200 && video.body?.ok === true;
+    },
+  });
 }
 
 async function videos() {

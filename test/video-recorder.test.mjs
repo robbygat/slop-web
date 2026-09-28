@@ -163,3 +163,19 @@ test('isolated browser still rejects a static canvas despite trusted gestures', 
   assert.equal(diagnostics.moving, 0);
   assert.equal(diagnostics.errors, 0);
 });
+
+
+test('higher-quality encoder preserves decodable 720p30 video and the upload byte ceiling', {skip:process.env.SLOP_RECORDER_ENCODER_TEST !== '1',timeout:60000}, async()=>{
+ const {mkdtemp,rm}=await import('node:fs/promises'),{tmpdir}=await import('node:os'),{join}=await import('node:path'),{execFileSync}=await import('node:child_process');
+ const {encodeLoop}=await import('../scripts/mcp-publisher/video.mjs');
+ const {validateVideo,validatePoster}=await import('../supabase/functions/slop-mcp/publisher.mjs');
+ const dir=await mkdtemp(join(tmpdir(),'slop-quality-test-'));
+ try {
+  execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=720x1280:rate=30','-frames:v','72','-q:v','2','-start_number','0',join(dir,'f%05d.jpg')]);
+  const clip=await encodeLoop(dir,72,{width:720,height:1280});
+  assert.equal(clip.crf,21);assert.ok(clip.video.length<=2600000);
+  const info=validateVideo(clip.video);assert.equal(info.width,720);assert.equal(info.height,1280);assert.ok(validatePoster(clip.poster,720,1280));
+  const media=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_name,r_frame_rate,pix_fmt','-of','json',join(dir,'preview.mp4')],{encoding:'utf8'}));
+  assert.equal(media.streams[0].codec_name,'h264');assert.equal(media.streams[0].r_frame_rate,'30/1');assert.equal(media.streams[0].pix_fmt,'yuv420p');
+ } finally {await rm(dir,{recursive:true,force:true});}
+});
