@@ -6,6 +6,7 @@ import {canonicalGameUrl} from '../lib/game-links.js';
 import {visibleFeedGame} from '../lib/feed-focus.js';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
 import {feedPromoAfter} from '../lib/feed-promo.js';
+import {appStoreUrl,googlePlayUrl} from '../lib/store-links.js';
 import {loadLeaderboard} from '../lib/leaderboard.js';
 import {useAuth} from '../auth.jsx';
 import {Button,Empty,Loading,Notice,Slop} from '../components/ui.jsx';
@@ -16,7 +17,7 @@ import './feed.css';
 
 const tones={tangerine:['#ffd98c','#ffa942','#8f4a1e'],mint:['#d2f8d8','#8fdba9','#346b4e'],bubblegum:['#ffd6e8','#f4a9cd','#915474'],grape:['#dec6ff','#b894e2','#69508c'],blueberry:['#d2e9ff','#9ac6ef','#416d91'],aqua:['#d1f5f0','#8edace','#3e7977'],lime:['#ecf5c2','#c9e47d','#697c39']};
 function tone(game){const colors=tones[game.profiles?.slop_look?.palette]||tones.tangerine;return {'--feed-light':colors[0],'--feed-clay':colors[1],'--feed-shade':colors[2],'--game-aspect':gameFormat(game).playerAspect};}
-function MobileAppCard({onContinue,cardRef}){return <aside ref={cardRef} className="feed-app-card" aria-label="Slop mobile app"><div className="feed-app-scene"><img src="/assets/illustrations/desert-horizon.webp" alt="" loading="lazy"/><div className="feed-app-phone"><img src="/assets/gameplay/night-drift.jpg" alt="Night Drift in Slop on mobile" loading="lazy"/></div><Slop body="heart" color="bubblegum" className="feed-app-slop" alt=""/></div><div className="feed-app-copy"><h2>Slop on your phone.</h2><p>Your character. Your games. The same account.</p><div className="feed-app-links"><a href="#/download"><Icon name="download" size={20}/><span>App Store</span><Icon name="arrow" size={17}/></a><a href="#/download"><Icon name="download" size={20}/><span>Android APK</span><Icon name="arrow" size={17}/></a></div><button className="feed-app-continue" onClick={onContinue}>Next game<Icon name="chevron" size={17}/></button></div></aside>;}
+function MobileAppCard({onContinue,cardRef}){return <aside ref={cardRef} className="feed-app-card" aria-label="Slop mobile app"><div className="feed-app-scene"><img src="/assets/illustrations/desert-horizon.webp" alt="" loading="lazy"/><div className="feed-app-phone"><img src="/assets/gameplay/night-drift.jpg" alt="Night Drift in Slop on mobile" loading="lazy"/></div><Slop body="heart" color="bubblegum" className="feed-app-slop" alt=""/></div><div className="feed-app-copy"><h2>Slop on your phone.</h2><p>Your character. Your games. The same account.</p><div className="feed-app-links"><a href={appStoreUrl} target="_blank" rel="noopener noreferrer"><Icon name="download" size={20}/><span>App Store</span><Icon name="arrow" size={17}/></a><a href={googlePlayUrl} target="_blank" rel="noopener noreferrer"><Icon name="download" size={20}/><span>Google Play</span><Icon name="arrow" size={17}/></a></div><button className="feed-app-continue" onClick={onContinue}>Next game<Icon name="chevron" size={17}/></button></div></aside>;}
 
 export default function Feed(){
  const {user,requireAuth}=useAuth();
