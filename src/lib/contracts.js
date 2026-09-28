@@ -11,6 +11,16 @@ export function trustedMedia(value) {
     return url.protocol === 'https:' && hosts.has(url.hostname) && !url.username && !url.password && !url.port && url.pathname.startsWith('/storage/v1/object/public/') ? url.href : null;
   } catch { return null; }
 }
+// Feed preview video (H.264 loop + poster) from the public video bucket. The
+// row is exposed by RLS only for the game's current published release.
+const VIDEO_PATH = /^[0-9a-f-]{36}\/v1-[0-9a-f]{32}\/(preview\.mp4|poster\.jpg)$/;
+export function previewVideo(game) {
+  const v = Array.isArray(game?.preview_video) ? game.preview_video[0] : game?.preview_video;
+  if (!v || !VIDEO_PATH.test(v.video_path ?? '') || !VIDEO_PATH.test(v.poster_path ?? '')) return null;
+  if (!((v.width === 720 && v.height === 1280) || (v.width === 1280 && v.height === 720))) return null;
+  const base = new URL('/storage/v1/object/public/game-preview-videos/', GAMES).href;
+  return { src: base + v.video_path, poster: base + v.poster_path, width: v.width, height: v.height };
+}
 export function gameEntry(game) {
   if (game?.status !== 'published' || !SLUG.test(game.slug)) throw new Error('This game is not available to play.');
   const version = /^\d+(?:\.\d+){0,3}$/.test(game.bundle_version) ? game.bundle_version : '1.0.0';

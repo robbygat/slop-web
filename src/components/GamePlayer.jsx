@@ -13,7 +13,7 @@ import {useAuth} from '../auth.jsx';
 import {Loading,Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
-export function GamePlayer({url,game,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game',stageAspect=null}){
+export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game',stageAspect=null}){
  const {profile}=useAuth();
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),heldKeys=useRef(new Set());callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
@@ -114,6 +114,7 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
  return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
+   {previewVideo&&!error&&<PreviewVideo key={previewVideo.src} video={previewVideo} done={ready}/>}
    <div className={`player-loading ${ready&&!error?'hidden':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
    {waitingStart&&!error&&<button className="player-start-overlay" onClick={startFromRest}><span>Play</span></button>}
    {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay}/>}
@@ -126,5 +127,19 @@ export function GamePlayer({url,game,preview=false,paused=false,initialMuted=fal
    <IconButton name="refresh" label="Restart game" onClick={replay}/>
    <button className="icon-button" aria-label={expanded?'Exit fullscreen':'Expand game'} title={expanded?'Exit fullscreen':'Expand game'} onClick={expand}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{expanded?<path d="M3 9h6V3m12 6h-6V3M3 15h6v6m12-6h-6v6"/>:<path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/>}</svg></button>
   </div></div>
+ </div>;
+}
+
+// Feed handoff: the recorded loop plays instantly (muted, inline) while the
+// real game boots underneath, then fades out once the game is ready. A video
+// that fails simply disappears and the normal loading surface shows.
+function PreviewVideo({video,done}){
+ const [failed,setFailed]=useState(false),[gone,setGone]=useState(false),el=useRef(null);
+ useEffect(()=>{if(!done)return;const t=setTimeout(()=>{setGone(true);el.current?.pause();},700);return()=>clearTimeout(t);},[done]);
+ useEffect(()=>{const v=el.current;if(!v)return;v.muted=true;const p=v.play();if(p&&p.catch)p.catch(()=>{});},[]);
+ if(failed||gone)return null;
+ return <div className={`player-preview-video ${done?'is-done':''} ${video.width>video.height?'is-wide':''}`} aria-hidden="true" data-preview-video="">
+  <img src={video.poster} alt="" className="player-preview-fill"/>
+  <video ref={el} src={video.src} poster={video.poster} muted autoPlay loop playsInline preload="auto" disablePictureInPicture onError={()=>setFailed(true)}/>
  </div>;
 }
