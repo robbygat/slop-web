@@ -171,3 +171,62 @@ test("real Edge adapter uses phone RLS for bytes and server authority only for r
     globalThis.Deno = originalDeno;
   }
 });
+
+test('ready confirmation adapter restores bytes only for the exact preview mismatch response', async () => {
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const slug = 'mcp-' + 'a'.repeat(32);
+  const validated = await validateDraft({project_id: owner, request_id: owner, revision: 1,
+    name: 'Reopen fixture', files: {'index.html': '<canvas></canvas>', 'game.js': 'void 0;'}});
+  const draft = {...validated, submission_id: owner, owner_id: owner, slug, lease: owner,
+    status: 'validating', game_id: owner, ready_at: '2026-01-01T00:00:00Z'};
+  const originalDeno = globalThis.Deno, originalFetch = globalThis.fetch;
+  let handler, scenario, previews = 0, uploads = 0, finishes = 0;
+  globalThis.Deno = {env: {get: key => ({SUPABASE_URL: 'https://backend.example',
+    SUPABASE_ANON_KEY: 'test-anon', SUPABASE_SERVICE_ROLE_KEY: 'test-service'})[key]}, serve: value => handler = value};
+  globalThis.fetch = async (raw, options) => {
+    const path = new URL(raw).pathname;
+    if (path === '/rest/v1/rpc/mcp_service') {
+      assert.equal(options.headers.Authorization, 'Bearer test-service');
+      finishes++; return Response.json({status: 'ready', game_id: owner});
+    }
+    assert.equal(options.headers.Authorization, 'Bearer owner.jwt');
+    assert.equal(options.headers.apikey, 'test-anon');
+    if (path === '/auth/v1/user') return Response.json({id: owner, is_anonymous: false});
+    if (path === '/rest/v1/rpc/mcp_phone') return Response.json(JSON.parse(options.body).p_action === 'claim_draft' ? draft : {ok: true});
+    if (path === '/rest/v1/games') return Response.json([{id: owner, owner_id: owner, slug, status: 'draft'}]);
+    if (path === '/rest/v1/rpc/reserve_game_draft_upload') return Response.json({owner_id: owner, slug,
+      object_count: 2, upload_id: owner, expires_at: new Date(Date.now() + 600000).toISOString()});
+    if (path.startsWith('/storage/')) { uploads++; return Response.json({ok: true}); }
+    if (path === '/functions/v1/game-bundle') {
+      previews++;
+      const body = JSON.parse(options.body);
+      assert.equal(body.expected_bundle_digest, validated.digest);
+      assert.deepEqual(body.expected_bundle_manifest, validated.manifest);
+      if (previews === 1 && scenario.status) return Response.json({error: scenario.error}, {status: scenario.status});
+      return Response.json({ok: true,
+        url: `https://api.slop.game/functions/v1/game-bundle/preview/${'c'.repeat(64)}/${slug}/1.0.0/index.html`,
+        expires_at: new Date(Date.now() + 900000).toISOString()});
+    }
+    throw new Error(`Unexpected test route ${path}`);
+  };
+  try {
+    await import('../../supabase/functions/slop-mcp/index.ts?ready-preview-reuse-test');
+    for (scenario of [
+      {status: 0, expectedStatus: 200, expectedUploads: 0, expectedPreviews: 1},
+      {status: 409, error: 'uploaded draft snapshot changed', expectedStatus: 200, expectedUploads: 2, expectedPreviews: 2},
+      {status: 503, error: 'uploaded draft snapshot changed', expectedStatus: 503, expectedUploads: 0, expectedPreviews: 1},
+      {status: 409, error: 'preview snapshot unavailable', expectedStatus: 503, expectedUploads: 0, expectedPreviews: 1},
+      {status: 403, error: 'uploaded draft snapshot changed', expectedStatus: 503, expectedUploads: 0, expectedPreviews: 1},
+    ]) {
+      previews = uploads = finishes = 0;
+      const response = await handler(new Request('https://api.slop.game/functions/v1/slop-mcp/drafts/confirm', {
+        method: 'POST', headers: {Authorization: 'Bearer owner.jwt', 'content-type': 'application/json'},
+        body: JSON.stringify({submission_id: owner, expected_digest: validated.digest}),
+      }));
+      assert.equal(response.status, scenario.expectedStatus);
+      assert.equal(uploads, scenario.expectedUploads);
+      assert.equal(previews, scenario.expectedPreviews);
+      assert.equal(finishes, scenario.expectedStatus === 200 ? 1 : 0);
+    }
+  } finally { globalThis.Deno = originalDeno; globalThis.fetch = originalFetch; }
+});

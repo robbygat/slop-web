@@ -304,3 +304,103 @@ test("cross-origin, oversized streaming body and unknown routes fail closed with
 });
 
 test("JavaScript drafts use the strict mobile gateway MIME contract",()=>{assert.equal(mime("game.js"),"text/javascript; charset=utf-8");assert.equal(mime("index.html"),"text/html; charset=utf-8");});
+
+async function reopenFixture({ ready = true, previewError, previewResult, receipt = {}, leaseError, leaseErrorAt = 1 } = {}) {
+  const validated = await validateDraft(draftInput);
+  const slug = 'mcp-' + 'a'.repeat(32);
+  const calls = [];
+  let completed = ready, previews = 0, leaseChecks = 0;
+  const handler = createHandler({
+    verifyUser: async () => calls.push('verify'),
+    phone: async (_token, action) => {
+      calls.push(action);
+      if (action === 'claim_draft') return {
+        ...validated, submission_id: id, owner_id: id, slug, lease: id,
+        status: 'validating', game_id: completed ? id : null,
+        ready_at: completed ? '2026-01-01T00:00:00Z' : null, ...receipt,
+      };
+      if (leaseError && ++leaseChecks === leaseErrorAt) throw leaseError;
+      return { ok: true };
+    },
+    ensureDraft: async () => { calls.push('ensure'); return { id }; },
+    uploadFiles: async (token, actualSlug, files, owner) => {
+      calls.push('upload'); assert.equal(token, 'phone.jwt');
+      assert.equal(actualSlug, slug); assert.equal(owner, id);
+      assert.deepEqual(files, validated.files);
+    },
+    preview: async (token, input) => {
+      calls.push('preview'); previews++;
+      assert.equal(token, 'phone.jwt'); assert.equal(input.expected_bundle_digest, validated.digest);
+      assert.deepEqual(input.expected_bundle_manifest, validated.manifest);
+      if (previews === 1 && previewError) throw previewError;
+      if (previewResult) return previewResult();
+      return { ok: true, url: `https://api.slop.game/functions/v1/game-bundle/preview/${'c'.repeat(64)}/${slug}/1.0.0/index.html`, expires_at: new Date(Date.now() + 900000).toISOString() };
+    },
+    service: async (action, input) => {
+      calls.push(action); assert.equal(input.lease, id); assert.equal(input.owner_id, id);
+      completed = true; return { status: 'ready', game_id: id };
+    },
+  });
+  return { calls, confirm: (body = {}) => handler(request('/drafts/confirm', {
+    body: { submission_id: id, expected_digest: validated.digest, ...body },
+  })) };
+}
+
+test('reopening the exact ready submission verifies a new preview without repeating uploads', async () => {
+  const f = await reopenFixture({ ready: false });
+  assert.equal((await f.confirm()).status, 200);
+  assert.equal((await f.confirm()).status, 200);
+  assert.equal(f.calls.filter(x => x === 'upload').length, 1);
+  assert.equal(f.calls.filter(x => x === 'preview').length, 2);
+  assert.equal(f.calls.filter(x => x === 'finish_draft').length, 2);
+  assert.deepEqual(f.calls.slice(8), ['verify', 'claim_draft', 'ensure', 'check_lease', 'preview', 'finish_draft']);
+});
+
+test('only an explicit changed snapshot restores original bytes under a rechecked lease', async () => {
+  const f = await reopenFixture({ previewError: new BridgeError('draft_snapshot_changed', 409) });
+  assert.equal((await f.confirm()).status, 200);
+  assert.deepEqual(f.calls, ['verify', 'claim_draft', 'ensure', 'check_lease', 'preview', 'check_lease', 'upload', 'check_lease', 'preview', 'finish_draft']);
+});
+
+test('ready preview failures never amplify storage writes or finalize a receipt', async () => {
+  for (const options of [
+    { previewError: new BridgeError('upstream_unavailable', 503) },
+    { previewError: new BridgeError('authentication_required', 401) },
+    { previewError: new BridgeError('rate_limited', 429) },
+    { previewError: new BridgeError('draft_snapshot_changed', 503) },
+    { previewError: new DOMException('Timed out', 'TimeoutError') },
+    { previewResult: () => undefined },
+    { previewResult: () => ({ ok: true, url: 'https://evil.example/', expires_at: new Date(Date.now() + 900000).toISOString() }) },
+    { leaseError: new BridgeError('invalid_connection', 403) },
+  ]) {
+    const f = await reopenFixture(options);
+    assert.notEqual((await f.confirm()).status, 200);
+    assert.equal(f.calls.includes('upload'), false);
+    assert.equal(f.calls.includes('finish_draft'), false);
+  }
+});
+
+test('unconfirmed, malformed, or different-game ready receipts cannot skip uploads', async () => {
+  for (const receipt of [{ ready_at: null }, { ready_at: 'invalid-date' }, { game_id: '22222222-2222-4222-8222-222222222222' }]) {
+    const f = await reopenFixture({ receipt });
+    assert.equal((await f.confirm()).status, 200);
+    assert.equal(f.calls.filter(x => x === 'upload').length, 1);
+  }
+  const unconfirmed = await reopenFixture({ ready: false });
+  assert.equal((await unconfirmed.confirm({ ready_at: '2026-01-01T00:00:00Z', game_id: id })).status, 200);
+  assert.equal(unconfirmed.calls.filter(x => x === 'upload').length, 1);
+});
+
+
+test('a lease lost after detecting changed bytes prevents recovery uploads', async () => {
+  const f = await reopenFixture({
+    previewError: new BridgeError('draft_snapshot_changed', 409),
+    leaseError: new BridgeError('confirmation_expired', 409), leaseErrorAt: 2,
+  });
+  const response = await f.confirm();
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, 'confirmation_expired');
+  assert.equal(f.calls.filter(x => x === 'preview').length, 1);
+  assert.equal(f.calls.includes('upload'), false);
+  assert.equal(f.calls.includes('finish_draft'), false);
+});

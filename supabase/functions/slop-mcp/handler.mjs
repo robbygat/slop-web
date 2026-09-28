@@ -366,18 +366,48 @@ export function createHandler(deps, config = {}) {
           submission_id: draft.submission_id,
           lease: draft.lease,
         });
-        await deps.uploadFiles(bearer, draft.slug, validated.files, draft.owner_id);
-        await phone("check_lease", {
-          submission_id: draft.submission_id,
-          lease: draft.lease,
-        });
-        const preview = await deps.preview(bearer, {
+        const mintPreview = () => deps.preview(bearer, {
           action: "preview",
           slug: draft.slug,
           version: VERSION,
           expected_bundle_digest: validated.digest,
           expected_bundle_manifest: validated.manifest,
         });
+        // claim_draft preserves the server's prior ready receipt while taking
+        // a new lease. Reopening that exact immutable submission need not
+        // rewrite its files. The preview service still verifies every byte
+        // against this digest before issuing a fresh immutable capability.
+        const previouslyReady = UUID.test(draft.game_id ?? "") &&
+          draft.game_id === game.id && typeof draft.ready_at === "string" &&
+          Number.isFinite(Date.parse(draft.ready_at));
+        let preview;
+        let uploadRequired = !previouslyReady;
+        if (previouslyReady) {
+          try {
+            preview = await mintPreview();
+          } catch (error) {
+            // Only an explicit byte mismatch permits restoring the queue's
+            // original source. Timeouts, permission errors and service failures
+            // must never amplify load with another batch of storage writes.
+            if (!(error instanceof BridgeError) ||
+              error.code !== "draft_snapshot_changed" || error.status !== 409) {
+              throw error;
+            }
+            await phone("check_lease", {
+              submission_id: draft.submission_id,
+              lease: draft.lease,
+            });
+            uploadRequired = true;
+          }
+        }
+        if (uploadRequired) {
+          await deps.uploadFiles(bearer, draft.slug, validated.files, draft.owner_id);
+          await phone("check_lease", {
+            submission_id: draft.submission_id,
+            lease: draft.lease,
+          });
+          preview = await mintPreview();
+        }
         requireValue(
           trustedPreview(preview, draft.slug, origins),
           "preview_not_confirmed",
