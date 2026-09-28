@@ -1,9 +1,12 @@
 import {createHash} from 'node:crypto';
-import {coastLane,roofTarget,crowdTarget,flappyTap,rollerDirection} from './visible-game-plans.mjs';
+import {coastLane,roofTarget,crowdTarget,joinTarget,petalDelta,puffPlan,flappyTap,rollerDirection} from './visible-game-plans.mjs';
 
 // These controls are reviewed only for these exact authored control revisions.
 // Titles alone never opt an unrelated or newly changed game into a policy.
 const BUILDS = Object.freeze({
+ 'Petal Storm': ['petal','7990c680c23f52c5644fbf2e80241f85e9c739bf6cad8f67a77a9845dcfdc300'],
+ 'Puff Gulp': ['puff','3dabae337266ea67875c2c40ec3237fd57b644b676a909973435ed6e179175a1'],
+ 'Join Clash 3D': ['join','c9f7240af7f0a3b05f05a32fbeb1e548a4aa30eef18d3f6c5415b1048fae387b'],
  'Stumble Run': ['stumble','93f8e3c2d6a6bc2fea77230b5520938b47db918d051036470b37def5a49ea170'],
  'Pulse Prism': ['trig','b9e6b8fe37296d49920015728d5543b66e50405be1940d0bcd09d665c1ee71d3'],
  'RIFF RUSH': ['riff','6fb19a94d4b4bdd3885d5dcdb5b773c26ec71d863451a046084a0d92c4481618'],
@@ -35,7 +38,7 @@ export function identifyGameInput(html,source){const title=authoredInputTitle(ht
 // Injected into the isolated game frame. Copy bounded scalar observations;
 // never expose renderer/debug objects or call gameplay/state mutation methods.
 export function readRecorderGame(target,kind){
- const titles={stumble:'Stumble Run',flight:'',riff:'',trig:'Pulse Prism',flappy:'Flappy Dunk',roller:'Roller Splat',doge:'Save the Doge',coast:'Coast Racer',roof:'Roof Rails',crowd:'Crowd Clash',hill:'Hill Climb',drift:'Drift King',zigzag:'Zigzag',goods:'Goods Sort 3D',sand:'Sand Balls',whack:'Whack Frenzy',golf:'Golf Paradise',boxing:'Knockout Champ',pingpong:'Ping Pong Rally',zoomies:'Zoomies',tanks:'Crumble Tanks',lily:'Lily Leap',comet:'Comet Catcher',taiko:'Taiko Bloom'};
+ const titles={petal:'Petal Storm',puff:'Puff Gulp',join:'Join Clash 3D',stumble:'Stumble Run',flight:'',riff:'',trig:'Pulse Prism',flappy:'Flappy Dunk',roller:'Roller Splat',doge:'Save the Doge',coast:'Coast Racer',roof:'Roof Rails',crowd:'Crowd Clash',hill:'Hill Climb',drift:'Drift King',zigzag:'Zigzag',goods:'Goods Sort 3D',sand:'Sand Balls',whack:'Whack Frenzy',golf:'Golf Paradise',boxing:'Knockout Champ',pingpong:'Ping Pong Rally',zoomies:'Zoomies',tanks:'Crumble Tanks',lily:'Lily Leap',comet:'Comet Catcher',taiko:'Taiko Bloom'};
  if(target.document.title.trim()!==titles[kind])return null;
  const api=target.__game;
  try{
@@ -78,8 +81,34 @@ export function readRecorderGame(target,kind){
   }
   if(!api)return null;
 
-  const g=kind==='hill'&&typeof api.state==='function'?api.state():['taiko','golf'].includes(kind)?api:['pingpong','whack','drift'].includes(kind)&&typeof api.snapshot==='function'?api.snapshot():typeof api.snap==='function'?api.snap():null;
+  const g=kind==='hill'&&typeof api.state==='function'?api.state():['taiko','golf'].includes(kind)?api:['pingpong','whack','drift','petal','puff'].includes(kind)&&typeof api.snapshot==='function'?api.snapshot():typeof api.snap==='function'?api.snap():null;
   const finite=(...values)=>values.every(v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<1e8);
+  if(kind==='petal'){
+   if(!g||typeof g.over!=='boolean'||typeof g.started!=='boolean'||!finite(g.score,g.heroR,g.W,g.H,g.top,g.bottom,g.left,g.right,g.grazes,g.blooms)||!Array.isArray(g.hero)||g.hero.length!==2||!finite(...g.hero)||!Array.isArray(g.bullets)||g.bullets.length>1100||g.bullets.some(b=>!Array.isArray(b)||b.length!==7||!finite(...b)))return null;
+   return {kind,state:g.over?'over':'play',score:g.score,started:g.started,hero:g.hero.slice(),heroR:g.heroR,W:g.W,H:g.H,top:g.top,bottom:g.bottom,left:g.left,right:g.right,grazes:g.grazes,blooms:g.blooms,bullets:g.bullets.map(b=>b.slice())};
+  }
+  if(kind==='puff'){
+   if(!g||typeof g.over!=='boolean'||typeof g.holding!=='boolean'||typeof g.mode!=='string'||!finite(g.score,g.hearts,g.belly,g.ceil,g.floor,g.puff?.x,g.puff?.y,g.puff?.r,g.cone?.L,g.cone?.w1,g.input?.gulps,g.input?.spits,g.input?.hurts,g.input?.kills)||!Array.isArray(g.enemies)||g.enemies.length>256)return null;
+   const enemies=g.enemies.map(e=>e&&finite(e.x,e.y,e.r,e.vx)&&typeof e.spiky==='boolean'&&typeof e.sucked==='boolean'?{x:e.x,y:e.y,r:e.r,vx:e.vx,spiky:e.spiky,sucked:e.sucked}:null);
+   if(enemies.some(e=>!e))return null;
+   const boss=g.boss?{y:g.boss.y,state:g.boss.state}:null;if(boss&&(!finite(boss.y)||typeof boss.state!=='string'||boss.state.length>20))return null;
+   return {kind,state:g.over?'over':'play',phase:g.mode,score:g.score,hearts:g.hearts,belly:g.belly,holding:g.holding,ceil:g.ceil,floor:g.floor,puff:{x:g.puff.x,y:g.puff.y,r:g.puff.r},cone:{L:g.cone.L,w1:g.cone.w1},enemies,boss,gulps:g.input.gulps,spits:g.input.spits,hurts:g.input.hurts,kills:g.input.kills};
+  }
+  if(kind==='join'){
+   if(!g||typeof g.state!=='string')return null;
+   const keys=['T','md','mx','targetX','K','HW','count','score','speed','R','front','back','rage','recruits','kills','bossesBeaten','dodges'];
+   if(!keys.every(k=>finite(g[k]))||g.K<=0||g.HW<=0||!Array.isArray(g.hazards)||g.hazards.length>64||!Array.isArray(g.idles)||g.idles.length>24)return null;
+   const hazards=g.hazards.map(h=>{
+    if(!h||!finite(h.d))return null;
+    const keys={wall:['gaps'],saw:['x','amp','w','ph'],roller:['x0','x1','v'],sweeper:['L','th','w']}[h.type];if(!keys)return null;
+    const out={type:h.type,d:h.d};for(const key of keys){const v=h[key];if(key==='gaps'){if(!Array.isArray(v)||v.length>10||v.some(p=>!Array.isArray(p)||p.length!==2||!finite(...p)||p[0]>=p[1]))return null;out[key]=v.map(p=>p.slice());}else{if(!finite(v))return null;out[key]=v;}}return out;
+   });
+   const idles=g.idles.map(i=>i&&finite(i.x,i.d)&&typeof i.gold==='boolean'?{x:i.x,d:i.d,gold:i.gold}:null);
+   if(hazards.some(h=>!h)||idles.some(i=>!i))return null;
+   const boss=g.boss?{phase:g.boss.phase,tx:g.boss.tx,Rs:g.boss.Rs}:null;
+   if(boss&&(typeof boss.phase!=='string'||boss.phase.length>16||!finite(boss.tx,boss.Rs)))return null;
+   return {...Object.fromEntries(keys.map(k=>[k,g[k]])),kind,state:['run','boss','ko'].includes(g.state)?'play':g.state,phase:g.state,hazards,idles,boss};
+  }
   if(kind==='flappy'){
    if(!g||typeof g.st!=='string'||!finite(g.score,g.t,g.x,g.y,g.vx,g.vy,g.floor,g.vxNow,g.passed,g.swishes,api.R,api.G,api.FLAP,api.RIM)||!Array.isArray(g.hoops)||g.hoops.length>2)return null;
    const hoops=g.hoops.map(h=>Object.fromEntries(['x','y','baseY','amp','freq','ph','ang','half'].map(k=>[k,h[k]])));
@@ -200,10 +229,10 @@ export function installGameObservation(read,target=window){
 
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const slew=(from,to,max)=>from+clamp(to-from,-max,max);
-export const GAME_WARMUP_FRAMES=Object.freeze({stumble:6,flight:30,riff:6,trig:6,flappy:12,roller:6,doge:6,coast:15,roof:15,crowd:15,hill:15,drift:45,zigzag:12,goods:6,sand:60,whack:6,golf:45,boxing:12,pingpong:18,zoomies:45,tanks:30,lily:12,comet:30,taiko:66});
-// The boxing sway spring is stable at its authored 60Hz update cadence.
+export const GAME_WARMUP_FRAMES=Object.freeze({petal:6,puff:6,join:6,stumble:6,flight:30,riff:6,trig:6,flappy:12,roller:6,doge:6,coast:15,roof:15,crowd:15,hill:15,drift:45,zigzag:12,goods:6,sand:60,whack:6,golf:45,boxing:12,pingpong:18,zoomies:45,tanks:30,lily:12,comet:30,taiko:66});
+// Boxing springs and Petal Storm adaptive quality expect normal 60Hz updates.
 // Substep its clock without changing the 30fps clip's duration or any state.
-export function gameInputSimulationSteps(kind){return kind==='boxing'?2:1;}
+export function gameInputSimulationSteps(kind){return ['boxing','petal'].includes(kind)?2:1;}
 export function createGameInputController(kind,{width,height,fps=30}){
  if(!Object.hasOwn(GAME_WARMUP_FRAMES,kind)||!Number.isFinite(width)||!Number.isFinite(height)||width<100||height<100||fps!==30)throw new TypeError('Invalid game input policy');
  let finger=null,lastDecision=-99,goal=0,gesture=null,nextAction=0,rollLane=0;
@@ -251,6 +280,28 @@ export function createGameInputController(kind,{width,height,fps=30}){
    if(kind==='doge'){
     if(gesture){const i=frame-gesture.start;if(i*2>=gesture.path.length){gesture=null;return end();}return move(gesture.path[i*2],gesture.path[i*2+1]);}
     if(g.phase==='draw'&&g.path&&frame>=nextAction){gesture={start:frame,path:g.path.slice()};nextAction=frame+40;return move(g.path[0],g.path[1]);}return end();
+   }
+   if(kind==='petal'){
+    if(!finger)return move(width*.5,height*.76);
+    const [dx,dy]=petalDelta(g),x=finger.x+dx,y=finger.y+dy;
+    if(x<width*.1||x>width*.9||y<height*.15||y>height*.92)return [...end(),...move(width*.5,height*.65)];
+    return move(x,y);
+   }
+   if(kind==='puff'){
+    if(frame<nextAction)return [];
+    if(!finger)return move(width*.5,height*.55);
+    const plan=puffPlan(g);
+    if(plan.release){nextAction=frame+3;return end();}
+    const y=finger.y+clamp(plan.y-g.puff.y,-6,6);
+    if(y<height*.16||y>height*.9){nextAction=frame+3;return end();}
+    return move(width*.5,y);
+   }
+   if(kind==='join'){
+    if(!finger)return move(width*.5,height*.74);
+    if(frame-lastDecision>=3){lastDecision=frame;goal=joinTarget(g);}
+    const dx=clamp((goal-g.targetX)/g.K,-width*.018,width*.018),x=finger.x+dx;
+    if(x<width*.1||x>width*.9)return [...end(),...move(width*.5,height*.74)];
+    return move(x,height*.74);
    }
    if(['coast','roof','crowd'].includes(kind)){
     if(!finger)return move(width*.5,height*.74);
@@ -378,7 +429,7 @@ export function createGameInputController(kind,{width,height,fps=30}){
   },
  };
 }
-export function gameInputProgress(g){if(!g)return null;const out={state:g.state,score:g.score};for(const key of ['x','yaw','rank','crashes','passes','boosts','moves','hp','kills','drags','row','chain','caught','hits','taps','lives','kos','perfects','landed','hole','strokes','shots','clears','floor','digs','carved','bonks','bombs','distance','coins','gap','turns','near','gems','count','cleared','combo','passed','swishes','scene','bees','alt','speed'])if(Number.isFinite(g[key]))out[key]=g[key];return out;}
+export function gameInputProgress(g){if(!g)return null;const out={state:g.state,score:g.score};for(const key of ['x','yaw','rank','crashes','grazes','blooms','hearts','gulps','spits','hurts','recruits','bossesBeaten','dodges','passes','boosts','moves','hp','kills','drags','row','chain','caught','hits','taps','lives','kos','perfects','landed','hole','strokes','shots','clears','floor','digs','carved','bonks','bombs','distance','coins','gap','turns','near','gems','count','cleared','combo','passed','swishes','scene','bees','alt','speed'])if(Number.isFinite(g[key]))out[key]=g[key];return out;}
 
 export function continuousGameInput(g){return !!g&&(g.state==='play'||g.kind==='tanks'&&['battle','kill','advance'].includes(g.state));}
 

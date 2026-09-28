@@ -5,6 +5,7 @@ import {gamePlatform} from '../lib/game-platforms.js';
 import {captureStageAspect} from '../lib/capture-contracts.js';
 import {recordingOwner,assertRecordingOwner,recordingRelease,RECORDING_UNSUPPORTED} from '../lib/preview-recording.js';
 import {loadOwnerPreviewGame,usePublishVideo} from '../lib/use-publish-video.js';
+import {mcpRecoveryError} from '../lib/mcp-publication-recovery.js';
 import {GamePlayer} from './GamePlayer.jsx';
 import {Button,Loading,Modal,Notice} from './ui.jsx';
 import './manual-preview-recorder.css';
@@ -18,20 +19,20 @@ export default function ManualPreviewRecorder({game,onClose}){
  const supported=typeof VideoEncoder==='function'&&typeof OffscreenCanvas==='function'&&typeof VideoFrame==='function';
  useEffect(()=>{alive.current=true;let cancelled=false;
   if(!owner){setError(new Error('Sign in again before recording your preview.'));setPhase('failed');return()=>{alive.current=false;};}
-  loadOwnerPreviewGame(game.id).then(value=>{assertRecordingOwner(owner,getSession());if(cancelled)return;setRelease(recordingRelease(value,owner.owner));setCurrent(value);setPhase('ready');}).catch(e=>{if(!cancelled){setError(e);setPhase('failed');}});
+  loadOwnerPreviewGame(game.id).then(value=>{assertRecordingOwner(owner,getSession());if(cancelled)return;setRelease(recordingRelease(value,owner.owner));setCurrent(value);setPhase('ready');}).catch(e=>{if(!cancelled){setError(mcpRecoveryError(e));setPhase('failed');}});
   return()=>{cancelled=true;alive.current=false;};
  },[game.id]);
  useEffect(()=>{if(owner&&user?.id!==owner.owner)onClose();},[user?.id]);
  useEffect(()=>()=>{if(clipUrl)URL.revokeObjectURL(clipUrl);},[clipUrl]);
  useEffect(()=>{if(phase!=='recording'||video.status!=='recording')return;const started=performance.now();setSeconds(0);const timer=setInterval(()=>setSeconds(Math.floor((performance.now()-started)/1000)),250);return()=>clearInterval(timer);},[phase,video.status]);
- function record(){try{assertRecordingOwner(owner,getSession());setError(null);setClipUrl(null);setSeconds(0);setPhase('recording');}catch(e){setError(e);}}
+ function record(){try{assertRecordingOwner(owner,getSession());setError(null);setClipUrl(null);setSeconds(0);setPhase('recording');}catch(e){setError(mcpRecoveryError(e));}}
  async function review(){if(pending.current)return;pending.current=true;setError(null);
   try{const clip=await video.finish({resume:false});if(!alive.current)return;setClipUrl(URL.createObjectURL(new Blob([clip.video],{type:'video/mp4'})));setPhase('review');}
-  catch(e){if(alive.current){setError(e);setPhase('ready');}}finally{pending.current=false;}
+  catch(e){if(alive.current){setError(mcpRecoveryError(e));setPhase('ready');}}finally{pending.current=false;}
  }
  async function save(){if(pending.current)return;pending.current=true;setError(null);setPhase('saving');
   try{assertRecordingOwner(owner,getSession());await video.attach(current.slug,{expectedGame:release});if(alive.current)setPhase('saved');}
-  catch(e){if(alive.current){setError(e);setPhase('review');}}finally{pending.current=false;}
+  catch(e){if(alive.current){setError(mcpRecoveryError(e));setPhase('review');}}finally{pending.current=false;}
  }
  const active=phase==='recording',reviewing=['review','saving','saved'].includes(phase);
  return <Modal title={`Record preview · ${game.name}`} onClose={()=>{if(phase!=='saving')onClose();}} className="manual-preview-modal">

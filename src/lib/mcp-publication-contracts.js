@@ -25,3 +25,27 @@ export function mcpInboxState(row){
  if(row?.status!=='draft')return row?.status;
  return row.published_bundle_path||(row.thumb&&row.preview_url)?'updating':'draft';
 }
+
+// The inbox offers recovery only for this owner's current published release.
+// Old-release records and legacy GIFs cannot satisfy a current MP4 preview.
+export function mcpInboxPreview(row,owner){
+ if(!UUID.test(owner)||row?.owner_id!==owner||!UUID.test(row.id)||row.status!=='published'||typeof row.slug!=='string'||!/^mcp-[a-f0-9]{32}$/.test(row.slug))return null;
+ const releaseKey=row.published_bundle_path||`legacy/${row.slug}`;
+ if(row.published_bundle_path&&!new RegExp(`^releases/[a-f0-9]{64}/${row.slug}$`).test(releaseKey))return null;
+ const videos=Array.isArray(row.preview_video)?row.preview_video:row.preview_video?[row.preview_video]:[];
+ const hasVideo=videos.some(video=>video.game_id===row.id&&video.release_key===releaseKey&&new RegExp(`^${row.id}/v1-[a-f0-9]{32}/preview\\.mp4$`).test(video.video_path||''));
+ return {id:row.id,slug:row.slug,name:row.name||'Your game',releaseKey,hasVideo};
+}
+
+export async function mcpUpdateReceipt(row,preview,target){
+ if(row?.id!==target?.game_id||row?.slug!==target?.slug)return null;
+ // A pending target may belong to a different revision. Its protected source
+ // manifest must match this revision before we treat it as a retry receipt.
+ if(row.status==='pending_review'){
+  if(!Array.isArray(row.bundle_manifest))return null;
+  const source=row.bundle_manifest.filter(file=>file&&typeof file.path==='string'&&!/^1\.0\.0\/(covers|previews)\//.test(file.path)).sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
+  if(!source.some(file=>file.path==='1.0.0/index.html')||await sha256(source.map(file=>`${file.path}:${file.bytes}:${file.sha256}`).join('\n'))!==preview.digest)return null;
+ }
+ const receipt=await mcpPublicationReceipt(row,{...preview,game_id:target.game_id,slug:target.slug});
+ return receipt?{...receipt,updated:true}:null;
+}
