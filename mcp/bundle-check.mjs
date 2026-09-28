@@ -96,7 +96,7 @@ export async function checkBundle(files, { target_platform } = {}) {
   rule(/\bnew\s+THREE\.Geometry\b|\bTHREE\.Face3\b/, "THREE.Geometry and Face3 do not exist in three.js r128. Use BufferGeometry.");
   rule(/examples\/jsm|\bOrbitControls\b|\bEffectComposer\b|\bGLTFLoader\b|\bUnrealBloomPass\b/, "Only core three.js r128 is available (no examples/jsm add-ons).");
   if (/\bWebGLRenderer\s*\(|getContext\s*\(\s*["'](?:webgl2?|experimental-webgl)["']/.test(code) && !/preserveDrawingBuffer\s*:\s*true/.test(code)) {
-    problems.push("WebGL without preserveDrawingBuffer: true. The cover and gameplay GIF capture come back black, so the game cannot be published.");
+    problems.push("WebGL without preserveDrawingBuffer: true. The cover and gameplay preview capture come back black, so the game cannot be published.");
   }
   rule(/\brequestAnimationFrame\s*\(/, "Use Slop.loop for animation. A separate requestAnimationFrame loop keeps running when Slop pauses the game.", false);
   rule(/addEventListener\(\s*["']mouse(?:down|up)["']/, "slop.js calls preventDefault on pointerdown, so mousedown and mouseup never fire. Use pointerdown and pointerup.", false);

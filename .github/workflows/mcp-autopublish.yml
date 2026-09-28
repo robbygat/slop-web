@@ -9,18 +9,23 @@ on:
   workflow_dispatch:
     inputs:
       videos:
-        description: 'Feed video pass: "incremental" (default) or "backfill" (8 parallel shards, long budget)'
+        description: 'Feed video pass: "incremental" (default) or "backfill" (2 parallel shards, long budget)'
         required: false
         default: incremental
         type: choice
         options: [incremental, backfill]
       retry_failed:
-        description: Retry games whose video recording already failed twice
+        description: Allow one forced retry claim per shard for previously failed videos
         required: false
         default: false
         type: boolean
   schedule:
     - cron: '*/5 * * * *'
+
+# Keep manual backfills and scheduled passes from loading production together.
+concurrency:
+  group: mcp-publisher-production
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -64,8 +69,9 @@ jobs:
     timeout-minutes: ${{ inputs.videos == 'backfill' && 75 || 25 }}
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
-        shard: ${{ fromJSON(inputs.videos == 'backfill' && '[0,1,2,3,4,5,6,7]' || '[0]') }}
+        shard: ${{ fromJSON(inputs.videos == 'backfill' && '[0,1]' || '[0]') }}
     concurrency:
       group: mcp-videos-${{ inputs.videos == 'backfill' && 'backfill' || 'incremental' }}-${{ matrix.shard }}
       cancel-in-progress: false
@@ -89,7 +95,7 @@ jobs:
         env:
           SLOP_PUBLISHER_MODE: videos
           SLOP_VIDEO_SHARD: ${{ matrix.shard }}
-          SLOP_VIDEO_SHARDS: ${{ inputs.videos == 'backfill' && 8 || 1 }}
+          SLOP_VIDEO_SHARDS: ${{ inputs.videos == 'backfill' && 2 || 1 }}
           SLOP_VIDEO_BUDGET_MIN: ${{ inputs.videos == 'backfill' && 68 || 18 }}
           SLOP_VIDEO_RETRY_FAILED: ${{ inputs.retry_failed && '1' || '0' }}
         run: node scripts/mcp-publisher/run.mjs

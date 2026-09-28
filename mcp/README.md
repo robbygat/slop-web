@@ -5,8 +5,9 @@ your phone or at [slop.game](https://slop.game/#/connect). The local MCP adapter
 connects to Slop's deployed account and private-game services. You approve the
 computer once, and review each draft revision before it becomes playable.
 
-Connections can send private drafts and read their delivery status. They cannot
-publish games, spend coins, buy assets, or change your account. Your agent never
+Connections can send private drafts and read their delivery status. Publishing
+requires the owner to enable Auto-publish for that connection, or to review and
+submit a draft in Slop. Connections cannot spend coins, buy assets, or change your account. Your agent never
 receives your Slop password, account session, or private preview URL.
 
 ## Connect your coding agent
@@ -20,7 +21,7 @@ pinned runtime dependencies are resolved by npm.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -29,7 +30,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -49,7 +50,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -67,7 +68,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -90,7 +91,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz",
         "slop-mcp"
       ]
     }
@@ -106,10 +107,11 @@ desktop app cannot find `npx`, use its actual absolute executable path.
 
 The model does not authenticate directly. Run it in any MCP-compatible host and
 add the same local STDIO configuration above. This works with local models such
-as Qwen because the host launches the Slop adapter and exposes its seven tools to
+as Qwen because the host launches the Slop adapter and exposes its eight tools to
 the model. After one browser approval, the adapter keeps a private, narrow
-30-day credential and can deliver new private drafts headlessly. It cannot
-publish publicly, spend coins, or change the account.
+30-day credential and can deliver new private drafts headlessly. It can request
+publication only when the owner enables Auto-publish for that connection; it
+cannot spend coins or change the account.
 
 ## Pair, send, play
 
@@ -123,10 +125,11 @@ publish publicly, spend coins, or change the account.
    complete bundle with `slop_send_draft` and the same target.
 4. The draft appears in the same account's computer connection inbox on web and
    mobile. Select **Try on my phone** or **Playtest & publish** on the website.
-   Play the real build and record its required gameplay GIF. The recorder
-   captures 12 timed frames and refuses a static sequence; publication parses
-   the encoded GIF and rejects missing, malformed, untimed, or lost frames.
-   A validated, immutable private preview opens after approval.
+   Play the real build while Slop records an H.264 MP4 feed preview and poster.
+   A moving GIF and cover are also retained for older clients; their existing
+   validation still applies. A validated, immutable private preview opens
+   after approval. Browser capture requires H.264 encoding support; the
+   server video pass backfills missing previews for published games.
 5. For another iteration, ask your agent to send the next revision. Review it
    separately. Disconnect the computer any time in Slop.
 
@@ -143,9 +146,11 @@ Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
 Switch on **Auto-publish** for a connected app at slop.game/#/connect. The agent
 can then call `slop_publish` with a `submission_id` (or pass `publish: true` to
 `slop_send_draft`). Slop's server playtests the latest revision in a headless
-browser, records the 9:16 (or 16:9 desktop) feed GIF and cover with the
-website's own capture code, and publishes it: staff accounts go live
-immediately, everyone else goes to review. A later revision of an already
+browser and records a moving H.264 MP4 feed loop and JPEG poster, plus a GIF
+and cover for older clients. Video recording must succeed before publication
+proceeds; a failed recording leaves the job retryable. Staff accounts go live
+immediately, everyone else goes to review. Feed videos are 720×1280 (9:16),
+or 1280×720 (16:9) for desktop games, at 30 fps for about seven seconds. A later revision of an already
 published project updates that game. `slop_draft_status` reports each
 revision's `publication` (`requested`, `recording`, `publishing`, `published`,
 `pending_review`, or `failed` with a `failure_code` such as `no_motion`,
@@ -235,10 +240,11 @@ ready-after-first-frame, score, finished, restart, pause and touch integration.
 For desktop games implement keyboard and mouse controls; for cross-platform
 games implement equivalent keyboard/mouse and touch controls around one game
 state. The selected target is sealed into `slop-platform.json` and becomes the
-published game's platform metadata. The owner must playtest and record a real cover and GIF
-in the website draft inbox before explicitly submitting the game through the
-same review process used by the app. The coding agent has no publishing
-permission and cannot bypass the GIF requirement.
+published game's platform metadata. In the website draft inbox, the owner
+playtests and records real gameplay before submitting through the same review
+process used by the app. With owner-enabled Auto-publish, the server performs
+that playtest and records the MP4 preview, poster, legacy GIF and cover. The
+coding agent cannot bypass that connection permission or the media checks.
 
 The returned `authorization_uri` starts on `api.slop.game` and redirects to the
 fixed Slop account review page while keeping the short-lived challenge in the
