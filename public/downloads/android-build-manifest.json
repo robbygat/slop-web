@@ -1,8 +1,8 @@
 {
-  "file": "Slop-3.7.5-build-2051-universal.apk",
-  "url": "https://robbygat.com/slop-android/Slop-3.7.5-build-2051-universal.apk",
-  "version": "3.7.5",
-  "versionCode": 2051,
+  "file": "Slop-3.7.7-build-2070-universal.apk",
+  "url": "https://robbygat.com/slop-android/Slop-3.7.7-build-2070-universal.apk",
+  "version": "3.7.7",
+  "versionCode": 2070,
   "package": "game.slop",
   "architectures": [
     "arm64-v8a",
@@ -11,18 +11,17 @@
   ],
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 145156606,
-  "sha256": "772d9346f44cf050b6356f0205bf75eb903ac4787dd07d3f3e442d5461bedb67",
+  "bytes": 154667673,
+  "sha256": "7b7124edef410fd173257e82cf3e66f53cdf1f7597646b3c7f89b3e687d55439",
   "certificateSha256": "48:66:DC:90:3F:E0:41:F8:E0:BE:E3:C2:40:AE:13:40:EC:4E:BC:FD:D5:A4:E3:40:19:F4:FC:8E:B5:97:B8:AB",
-  "sourceRevision": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
-  "flutterVersion": "3.47.4",
   "verification": {
     "archive": "APK archive readable with all three declared Android ABIs present",
-    "manifest": "package game.slop; version 3.7.5 (2051); minSdk 24; targetSdk 36",
+    "manifest": "package game.slop; version 3.7.7 (2070); minSdk 24; targetSdk 36",
     "signature": "APK Signature Scheme v2 verified; certificate matches the previous Slop direct-download release",
-    "releaseAsset": "public GitHub release asset uploaded with application/vnd.android.package-archive content type and matching SHA-256 digest"
+    "releaseAsset": "public GitHub release asset and deployed Pages download have the exact supplied byte length and SHA-256 digest"
   },
   "limitations": [
-    "This upload was verified structurally and cryptographically; it was not installed on a physical Android phone during the website update."
+    "This upload was verified structurally and cryptographically; it was not installed on a physical Android phone during the website update.",
+    "The supplied APK does not embed a source revision, so no source commit is claimed."
   ]
 }

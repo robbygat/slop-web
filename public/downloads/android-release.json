@@ -1,12 +1,11 @@
 {
-  "url": "https://robbygat.com/slop-android/Slop-3.7.5-build-2051-universal.apk",
-  "file": "Slop-3.7.5-build-2051-universal.apk",
-  "version": "3.7.5",
-  "build": 2051,
-  "date": "September 17, 2026",
-  "size": "145 MB",
-  "sha256": "772d9346f44cf050b6356f0205bf75eb903ac4787dd07d3f3e442d5461bedb67",
-  "commit": "66313b2d4b17bc1ad80e1f458dffb7d964cbe26c",
+  "url": "https://robbygat.com/slop-android/Slop-3.7.7-build-2070-universal.apk",
+  "file": "Slop-3.7.7-build-2070-universal.apk",
+  "version": "3.7.7",
+  "build": 2070,
+  "date": "September 29, 2026",
+  "size": "155 MB",
+  "sha256": "7b7124edef410fd173257e82cf3e66f53cdf1f7597646b3c7f89b3e687d55439",
   "architectures": "Universal APK",
   "minAndroid": "7.0"
 }
