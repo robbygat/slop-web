@@ -1,6 +1,7 @@
 import {supabase,result,asOwner,getSession} from './supabase.js';
 import {SLUG,SlopError} from './contracts.js';
 import {createScoreRun,parseLeaderboard} from './score-contracts.js';
+import {parseFeedCrown} from './feed-crown.js';
 export async function loadLeaderboard(slug) {
   if(!SLUG.test(slug))throw new SlopError('invalid_response');
   try {
@@ -8,6 +9,12 @@ export async function loadLeaderboard(slug) {
     if(rows.length)return rows;
   } catch(error) {if(!['PGRST202','42883'].includes(error.code))throw error;}
   return parseLeaderboard(await result(supabase.rpc('top_scores',{p_game:slug,p_limit:10})));
+}
+// Feed crowns require explicit receipt authority; legacy scores are not a fallback.
+export async function loadFeedCrown(slug) {
+  if(!SLUG.test(slug))throw new SlopError('invalid_response');
+  const rows=await result(supabase.rpc('competitive_top_scores',{p_game:slug,p_limit:1}).abortSignal(AbortSignal.timeout(6000)));
+  return parseFeedCrown(rows);
 }
 export function scoreRun(slug) {
   return createScoreRun({game:slug,getSession,submit:expected=>asOwner((owner,client)=>{
