@@ -15,6 +15,8 @@ const MAX_JOBS = Number(process.env.SLOP_PUBLISHER_MAX_JOBS ?? 8);
 // published games that have none for their current release.
 const MODE = process.env.SLOP_PUBLISHER_MODE ?? "publish";
 const RELEASES = "https://api.slop.game/storage/v1/object/public/games/";
+// The website's public (publishable) key, for anonymous catalog reads only.
+const PUBLISHABLE_KEY = "sb_publishable_hR6MXJRNM9VuADkU8z-2mg_K9t7FBQL";
 
 async function oidcToken() {
   const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL, token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
@@ -37,7 +39,10 @@ async function call(path, bearer, { json, bytes, type } = {}) {
 
 if (MODE === "publish") {
 let published = 0, review = 0, failed = 0;
-for (let n = 0; n < MAX_JOBS; n++) {
+// Each job now records a GIF and a video (minutes under software GL); stop
+// claiming while a whole job still fits in the workflow's time limit.
+const publishDeadline = Date.now() + 14 * 60_000;
+for (let n = 0; n < MAX_JOBS && Date.now() < publishDeadline; n++) {
   const claim = await call("/publisher/claim", await oidcToken());
   if (claim.status !== 200) { console.log(`claim refused: ${claim.status} ${claim.body?.code ?? ""}`); process.exitCode = 1; break; }
   const job = claim.body?.job;
@@ -46,6 +51,14 @@ for (let n = 0; n < MAX_JOBS; n++) {
   try {
     var diagnostics = {};
     const media = await recordGame(job.files, { diagnostics });
+    // Owner rule: a game only goes live with a video preview. Record it from
+    // the exact bundle first; a game whose video cannot be recorded is not
+    // published (the job fails retryably and is tried again).
+    const { mcpTargetFromFiles } = await import("../../src/lib/mcp-platform.js");
+    const clip = await recordVideo({ files: job.files }, {
+      target: mcpTargetFromFiles(job.files), diagnostics: (diagnostics.video = {}),
+      seed: parseInt(String(job.job_id).replace(/-/g, "").slice(0, 8), 16) || 1,
+    }).catch((error) => { throw new RecorderFailure(error instanceof VideoFailure && ["no_motion", "blank_canvas", "boot_error"].includes(error.code) ? error.code : "recorder_error", true); });
     for (const [kind, bytes, type] of [["cover", media.cover, "image/jpeg"], ["gif", media.gif, "image/gif"]]) {
       const up = await call(`${path}/media?kind=${kind}`, job.lease, { bytes, type });
       if (up.status !== 200) throw new RecorderFailure("recorder_error", true);
@@ -53,6 +66,12 @@ for (let n = 0; n < MAX_JOBS; n++) {
     const done = await call(`${path}/finish`, job.lease);
     if (done.body?.ok === true) {
       done.body.status === "published" ? published++ : review++;
+      // Attach the video to the release that just went live (seconds later).
+      // A game held for review gets its video from the video pass once approved.
+      if (done.body.status === "published") {
+        const attached = await attachVideo(done.body.slug, clip).catch(() => false);
+        console.log(`job ${n + 1}: video ${attached ? "attached" : "deferred to the video pass"}`);
+      }
       console.log(`job ${n + 1}: ${done.body.status}${done.body.update ? " (update)" : ""} ${media.width}x${media.height} ${media.frameCount} frames`);
     } else {
       failed++;
@@ -69,6 +88,29 @@ for (let n = 0; n < MAX_JOBS; n++) {
 console.log(`published ${published}, in review ${review}, failed ${failed}`);
 }
 if (MODE === "videos") await videos();
+
+async function attachVideo(slug, clip) {
+  if (typeof slug !== "string" || !/^[a-z0-9-]{3,120}$/.test(slug)) return false;
+  const { createHash } = await import("node:crypto");
+  const key = createHash("sha256").update(clip.video).digest("hex").slice(0, 32);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 3000 * attempt));
+    // Public catalog read: the published row's id and current release.
+    const rows = await fetch(`https://api.slop.game/rest/v1/games?slug=eq.${slug}&status=eq.published&select=id,slug,published_bundle_path`, {
+      headers: { apikey: PUBLISHABLE_KEY }, signal: AbortSignal.timeout(20_000),
+    }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    const game = rows?.[0];
+    if (!game?.id) continue;
+    const token = await oidcToken(), path = `/publisher/videos/${game.id}/media`;
+    const poster = await call(`${path}?kind=poster&key=${key}`, token, { bytes: clip.poster, type: "image/jpeg" });
+    if (poster.status !== 200) continue;
+    const query = new URLSearchParams({ kind: "video", key, poster_bytes: String(clip.poster.length),
+      release_key: game.published_bundle_path || `legacy/${game.slug}` });
+    const video = await call(`${path}?${query}`, token, { bytes: clip.video, type: "video/mp4" });
+    if (video.status === 200 && video.body?.ok === true) return true;
+  }
+  return false;
+}
 
 async function videos() {
   const shard = Number(process.env.SLOP_VIDEO_SHARD ?? 0), shards = Number(process.env.SLOP_VIDEO_SHARDS ?? 1);
