@@ -21,7 +21,7 @@ import { installGameStorage } from "../../src/lib/player-storage.js";
 import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-input.js";
 import { installRecorderClock } from "./clock.js";
 import { installRecorderInput, mobileInputFrame } from "./input.mjs";
-import { authoredInputTitle, identifyGameInput, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput } from "./game-input.mjs";
+import { authoredInputTitle, identifyGameInput, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput, gameInputSimulationSteps } from "./game-input.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -62,7 +62,7 @@ function runFfmpeg(args, { timeoutMs = 240_000 } = {}) {
 // Encodes numbered JPEG frames into a looping H.264 clip. The first `seam`
 // frames are cut from the start and crossfaded over the end, so the last frame
 // flows back into the first with no visible jump.
-export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 25, out = join(dir, "preview.mp4") } = {}) {
+export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 21, out = join(dir, "preview.mp4") } = {}) {
   const k = Math.min(seam, Math.floor(count / 4));
   const bodyFrames = count - k;
   const scale = `scale=${width}:${height}:flags=lanczos:out_range=tv:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1`;
@@ -169,12 +169,13 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
   const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n(${installGameObservation.toString()})(${readRecorderGame.toString()});\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
   const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#000;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style></head>
 <body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
-<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__errors=[];window.__controls=[];window.__acks=new Map();window.__observations=new Map();
+<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__score=0;window.__errors=[];window.__controls=[];window.__acks=new Map();window.__observations=new Map();
 addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(!m||typeof m.type!=='string')return;
  if(m.type==='webGameError'&&window.__errors.length<12)window.__errors.push(String(m.message||'').slice(0,800));
  if(m.type==='slopRecorderObservation'){const resolve=window.__observations.get(m.seq);if(resolve){window.__observations.delete(m.seq);resolve(m.observation);}return;}
  if(m.type==='slopRecorderControlsResult'){window.__controls=m.points;return;}
  if(m.type==='slopClockAck'){const r=window.__acks.get(m.seq);if(r){window.__acks.delete(m.seq);r();}return;}
+ if(m.type==='score'&&Number.isFinite(m.value)&&m.value>=0)window.__score=m.value;
  if(m.type==='webCaptureResult'||m.type==='webCaptureError')return;window.__events.push({type:m.type,at:performance.now()});});
 let seq=0;window.__clock=(op,dt)=>new Promise(resolve=>{const s=++seq;const t=setTimeout(()=>{window.__acks.delete(s);resolve(false)},20000);window.__acks.set(s,()=>{clearTimeout(t);resolve(true)});f.contentWindow.postMessage(JSON.stringify({type:'slopClock',op,dt,seq:s}),'*');});
 let observationSeq=0;window.__observe=kind=>new Promise(resolve=>{const seq=++observationSeq,timer=setTimeout(()=>{window.__observations.delete(seq);resolve(null)},1500);window.__observations.set(seq,value=>{clearTimeout(timer);resolve(value)});f.contentWindow.postMessage(JSON.stringify({type:'slopRecorderObserve',kind,seq}),'*');});
@@ -251,7 +252,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     if (!(await evaluate("window.__clock('freeze')"))) throw new VideoFailure("clock_unavailable", true);
 
     let controller = null, runFrame = 0, observation = null;
-    const observe = () => evaluate(`window.__observe(${JSON.stringify(knownInput)})`);
+    const observe = () => evaluate(`window.__observe(${JSON.stringify(knownInput)}).then(g=>g&&g.kind==='trig'?{...g,score:window.__score}:g)`);
     const progress = { first: null, last: null, bestScore: 0, gestures: 0, moves: 0 };
     const rand = prng(seed);
     const r = (a, b) => a + rand() * (b - a);
@@ -276,7 +277,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
           progress.bestScore = Math.max(progress.bestScore, observation?.score || 0);
         }
         const events = controller ? controller.next(runFrame++, observation) : mobileInputFrame(frame, { width: W, height: H, fps: FPS });
-        if (controller && Array.isArray(diagnostics.inputTrace) && diagnostics.inputTrace.length < 900) diagnostics.inputTrace.push({ frame, x: observation?.x, events });
+        if (controller && Array.isArray(diagnostics.inputTrace) && diagnostics.inputTrace.length < 900) diagnostics.inputTrace.push({ frame, x: observation?.x, ...(knownInput==='trig'?{ground:observation?.ground,bottom:observation?.bottom,obstacle:observation?.obstacle}:{}), events });
         for (const event of events) {
           await touch(event.type, event.x, event.y);
           touching = event.type !== "touchEnd";
@@ -309,7 +310,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     };
     // A short game may already have ended while textures/shaders settled.
     // Restart through the normal host lifecycle before collecting its clip.
-    await evaluate("window.__send({type:'restart',request:'video-start'})");
+    await evaluate("window.__score=0;window.__send({type:'mute',on:true});window.__send({type:'restart',request:'video-start'})");
     await activateStart();
     if (desktop && !controlClicks) await click(W / 2, H * 0.6);
 
@@ -333,7 +334,10 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       await input(i);
       if (controller && i >= settle && !continuousGameInput(observation)) throw new VideoFailure('unstable_gameplay');
       const t0 = Date.now();
-      if (!(await evaluate(`window.__clock('step',${1000 / FPS})`))) throw new VideoFailure("clock_unavailable", true);
+      const substeps = controller ? gameInputSimulationSteps(knownInput) : 1;
+      for (let substep = 0; substep < substeps; substep++) {
+        if (!(await evaluate(`window.__clock('step',${1000 / FPS / substeps})`))) throw new VideoFailure("clock_unavailable", true);
+      }
       stepMs += Date.now() - t0;
       const fresh = await evaluate(`window.__events.slice(${seen}).map(e=>e.type)`);
       seen += fresh.length;

@@ -9,11 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       videos:
-        description: 'Feed video pass: "incremental" (default) or "backfill" (2 parallel shards, long budget)'
+        description: 'Pass: incremental, backfill, or publish_one (one queued game, no catalog video pass)'
         required: false
         default: incremental
         type: choice
-        options: [incremental, backfill]
+        options: [incremental, backfill, publish_one]
       retry_failed:
         description: Retry each previously failed video once during this pass
         required: false
@@ -56,6 +56,8 @@ jobs:
       - name: Allow Chrome's sandbox on Ubuntu
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Record and publish queued games
+        env:
+          SLOP_PUBLISHER_MAX_JOBS: ${{ inputs.videos == 'publish_one' && 1 || 8 }}
         run: node scripts/mcp-publisher/run.mjs
 
   # Feed videos (H.264 loop + poster) for every published game whose current
@@ -64,7 +66,7 @@ jobs:
   videos:
     # Independent of the publish job (which may queue behind another run):
     # a game published by this run is picked up by the next scheduled run.
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.videos != 'publish_one'
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.videos == 'backfill' && 75 || 25 }}
     strategy:
