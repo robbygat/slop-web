@@ -30,3 +30,10 @@ test('ready receipts reuse their exact digest; queued jobs are left to their pub
  for(const status of ['requested','recording','publishing'])assert.equal(shouldWarmDraft({publication:{status}}),false);
  for(const status of ['failed',undefined])assert.equal(shouldWarmDraft({publication:{status}}),true);
 });
+
+test('transient browser fetch failure retries within the same preparation budget',async()=>{
+ let time=0,calls=0;const pauses=[];
+ const prepare=createDraftPreparer({now:()=>time,pause:async ms=>{pauses.push(ms);time+=ms;},budgetMs:10000,request:async()=>{if(++calls===1)throw new TypeError('Failed to fetch');return {preview_expires_at:new Date(time+300000).toISOString()};}});
+ const result=await prepare({submission_id:'network-draft',digest:'source'});
+ assert.equal(calls,2);assert.deepEqual(pauses,[4000]);assert.ok(result.preview_expires_at);
+});

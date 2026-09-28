@@ -1,4 +1,5 @@
 import {SlopError} from './contracts.js';
+import {isMcpTransientError} from './mcp-publication-recovery.js';
 
 const retryable=new Set(['confirmation_busy','confirmation_expired','service_unavailable','upstream_unavailable','upload_not_confirmed','preview_not_confirmed']);
 export function shouldWarmDraft(draft){return !['requested','recording','publishing'].includes(draft.publication?.status);}
@@ -13,7 +14,7 @@ export function createDraftPreparer({request,now=Date.now,pause=ms=>new Promise(
    try{return await request('slop-mcp','/drafts/confirm',{body:{submission_id:draft.submission_id,expected_digest:draft.digest},timeout:Math.min(150000,remaining)});}
    catch(error){
     failure=error;
-    if(!retryable.has(error?.code)&&error?.name!=='AbortError')throw error;
+    if(!retryable.has(error?.code)&&!isMcpTransientError(error))throw error;
     const left=budgetMs-(now()-started);
     if(left<=0)throw error;
     await pause(Math.min(15000,4000+attempt*3000,left));

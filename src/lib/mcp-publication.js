@@ -4,7 +4,7 @@ import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
 import {reserve,uploadMedia} from './creator.js';
 import {validCaptureDimensions,validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
-import {mcpInboxState,mcpPublicationReceipt} from './mcp-publication-contracts.js';
+import {mcpInboxState,mcpPublicationReceipt,mcpInboxPreview,mcpUpdateReceipt} from './mcp-publication-contracts.js';
 import {mcpCatalogPlatform,mcpTargetFromFiles} from './mcp-platform.js';
 import {platformValues} from './game-platforms.js';
 import {requireAnimatedGif} from './gif-contracts.js';
@@ -60,7 +60,7 @@ export async function mcpGameStates(submissions){
  const ids=submissions.filter(s=>UUID.test(s.game_id)).map(s=>s.game_id);if(!ids.length)return {};
  // A released game sitting in draft is mid-update: keep treating it as the
  // live game so a retried update never publishes a duplicate.
- return asOwner(async(owner,client)=>{const rows=(await result(client.from('games').select('id,status,published_bundle_path,bundle_manifest,thumb,preview_url').eq('owner_id',owner).in('id',ids))).filter(r=>ids.includes(r.id));
+ return asOwner(async(owner,client)=>{const rows=(await result(client.from('games').select('id,owner_id,slug,name,status,published_bundle_path,bundle_manifest,thumb,preview_url,preview_video:game_preview_videos(game_id,release_key,video_path)').eq('owner_id',owner).in('id',ids).abortSignal(AbortSignal.timeout(12000)))).filter(r=>ids.includes(r.id));
   // The source digest each game serves (its release manifest without the
   // captured covers/previews, the same bytes an MCP submission digests), so a
   // revision applied as an update to an older game reads as live.
@@ -72,6 +72,7 @@ export async function mcpGameStates(submissions){
   }
   const states=Object.fromEntries(rows.map(r=>[r.id,mcpInboxState(r)]));
   Object.defineProperty(states,'digests',{value:digests,enumerable:false});
+  Object.defineProperty(states,'previews',{value:Object.fromEntries(rows.map(row=>[row.id,mcpInboxPreview(row,owner)]).filter(([,preview])=>preview)),enumerable:false});
   return states;});
 }
 
@@ -90,8 +91,10 @@ export async function submitMcpUpdate({preview,target,title,tagline,cover,gif,fr
  if(checked.receipt)throw new Error('This version is already published.');
  const {files,identity}=checked,slug=target.slug,fileTarget=mcpTargetFromFiles(files),platforms=platformValues(mcpCatalogPlatform(fileTarget));
  if(!validCaptureDimensionsForTarget(width,height,fileTarget))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
- await asOwner(async(owner,client)=>{
-  const live=await result(client.from('games').select('id,owner_id,slug,status').eq('id',target.game_id).eq('slug',slug).eq('owner_id',owner).single());assertCurrent(expected);
+ const recovered=await asOwner(async(owner,client)=>{
+  const live=await gameState(client,owner,{game_id:target.game_id,slug});assertCurrent(expected);
+  const recovered=await mcpUpdateReceipt(live,preview,target);assertCurrent(expected);
+  if(recovered)return recovered;
   if(live.status==='pending_review')throw new Error('An update to this game is already waiting for review.');
   if(!['published','draft','private'].includes(live.status))throw new Error('This game can no longer be updated here.');
   // Only the bundle authority may take a live game out of published: it
@@ -119,8 +122,11 @@ export async function submitMcpUpdate({preview,target,title,tagline,cover,gif,fr
   const clip=await result(client.rpc('record_game_preview',{p_slug:slug,p_version:'1.0.0',p_build_id:identity.buildId,p_path:clipPath,p_width:width,p_height:height,p_frame_count:frameCount,p_bytes:gif.length}));if(clip?.saved!==true||clip.slug!==slug||clip.path!==clipPath)throw new SlopError('invalid_response');assertCurrent(expected);
   const platform=await result(client.rpc('set_game_supported_platforms',{p_owner:owner,p_game_slug:slug,p_platforms:platforms}));if(platform?.owner_id!==owner||platform.game_slug!==slug)throw new SlopError('invalid_response');
  });
- assertCurrent(expected);onStage?.('Sending your update for review…');
- const receipt=await request('game-bundle','/',{ownerReceipt:false,body:{action:'submit_review',slug}});
- if(receipt.ok!==true||!['pending_review','published'].includes(receipt.status))throw new SlopError('invalid_response');
- return {owner_id:expected.user.id,game_id:target.game_id,slug,status:receipt.status,updated:true};
+ assertCurrent(expected);if(recovered)return recovered;onStage?.('Sending your update for review…');
+ let failure;
+ try{const submitted=await request('game-bundle','/',{ownerReceipt:false,body:{action:'submit_review',slug}});if(submitted.ok!==true||!['pending_review','published'].includes(submitted.status))throw new SlopError('invalid_response');}catch(error){failure=error;}
+ assertCurrent(expected);
+ const receipt=await asOwner(async(owner,client)=>mcpUpdateReceipt(await gameState(client,owner,{game_id:target.game_id,slug}),preview,target));assertCurrent(expected);
+ if(!receipt)throw failure||new Error('Your update has not been confirmed. Refresh before retrying.');
+ return receipt;
 }

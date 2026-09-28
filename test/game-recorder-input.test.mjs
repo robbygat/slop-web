@@ -227,3 +227,44 @@ test('Crowd Clash reads exactly its authored snapshot fields and validates visib
  assert.ok(createGameInputController('crowd',size).next(0,g).some(e=>e.type==='touchStart'));
  raw.rows[0].L.k='eval';assert.equal(readRecorderGame(t,'crowd'),null);
 });
+
+
+test('Join Clash observes only bounded copied fields and steers visible recruits through a wall gap',async()=>{
+ const raw={state:'run',T:0,md:0,mx:0,targetX:0,K:.028,HW:4.2,count:5,score:0,speed:7.4,R:.6,front:1,back:1,rage:0,recruits:0,kills:0,bossesBeaten:0,dodges:0,boss:null,hazards:[],idles:[{x:2,d:5,gold:false},{x:2.2,d:5.5,gold:false},{x:-2,d:25,gold:true}]};
+ const t=target('Join Clash 3D',{snap:()=>raw,reset(){throw Error('mutation');}}),g=readRecorderGame(t,'join');
+ const {joinTarget}=await import('../scripts/mcp-publisher/visible-game-plans.mjs');
+ assert.equal(joinTarget(g),2.1,'nearby recruits win over distant gold');g.idles[0].x=0;assert.equal(raw.idles[0].x,2);
+ const wall={type:'wall',d:7,gaps:[[-1.6,1.6]]};assert.equal(joinTarget({...g,hazards:[wall]}),0);
+ assert.equal(joinTarget({...g,md:7.6,hazards:[wall]}),0,'keep the tail within the gap');
+ const c=createGameInputController('join',size),events=[];let x=0,fingerX=180;
+ for(let f=0;f<150;f++){const e=c.next(f,{...g,targetX:x,mx:x,hazards:f>75?[wall]:[]});events.push(...e);for(const event of e){if(event.type==='touchMove')x+=(event.x-fingerX)*g.K;if(event.x!=null)fingerX=event.x;}}
+ assert.ok(Math.abs(x)<.15,'finish centered in the gap');
+ events.push(...c.reset());assertSmooth(events,360*.018);
+ raw.hazards=[{type:'wall',d:5,gaps:[[2,1]]}];assert.equal(readRecorderGame(t,'join'),null);
+});
+
+
+test('Petal Storm copies visible bullets and dodges smoothly without touching debug state',async()=>{
+ const raw={over:false,started:true,score:30,hero:[180,450],heroR:7,W:360,H:640,top:100,bottom:580,left:30,right:330,grazes:1,blooms:0,bullets:[[180,390,0,110,8,0,0]]};
+ const g=readRecorderGame(target('Petal Storm',{snapshot:()=>raw,debug:new Proxy({},{get(){throw Error('debug access');}})}),'petal');
+ const {petalDelta}=await import('../scripts/mcp-publisher/visible-game-plans.mjs');
+ const delta=petalDelta(g);assert.ok(Math.hypot(...delta)<=6.001);assert.ok(Math.abs(delta[0])>0,'leave the oncoming bullet lane');
+ g.bullets[0][0]=200;assert.equal(raw.bullets[0][0],180);
+ const c=createGameInputController('petal',size),events=[];for(let f=0;f<40;f++)events.push(...c.next(f,g));events.push(...c.reset());assertSmooth(events,6.001);
+ assert.equal(continuousGameInput(readRecorderGame(target('Petal Storm',{snapshot:()=>({...raw,over:true})}),'petal')),false);
+ const steps=gameInputSimulationSteps('petal'),dt=1/30/steps;
+ assert.equal(steps*dt,1/30);assert.ok(dt<=.02,'normal update cadence must not trigger the authored slow-frame quality downgrade');
+ raw.bullets[0][2]=NaN;assert.equal(readRecorderGame(target('Petal Storm',{snapshot:()=>raw}),'petal'),null);
+});
+
+test('Puff Gulp smoothly pursues food and releases ammo at danger without debug spawns',async()=>{
+ const raw={mode:'play',over:false,score:3,hearts:3,belly:1,holding:true,ceil:90,floor:560,puff:{x:100,y:320,r:20},cone:{L:120,w1:60},input:{gulps:1,spits:0,hurts:0,kills:0},enemies:[{x:160,y:320,r:12,vx:-30,spiky:true,sucked:false}],boss:null};
+ const g=readRecorderGame(target('Puff Gulp',{snapshot:()=>raw,debug:new Proxy({},{get(){throw Error('debug access');}})}),'puff');
+ const {puffPlan}=await import('../scripts/mcp-publisher/visible-game-plans.mjs');
+ assert.equal(puffPlan(g).release,true);
+ assert.notEqual(puffPlan({...g,belly:0}).y,g.puff.y,'dodge when no ammo is available');
+ const food={...g,belly:0,enemies:[{x:230,y:250,r:12,vx:-30,spiky:false,sucked:false}]};
+ const c=createGameInputController('puff',size),events=[];for(let f=0;f<25;f++)events.push(...c.next(f,food));events.push(...c.next(25,g));
+ assert.equal(events.at(-1).type,'touchEnd');assert.equal(assertSmooth(events,6).starts,1);assert.deepEqual(c.next(26,food),[],'release has a normal brief pause');
+ raw.enemies[0].r=NaN;assert.equal(readRecorderGame(target('Puff Gulp',{snapshot:()=>raw}),'puff'),null);
+});

@@ -178,3 +178,65 @@ export function rollerDirection(g){const DX=[0,1,0,-1],DY=[-1,0,1,0];
     return -1;
   }
 return plan(g.grid,g.gw,g.pos);}
+
+
+// Steer a running mob using only visible recruits, wall openings and hazard
+// motion. Keep the full tail through a gap before switching to a new cluster.
+export function joinTarget(g) {
+ const lim=g.HW-.5,clamp=x=>Math.max(-lim,Math.min(lim,x));
+ if(g.phase==='boss'&&g.boss?.phase==='wind'){
+  const need=g.boss.Rs+g.R+.35;
+  if(Math.abs(g.mx-g.boss.tx)>=need)return g.mx;
+  const options=[g.boss.tx-need,g.boss.tx+need].filter(x=>Math.abs(x)<=lim);
+  return options.length?options.sort((a,b)=>Math.abs(a-g.mx)-Math.abs(b-g.mx))[0]:g.boss.tx>0?-lim:lim;
+ }
+ if(g.phase!=='run')return g.mx;
+ const imminent=g.hazards.filter(h=>h.d>=g.md-g.back-.5&&h.d-g.md<=10+g.front).sort((a,b)=>a.d-b.d);
+ if(g.rage<=0)for(const h of imminent){
+  if(h.type==='wall'){
+   const gaps=h.gaps.slice().sort((a,b)=>(b[1]-b[0])-(a[1]-a[0])||Math.abs((a[0]+a[1])/2-g.mx)-Math.abs((b[0]+b[1])/2-g.mx));
+   return gaps.length?clamp((gaps[0][0]+gaps[0][1])/2):g.mx;
+  }
+  if(h.type==='saw'){
+   const eta=Math.max(0,(h.d-g.md)/Math.max(1,g.speed)),x=h.amp*Math.sin(h.w*(g.T+eta)+h.ph);
+   return x>0?-lim:lim;
+  }
+  if(h.type==='roller')return clamp(h.x0<=-g.HW+.01?(h.x1+g.HW)/2:(h.x0-g.HW)/2);
+  if(h.type==='sweeper')return g.mx>0?lim:-lim;
+ }
+ const nearby=g.idles.filter(i=>i.d>g.md+g.front*.25&&i.d<g.md+18).sort((a,b)=>a.d-b.d);
+ if(!nearby.length)return g.mx;
+ const first=nearby[0],cluster=nearby.filter(i=>i.d<=first.d+2.5),gold=cluster.find(i=>i.gold);
+ return clamp(gold?gold.x:cluster.reduce((x,i)=>x+i.x,0)/cluster.length);
+}
+
+
+export function petalDelta(g) {
+ const [hx,hy]=g.hero,candidates=[[0,0]];
+ for(let a=0;a<16;a++)for(const r of [3,6])candidates.push([Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r]);
+ let best=[0,0],bestCost=Infinity;
+ for(const [dx,dy] of candidates){
+  const x=Math.max(g.left,Math.min(g.right,hx+dx)),y=Math.max(g.top,Math.min(g.bottom,hy+dy));
+  let cost=Math.hypot(x-g.W*.5,(y-g.H*.6)*.8)*.03+Math.hypot(dx,dy)*.004;
+  for(const b of g.bullets){
+   if(Math.abs(b[0]-x)>260||Math.abs(b[1]-y)>260)continue;
+   for(let t=0;t<=.64;t+=.08){
+    const px=b[0]+b[2]*t+.5*b[5]*t*t,py=b[1]+b[3]*t+.5*b[6]*t*t,d=Math.hypot(px-x,py-y)-b[4]-g.heroR;
+    if(d<5)cost+=(4000+(5-d)*1200)*(1-t);else if(d<25)cost+=(25-d)*(1-t)*2.2;
+   }
+  }
+  if(cost<bestCost){bestCost=cost;best=[x-hx,y-hy];}
+ }
+ return best;
+}
+
+export function puffPlan(g) {
+ const p=g.puff,ahead=g.enemies.filter(e=>e.x>p.x-p.r*.3),spikes=ahead.filter(e=>e.spiky),food=ahead.filter(e=>!e.spiky);
+ const lane=e=>Math.abs(e.y-p.y)<p.r+e.r+26;
+ const threat=spikes.filter(e=>lane(e)&&e.x-p.x<g.cone.L+120).sort((a,b)=>a.x-b.x)[0];
+ if(g.enemies.some(e=>e.spiky&&e.sucked))return {release:true,y:p.y};
+ if(g.belly>0&&(threat||g.boss?.state==='fight'&&Math.abs(g.boss.y-p.y)<65||g.belly>=3||g.belly>=2&&food.some(e=>lane(e))))return {release:true,y:p.y};
+ if(threat&&!g.belly){const up=threat.y>=p.y;return {release:false,y:up?Math.max(g.ceil+p.r,p.y-55):Math.min(g.floor-p.r,p.y+55)};}
+ const target=g.boss&&g.belly>=2?g.boss:food.filter(e=>!spikes.some(k=>Math.abs(k.y-e.y)<k.r+p.r&&k.x<e.x&&k.x>p.x)).sort((a,b)=>a.x-b.x)[0];
+ return {release:false,y:target?Math.max(g.ceil+p.r,Math.min(g.floor-p.r,target.y)):(g.ceil+g.floor)*.5};
+}
