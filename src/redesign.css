@@ -32,3 +32,7 @@ body{background:var(--bg);color:var(--ink);transition:background .2s,color .2s}h
 .mobile-nav .nav-feed{background:var(--orange);color:#2e2634}
 .mobile-nav .nav-feed.active{background:var(--orange);color:#2e2634}
 @media(max-width:600px){.mobile-nav{border-radius:24px;bottom:max(12px,env(safe-area-inset-bottom))}.mobile-nav .nav-item{min-height:45px}.mobile-nav .nav-play-word{font-size:17px}}
+
+/* Keep the original logo's square canvas and opaque brand colors. */
+.mobile-brand.brand{align-items:center;gap:10px}.brand-mark{width:36px;height:36px;flex:none;border-radius:9px}
+@media(max-width:600px){.mobile-brand.brand{gap:8px}.brand-mark{width:30px;height:30px;border-radius:7px}}
