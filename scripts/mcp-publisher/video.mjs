@@ -63,7 +63,7 @@ function runFfmpeg(args, { timeoutMs = 240_000 } = {}) {
 export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 25, out = join(dir, "preview.mp4") } = {}) {
   const k = Math.min(seam, Math.floor(count / 4));
   const bodyFrames = count - k;
-  const scale = `scale=${width}:${height}:flags=lanczos:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1`;
+  const scale = `scale=${width}:${height}:flags=lanczos:out_range=tv:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1`;
   const filter = k >= 2
     ? `[0:v]${scale},split[a][b];[a]trim=end_frame=${k},setpts=PTS-STARTPTS[head];` +
       `[b]trim=start_frame=${k},setpts=PTS-STARTPTS[body];` +
@@ -74,7 +74,7 @@ export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 2
     "-filter_complex", filter, "-map", "[v]", "-an",
     "-c:v", "libx264", "-profile:v", "high", "-level:v", "4.0", "-preset", "slow", "-tune", "animation",
     "-crf", String(quality), "-maxrate", "2400k", "-bufsize", "4800k", "-g", String(FPS * 2), "-keyint_min", String(FPS),
-    "-pix_fmt", "yuv420p", "-r", String(FPS), "-movflags", "+faststart", "-metadata", "title=", out,
+    "-pix_fmt", "yuv420p", "-color_range", "tv", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-r", String(FPS), "-movflags", "+faststart", "-metadata", "title=", out,
   ]);
   let quality = crf, bytes;
   for (;;) {
@@ -233,6 +233,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     }
     if (events.includes("loadError")) throw new VideoFailure("boot_error");
     diagnostics.ready = events.includes("ready");
+    if (process.env.SLOP_VIDEO_DEBUG) console.error(`video: booted ${Date.now() - start} ms, ready ${diagnostics.ready}`);
     // Let first textures/shaders settle in real time, then take the clock.
     await sleep(softGL ? 2500 : 1200);
     if (!(await evaluate("window.__clock('freeze')"))) throw new VideoFailure("clock_unavailable", true);
@@ -297,6 +298,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       const { data } = await s.send("Page.captureScreenshot", { format: "jpeg", quality: 94, captureBeyondViewport: false, optimizeForSpeed: true });
       await writeFile(join(dir, `f${String(frames).padStart(5, "0")}.jpg`), Buffer.from(data, "base64"));
       frames++;
+      if (process.env.SLOP_VIDEO_DEBUG && frames % 30 === 0) console.error(`video: ${frames} frames, step ${Math.round(stepMs / (i + 1))} ms`);
     }
     if (drag) await touch("touchEnd").catch(() => {});
     diagnostics.frames = frames;

@@ -12,7 +12,7 @@ import {
   validateDraft,
   VERSION,
 } from "./contract.mjs";
-import { FAILURE_CODES, LEASE, validateMedia } from "./publisher.mjs";
+import { FAILURE_CODES, LEASE, validateMedia, validateVideo, validatePoster, jpegSize, VIDEO_MAX, VIDEO_FAILURE } from "./publisher.mjs";
 
 const JSON_HEADERS = {
   "content-type": "application/json",
@@ -95,6 +95,38 @@ const MEDIA = {
   gif: { type: "image/gif", max: 2_097_152, file: "preview.gif" },
 };
 
+// Feed preview video uploads (recorder and owner share one path). The poster
+// goes first under the video's own content key; the video upload then proves
+// that key, is validated, stored, and recorded against the game's current
+// published release by game_preview_video_service.
+async function uploadPreviewVideo(req, deps, url, gameId, source, ownerId = null) {
+  const kind = url.searchParams.get("kind"), key = url.searchParams.get("key") ?? "";
+  requireValue(UUID.test(gameId) && /^[0-9a-f]{32}$/.test(key) && (kind === "poster" || kind === "video"), "invalid_request");
+  const folder = `${gameId.toLowerCase()}/v1-${key}`;
+  if (kind === "poster") {
+    const bytes = await readBinary(req, "image/jpeg", 716_800);
+    const size = jpegSize(bytes);
+    requireValue(size && validatePoster(bytes, size.width, size.height) &&
+      ((size.width === 720 && size.height === 1280) || (size.width === 1280 && size.height === 720)), "media_invalid", 422);
+    await deps.storeVideo(`${folder}/poster.jpg`, bytes, "image/jpeg");
+    return { ok: true, kind, bytes: bytes.length, width: size.width, height: size.height };
+  }
+  const posterBytes = Number(url.searchParams.get("poster_bytes"));
+  requireValue(Number.isInteger(posterBytes) && posterBytes > 0 && posterBytes <= 716_800, "invalid_request");
+  const releaseKey = url.searchParams.get("release_key");
+  requireValue(source === "owner" || (typeof releaseKey === "string" && releaseKey.length >= 3 && releaseKey.length <= 300), "invalid_request");
+  const bytes = await readBinary(req, "video/mp4", VIDEO_MAX);
+  const info = validateVideo(bytes);
+  requireValue((await sha256(bytes)).slice(0, 32) === key, "media_invalid", 422);
+  await deps.storeVideo(`${folder}/preview.mp4`, bytes, "video/mp4");
+  return await deps.videoService("record", {
+    game_id: gameId.toLowerCase(), source, owner_id: ownerId, release_key: releaseKey,
+    video_path: `${folder}/preview.mp4`, poster_path: `${folder}/poster.jpg`,
+    width: info.width, height: info.height, duration_ms: info.duration_ms,
+    video_bytes: bytes.length, poster_bytes: posterBytes,
+  });
+}
+
 /** Dependencies contain only server-owned clients. No caller supplies an owner. */
 export function createHandler(deps, config = {}) {
   const origins = config.previewOrigins ??
@@ -145,6 +177,25 @@ export function createHandler(deps, config = {}) {
           });
           return json({ job: claimed?.job ? { ...claimed.job, lease } : null });
         }
+        if (path.startsWith("/publisher/videos/")) {
+          requireValue(deps.videoService && deps.storeVideo, "route_not_found", 404);
+          // Every call carries a fresh OIDC token of the pinned workflow.
+          await deps.verifyPublisher(bearer);
+          if (path === "/publisher/videos/claim") {
+            const input = await readBody(req);
+            return json(await deps.videoService("claim", {
+              limit: input.limit, shard: input.shard, shards: input.shards, retry_failed: input.retry_failed === true,
+            }));
+          }
+          const video = path.match(/^\/publisher\/videos\/([0-9a-f-]{36})\/(media|fail)$/);
+          requireValue(video && UUID.test(video[1]), "route_not_found", 404);
+          if (video[2] === "fail") {
+            const input = await readBody(req);
+            requireValue(VIDEO_FAILURE.test(input.failure_code ?? ""), "invalid_request");
+            return json(await deps.videoService("fail", { game_id: video[1].toLowerCase(), failure_code: input.failure_code }));
+          }
+          return json(await uploadPreviewVideo(req, deps, url, video[1], "recorder"));
+        }
         const route = path.match(
           /^\/publisher\/jobs\/([0-9a-f-]{36})\/(media|finish|fail)$/,
         );
@@ -177,6 +228,15 @@ export function createHandler(deps, config = {}) {
         }
         const published = await deps.publishJob({ job_id, lease_hash });
         return json(published.body, published.status);
+      }
+      // Owner upload from the website publish flow, for the owner's own
+      // published game (binary body, so before JSON parsing).
+      const ownerVideo = path.match(/^\/videos\/([0-9a-f-]{36})\/media$/);
+      if (ownerVideo && req.method === "POST") {
+        requireValue(deps.videoService && deps.storeVideo, "route_not_found", 404);
+        requireValue(bearer, "authentication_required", 401);
+        const owner = await deps.verifyUser(bearer);
+        return json(await uploadPreviewVideo(req, deps, url, ownerVideo[1], "owner", owner));
       }
       const input = req.method === "POST"
         ? await readBody(req)

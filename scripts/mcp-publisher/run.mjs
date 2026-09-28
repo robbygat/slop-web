@@ -6,10 +6,15 @@
 // THE REPOSITORY IS PUBLIC. Log only counts and fixed status/failure codes:
 // never game names, source, owner or submission ids, leases or media.
 import { recordGame, RecorderFailure } from "./record.mjs";
+import { recordVideo, VideoFailure } from "./video.mjs";
 
 const API = process.env.SLOP_MCP_URL ?? "https://api.slop.game/functions/v1/slop-mcp";
 const AUDIENCE = "https://api.slop.game/functions/v1/slop-mcp";
 const MAX_JOBS = Number(process.env.SLOP_PUBLISHER_MAX_JOBS ?? 8);
+// "publish" claims MCP publish jobs; "videos" records feed videos for
+// published games that have none for their current release.
+const MODE = process.env.SLOP_PUBLISHER_MODE ?? "publish";
+const RELEASES = "https://api.slop.game/storage/v1/object/public/games/";
 
 async function oidcToken() {
   const url = process.env.ACTIONS_ID_TOKEN_REQUEST_URL, token = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
@@ -30,6 +35,7 @@ async function call(path, bearer, { json, bytes, type } = {}) {
   return { status: response.status, body };
 }
 
+if (MODE === "publish") {
 let published = 0, review = 0, failed = 0;
 for (let n = 0; n < MAX_JOBS; n++) {
   const claim = await call("/publisher/claim", await oidcToken());
@@ -61,5 +67,45 @@ for (let n = 0; n < MAX_JOBS; n++) {
   }
 }
 console.log(`published ${published}, in review ${review}, failed ${failed}`);
+}
+if (MODE === "videos") await videos();
+
+async function videos() {
+  const shard = Number(process.env.SLOP_VIDEO_SHARD ?? 0), shards = Number(process.env.SLOP_VIDEO_SHARDS ?? 1);
+  const budget = Date.now() + Number(process.env.SLOP_VIDEO_BUDGET_MIN ?? 15) * 60_000;
+  const retryFailed = process.env.SLOP_VIDEO_RETRY_FAILED === "1";
+  let recorded = 0, failed = 0, n = 0;
+  while (Date.now() < budget - 6 * 60_000) {
+    const claim = await call("/publisher/videos/claim", await oidcToken(), { json: { limit: 1, shard, shards, retry_failed: retryFailed } });
+    if (claim.status !== 200) { console.log(`video claim refused: ${claim.status} ${claim.body?.code ?? ""}`); process.exitCode = 1; break; }
+    const game = claim.body?.games?.[0];
+    if (!game) break;
+    n++;
+    const diagnostics = {}, started = Date.now();
+    try {
+      if (!/^[0-9a-f-]{36}$/.test(game.game_id) || typeof game.entry_base !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._\/-]*\/$/.test(game.entry_base) || game.entry_base.includes("..")) {
+        throw new VideoFailure("runtime_invalid");
+      }
+      const seed = parseInt(game.game_id.replace(/-/g, "").slice(0, 8), 16);
+      const media = await recordVideo({ baseUrl: RELEASES + game.entry_base }, { target: game.target, diagnostics, seed });
+      const { createHash } = await import("node:crypto");
+      const key = createHash("sha256").update(media.video).digest("hex").slice(0, 32);
+      const token = await oidcToken(), path = `/publisher/videos/${game.game_id}/media`;
+      const poster = await call(`${path}?kind=poster&key=${key}`, token, { bytes: media.poster, type: "image/jpeg" });
+      if (poster.status !== 200) throw new VideoFailure(`upload_${poster.status}`, true);
+      const query = new URLSearchParams({ kind: "video", key, poster_bytes: String(media.poster.length), release_key: game.release_key });
+      const video = await call(`${path}?${query}`, token, { bytes: media.video, type: "video/mp4" });
+      if (video.status !== 200 || video.body?.ok !== true) throw new VideoFailure(video.body?.code ?? `upload_${video.status}`, true);
+      recorded++;
+      console.log(`video ${n}: recorded ${media.width}x${media.height} ${media.durationMs}ms ${media.video.length}B poster ${media.poster.length}B in ${Math.round((Date.now() - started) / 1000)}s step ${diagnostics.stepMs}ms crf ${diagnostics.crf}`);
+    } catch (error) {
+      failed++;
+      const code = typeof error?.code === "string" && /^[a-z_0-9]{1,40}$/.test(error.code) ? error.code : "recorder_error";
+      console.log(`video ${n}: ${code} ${JSON.stringify({ frames: diagnostics.frames, moving: diagnostics.moving, lit: diagnostics.lit, ready: diagnostics.ready, errors: diagnostics.errors })}`);
+      await call(`/publisher/videos/${game.game_id}/fail`, await oidcToken(), { json: { failure_code: code.replace(/[0-9]/g, "") || "recorder_error" } }).catch(() => {});
+    }
+  }
+  console.log(`videos recorded ${recorded}, failed ${failed}`);
+}
 // Never let a stray handle from a failed recording keep the workflow alive.
 process.exit(process.exitCode ?? 0);
