@@ -1,8 +1,8 @@
 {
-  "file": "Slop-3.7.6-build-2052-universal.apk",
-  "url": "https://robbygat.com/slop-android/Slop-3.7.6-build-2052-universal.apk",
-  "version": "3.7.6",
-  "versionCode": 2052,
+  "file": "Slop-3.7.7-build-2072-universal.apk",
+  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2072/Slop-3.7.7-build-2072-universal.apk",
+  "version": "3.7.7",
+  "versionCode": 2072,
   "package": "game.slop.api",
   "architectures": [
     "arm64-v8a",
@@ -11,19 +11,15 @@
   ],
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 145159622,
-  "sha256": "013b0da7000459c3b6a8fee180d2c06bd069bc1e65cdd1ed58170c7693f33a7a",
-  "certificateSha256": "48:66:DC:90:3F:E0:41:F8:E0:BE:E3:C2:40:AE:13:40:EC:4E:BC:FD:D5:A4:E3:40:19:F4:FC:8E:B5:97:B8:AB",
-  "sourceRevision": "03592313bf12e4b51744ccaa8df1a714a5f15320",
-  "flutterVersion": "3.47.4",
+  "bytes": 154670477,
+  "sha256": "5969af8945a29c9ccbfd65502f0b56f1afff78202fb786e49426c23a030a6cea",
+  "adsEnabled": false,
+  "AD_ID_permission": false,
   "verification": {
-    "archive": "APK archive readable with all three declared Android ABIs present",
-    "manifest": "package game.slop.api; version 3.7.6 (2052); minSdk 24; targetSdk 36",
-    "signature": "APK Signature Scheme v2 verified; certificate matches the Slop website-download certificate",
-    "releaseAsset": "public GitHub release asset uploaded with application/vnd.android.package-archive content type and matching SHA-256 digest"
+    "archive": "APK manifest and all three ABIs verified; exact SHA-256 match to the approved Desktop APK",
+    "icon": "Packaged adaptive icon contains the lime background and Slop wave logo"
   },
   "limitations": [
-    "This upload was verified structurally and cryptographically; it was not installed on a physical Android phone during the website update.",
-    "The current default mobile branch uses the legacy game.slop package; this APK was built from the newest clean authoritative game.slop.api release ref."
+    "No physical-device installation was performed during this website download update."
   ]
 }
