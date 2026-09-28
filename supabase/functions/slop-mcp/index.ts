@@ -65,6 +65,11 @@ async function request(
   });
   const result = await response.json().catch(() => null);
   if (!response.ok) {
+    if (path === "/functions/v1/game-bundle" &&
+      (body as { action?: string } | undefined)?.action === "preview" &&
+      response.status === 409 && result?.error === "uploaded draft snapshot changed") {
+      throw new BridgeError("draft_snapshot_changed", 409);
+    }
     const code = knownCodes.has(result?.message) ? result.message : null;
     if (code) {
       throw new BridgeError(

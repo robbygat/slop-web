@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkApiHealth, ApiHealthFailure, retryFailedForClaim } from '../scripts/mcp-publisher/safety.mjs';
-import { installRecorderInput } from '../scripts/mcp-publisher/input.mjs';
+import { installRecorderInput, mobileInputFrame } from '../scripts/mcp-publisher/input.mjs';
 
 test('background recorder stops for slow response bodies, HTTP errors and network errors', async () => {
   for (const scenario of ['slow-body', 'http-error', 'network-error']) {
@@ -85,4 +85,72 @@ test('isolated browser restarts a settled game and plays its upward-swipe contro
   await recordVideo({ files }, { seconds: 2, diagnostics });
   assert.equal(diagnostics.errors, 0);
   assert.ok(diagnostics.moving > 20, 'game must respond to its real swipe control after restart');
+});
+
+
+test('mobile repertoire keeps touches balanced, in bounds and clear of the screen edges', () => {
+  let active = false, starts = 0, ended = 0;
+  for (let frame = 0; frame < 30 * 16; frame++) {
+    for (const event of mobileInputFrame(frame, { width: 360, height: 640 })) {
+      if (event.type === 'touchStart') { assert.equal(active, false, 'a new gesture cannot replace a held finger'); active = true; starts++; }
+      if (event.type === 'touchMove') assert.equal(active, true);
+      if (event.type === 'touchEnd') { assert.equal(active, true); active = false; ended++; }
+      else { assert.ok(event.x > 0 && event.x < 360); assert.ok(event.y > 0 && event.y < 640); }
+    }
+  }
+  assert.equal(active, false);
+  assert.equal(starts, ended);
+  assert.ok(starts < 60, 'coverage must remain human-paced and bounded');
+});
+
+test('mobile repertoire covers bottom-tray placement and a fast upward flick', () => {
+  const gestures = []; let current;
+  for (let frame = 0; frame < 30 * 8; frame++) {
+    for (const event of mobileInputFrame(frame, { width: 360, height: 640 })) {
+      if (event.type === 'touchStart') current = { start: event, end: event, frame, moves: 0 };
+      if (event.type === 'touchMove') { current.end = event; current.moves++; }
+      if (event.type === 'touchEnd') gestures.push({ ...current, ms: (frame - current.frame) * 1000 / 30 });
+    }
+  }
+  assert.ok(gestures.some(g => g.start.y > 640 * .88 && g.end.y < 640 * .6 && g.moves >= 6), 'a tray drag must reach from the bottom into the board');
+  assert.ok(gestures.some(g => g.start.y - g.end.y > 640 * .45 && g.ms <= 220), 'a flick must travel far enough and release quickly');
+  assert.ok(gestures.some(g => g.end.y - g.start.y > 640 * .5), 'digging needs a connected top-to-bottom stroke');
+  assert.throws(() => mobileInputFrame(-1, { width: 360, height: 640 }), TypeError);
+});
+
+for (const gesture of ['bottom-tray', 'fast-flick']) {
+  test(`isolated browser starts a canvas requiring a trusted ${gesture} gesture`, { skip: process.env.SLOP_RECORDER_BROWSER_TEST !== '1', timeout: 90000 }, async () => {
+    const { recordVideo } = await import('../scripts/mcp-publisher/video.mjs');
+    const diagnostics = {};
+    const files = {
+      'index.html': '<!doctype html><html><head></head><body style="margin:0;touch-action:none"><canvas width="360" height="640"></canvas><script src="game.js"></script></body></html>',
+      'game.js': `const c=document.querySelector('canvas'),ctx=c.getContext('2d');let started=false,frame=0,start=null,end=null;
+        c.addEventListener('pointerdown',e=>{if(e.isTrusted){start={x:e.clientX,y:e.clientY,t:performance.now()};end=start;}});
+        c.addEventListener('pointermove',e=>{if(e.isTrusted&&start)end={x:e.clientX,y:e.clientY};});
+        c.addEventListener('pointerup',e=>{if(!e.isTrusted||!start)return;
+          if(${JSON.stringify(gesture)}==='bottom-tray')started ||= start.y>560&&start.x<110&&end.y<390&&Math.abs(end.x-start.x)<70;
+          else started ||= start.y-end.y>280&&performance.now()-start.t<=220;
+          start=null;});
+        parent.postMessage(JSON.stringify({type:'ready'}),'*');
+        function draw(){frame++;ctx.fillStyle='#ffd660';ctx.fillRect(0,0,360,640);ctx.fillStyle='#1b4089';ctx.fillRect(started?(frame*5)%280:50,200,80,200);requestAnimationFrame(draw)}draw();`,
+    };
+    const clip = await recordVideo({ files }, { seconds: 3, diagnostics });
+    assert.equal(diagnostics.errors, 0);
+    assert.equal(diagnostics.controlClicks, 0);
+    assert.ok(diagnostics.moving > 25, 'normal canvas controls must produce sustained visible gameplay');
+    assert.equal(clip.video.toString('ascii', 4, 8), 'ftyp');
+  });
+}
+
+
+test('isolated browser still rejects a static canvas despite trusted gestures', { skip: process.env.SLOP_RECORDER_BROWSER_TEST !== '1', timeout: 90000 }, async () => {
+  const { recordVideo } = await import('../scripts/mcp-publisher/video.mjs');
+  const diagnostics = {};
+  const files = {
+    'index.html': '<!doctype html><html><head></head><body style="margin:0;touch-action:none"><canvas width="360" height="640"></canvas><script src="game.js"></script></body></html>',
+    'game.js': `const ctx=document.querySelector('canvas').getContext('2d');ctx.fillStyle='#ffd660';ctx.fillRect(0,0,360,640);ctx.fillStyle='#1b4089';ctx.fillRect(50,200,80,200);parent.postMessage(JSON.stringify({type:'ready'}),'*');`,
+  };
+  await assert.rejects(recordVideo({ files }, { seconds: 1, diagnostics }), { code: 'no_motion' });
+  assert.equal(diagnostics.moving, 0);
+  assert.equal(diagnostics.errors, 0);
 });

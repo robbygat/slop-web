@@ -20,7 +20,7 @@ import { launchChrome } from "./cdp.mjs";
 import { installGameStorage } from "../../src/lib/player-storage.js";
 import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-input.js";
 import { installRecorderClock } from "./clock.js";
-import { installRecorderInput } from "./input.mjs";
+import { installRecorderInput, mobileInputFrame } from "./input.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -245,7 +245,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
 
     const rand = prng(seed);
     const r = (a, b) => a + rand() * (b - a);
-    let drag = null;
+    let touching = false;
     const touch = (type, x, y) => s.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
     const click = async (x, y) => {
       await s.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1, buttons: 1 });
@@ -254,27 +254,15 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     const keys = [["ArrowLeft", 37], ["ArrowRight", 39], ["ArrowUp", 38], ["Space", 32]];
     let held = null;
     const key = (type, [code, vk]) => s.send("Input.dispatchKeyEvent", { type, code, key: code === "Space" ? " " : code, windowsVirtualKeyCode: vk });
-    // Gentle, human-paced play in virtual time: a tap, then a slow drag, per
-    // second on phones; held arrows, a jump and a click on desktop.
+    // Play using ordinary trusted inputs on the virtual clock. Mobile uses a
+    // bounded repertoire covering bottom trays, paired board taps, digging,
+    // steering and fast upward flicks; desktop retains its keyboard controls.
     const input = async (frame) => {
       const f = frame % FPS;
       if (!desktop) {
-        if (drag) {
-          if (drag.left-- > 0) {
-            drag.x = Math.min(W - 24, Math.max(24, drag.x + drag.dx));
-            drag.y = Math.min(H - 24, Math.max(H * 0.25, drag.y + drag.dy));
-            await touch("touchMove", drag.x, drag.y);
-          } else { await touch("touchEnd"); drag = null; }
-        } else if (f === 0) {
-          const x = r(70, W - 70), y = r(H * 0.35, H * 0.85);
-          await touch("touchStart", x, y); await touch("touchEnd");
-        } else if (f === 10) {
-          // Cover upward/downward swipes as well as steering; some games
-          // ignore taps and require a real upward flick to begin moving.
-          const direction = [[0, -1], [1, 0], [0, 1], [-1, 0]][Math.floor(frame / FPS) % 4];
-          const speed = r(5, 9);
-          drag = { x: r(90, W - 90), y: r(H * 0.5, H * 0.8), dx: direction[0] * speed, dy: direction[1] * speed, left: 12 };
-          await touch("touchStart", drag.x, drag.y);
+        for (const event of mobileInputFrame(frame, { width: W, height: H, fps: FPS })) {
+          await touch(event.type, event.x, event.y);
+          touching = event.type !== "touchEnd";
         }
       } else {
         if (f === 0) { if (held) await key("keyUp", held); held = keys[Math.floor(rand() * 3)]; await key("keyDown", held); }
@@ -326,11 +314,21 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       }
       if (i < settle) continue;
       const { data } = await s.send("Page.captureScreenshot", { format: "jpeg", quality: 94, captureBeyondViewport: false, optimizeForSpeed: true });
+      // Mobile DPR-2 screenshots can leave Chrome's input transform at 2x
+      // even while layout metrics report scale 1. Restore CSS-coordinate
+      // input after capture so the next trusted touch reaches its target.
+      // This preserves DPR and the full-resolution frame already captured.
+      if (!desktop) {
+        await s.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+        // The input transform commits asynchronously. Wait for the host's
+        // native compositor frames; the game's virtual clock stays frozen.
+        await evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))");
+      }
       await writeFile(join(dir, `f${String(frames).padStart(5, "0")}.jpg`), Buffer.from(data, "base64"));
       frames++;
       if (process.env.SLOP_VIDEO_DEBUG && frames % 30 === 0) console.error(`video: ${frames} frames, step ${Math.round(stepMs / (i + 1))} ms`);
     }
-    if (drag) await touch("touchEnd").catch(() => {});
+    if (touching) await touch("touchEnd").catch(() => {});
     diagnostics.frames = frames;
     diagnostics.restarts = restarts;
     diagnostics.controlClicks = controlClicks;
