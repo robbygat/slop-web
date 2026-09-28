@@ -10,7 +10,7 @@ import {mcpGameStates} from '../lib/mcp-publication.js';
 import {mcpTargetLabel} from '../lib/mcp-platform.js';
 import {mcpConnectionNotice} from '../lib/mcp-connection-notice.js';
 import {createDraftPreparer,shouldWarmDraft} from '../lib/mcp-draft-preparation.js';
-const packageUrl='https://slop.game/downloads/slop-game-mcp-0.5.1.tgz';
+const packageUrl='https://slop.game/downloads/slop-game-mcp-0.5.2.tgz';
 const config=JSON.stringify({mcpServers:{slop:{type:'stdio',command:'npx',args:['--yes',`--package=${packageUrl}`,'slop-mcp']}}},null,2);
 const openCodeConfig=JSON.stringify({$schema:'https://opencode.ai/config.json',mcp:{slop:{type:'local',command:['npx','--yes',`--package=${packageUrl}`,'slop-mcp'],enabled:true,timeout:60000}}},null,2);
 const clients={

@@ -16,12 +16,16 @@ Install Node.js 22.12 or later. The versioned package is hosted by Slop; there i
 no npm registry package to guess. It contains only the local adapter and its
 pinned runtime dependencies are resolved by npm.
 
+Upgrading an existing connection: update its package URL to `slop-game-mcp-0.5.2.tgz`
+and restart the coding app’s MCP server. Keep the saved Slop credential; no new
+pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
+
 ### Codex
 
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -30,7 +34,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -50,7 +54,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -68,7 +72,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -91,7 +95,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz",
         "slop-mcp"
       ]
     }
