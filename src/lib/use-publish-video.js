@@ -1,15 +1,16 @@
 import {useEffect,useRef} from 'react';
 import {createVideoCapture,uploadPreviewVideo} from './video-capture.js';
 import {supabase,getSession} from './supabase.js';
+import {finishPublicationVideo} from './publication-video.js';
 
 // Records the playtest in the background while `active`, so publishing can
-// attach a real H.264 feed video. Everything here is best effort: a browser
-// without WebCodecs H.264, or a failed upload, leaves the game to the server
-// video pass and never blocks publishing.
+// attach a real H.264 feed video. A capture is required before publication;
+// the server video pass remains a backstop for a later upload failure.
 export function usePublishVideo(player,target,active){
  const capture=useRef(null),clip=useRef(null);
  useEffect(()=>{
   if(!active)return;
+  clip.current=null;
   let cancelled=false;
   createVideoCapture({target,requestFrame:()=>player.current?.requestFrame?.()??Promise.resolve(null)}).then(c=>{
    if(cancelled){c.close();return;}capture.current=c;c.start();
@@ -20,11 +21,9 @@ export function usePublishVideo(player,target,active){
   get supported(){return capture.current?.supported===true;},
   // Freezes the newest ~7 s window (call when the owner commits to publish).
   async finish(){
-   const c=capture.current;if(!c?.supported)return null;
-   try{clip.current=await c.finish();}catch{clip.current=null;}
-   // Keep recording in case the owner records or publishes again.
-   c.start();
-   return clip.current;
+   const c=capture.current;clip.current=null;
+   try{clip.current=await finishPublicationVideo(c);return clip.current;}
+   finally{c?.start();}
   },
   // After a publish receipt: attach the clip to the now-live game.
   async attach(slug){
