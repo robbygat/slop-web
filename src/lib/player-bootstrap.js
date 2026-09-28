@@ -29,6 +29,16 @@
    const keyEvent=new KeyboardEvent(value.down?'keydown':'keyup',{key:value.key==='Space'?' ':value.key,code:value.key,bubbles:true,cancelable:true});
    Object.defineProperty(keyEvent,'__slopHost',{value:true});dispatchEvent(keyEvent);return;
   }
+  // Publish-time video capture: the playfield canvas as a transferred bitmap.
+  if(value.type==='webFrame'&&typeof value.request==='string'&&value.request.length<=64){
+   const usable=list=>[...list].filter(c=>c.width>0&&c.height>0&&!c.closest('[data-slop-owned-ui]')).sort((a,b)=>b.width*b.height-a.width*a.height)[0];
+   const stage=document.querySelector('[data-slop-playfield]');
+   const canvas=(stage&&usable(stage.querySelectorAll('canvas')))||usable(document.querySelectorAll('canvas'));
+   let background=null;for(const node of [canvas?.parentElement,document.body,document.documentElement]){const color=node&&getComputedStyle(node).backgroundColor;if(color&&color!=='transparent'&&color!=='rgba(0, 0, 0, 0)'){background=color;break;}}
+   const reply=bitmap=>parent.postMessage({type:'webFrameResult',request:value.request,bitmap,background},'*',bitmap?[bitmap]:[]);
+   if(!canvas||typeof createImageBitmap!=='function'){reply(null);return;}
+   createImageBitmap(canvas).then(reply,()=>reply(null));return;
+  }
   if(value.type!=='webCapture' || typeof value.request!=='string')return;
   try {
    // Same choice as the app: the declared playfield first, never SDK-owned UI.

@@ -9,6 +9,7 @@ import {claimGameName,myGameName,previewGameName} from '../lib/game-name-claims.
 import {validGameName} from '../lib/game-links.js';
 import {mcpTargetLabel} from '../lib/mcp-platform.js';
 import {previewGameForTarget} from '../lib/game-target-contract.js';
+import {usePublishVideo} from '../lib/use-publish-video.js';
 import './mcp-draft-review.css';
 
 // Publishing an agent-made game works like publishing in the app: you play,
@@ -19,6 +20,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
  const player=useRef(null),pending=useRef(null),alive=useRef(true),ring=useRef(createClipRing()),capturing=useRef(false);
  const[busy,setBusy]=useState(false),[error,setError]=useState(null),[stage,setStage]=useState(''),[ready,setReady]=useState(false),[clip,setClip]=useState({frames:0,moving:false,poster:null}),[title,setTitle]=useState(preview.name||''),[description,setDescription]=useState(preview.description||''),[gameName,setGameName]=useState(''),[claimed,setClaimed]=useState(false),[nameEdited,setNameEdited]=useState(false),[nameLoading,setNameLoading]=useState(true),[details,setDetails]=useState(false);
  const clipReady=clip.frames>=CLIP_FRAMES&&clip.moving,update=preview.update_target||null;
+ const video=usePublishVideo(player,preview.target_platform||'mobile',ready);
  useEffect(()=>{if(claimed||nameEdited)return;let active=true;setNameLoading(true);const timer=setTimeout(()=>{myGameName(preview.slug).then(name=>name||previewGameName(preview.slug,title)).then(name=>{if(active&&name){setGameName(name.name);setClaimed(name.claimed===true);}}).catch(e=>{if(active)setError(e);}).finally(()=>{if(active)setNameLoading(false);});},200);return()=>{active=false;clearTimeout(timer);};},[preview.slug,title,claimed,nameEdited]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;if(pending.current){clearTimeout(pending.current.timer);pending.current.reject(new Error('Playtest closed.'));pending.current=null;}};},[]);
  // A game that never announces ready still gets its clip captured.
@@ -51,6 +53,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
    const picked=clipWindow(ring.current.frames());
    if(!picked)throw new Error('Play for a few seconds so Slop can capture a moving clip, then publish.');
    setStage('Making your cover and clip…');
+   await video.finish();
    const recorded=await encodeCapture(picked.frames,preview.target_platform||'mobile',{background:picked.background});
    if(!alive.current)return;
    const onStage=value=>{if(alive.current)setStage(value);};
@@ -60,6 +63,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
     if(!claimed){setStage('Reserving your game link…');await claimGameName(preview.slug,gameName);if(!alive.current)return;setClaimed(true);}
     receipt=await submitMcpPublication({preview,title:title.trim(),tagline:description.trim(),...recorded,onStage});
    }
+   if(receipt?.status==='published'){setStage('Attaching your video preview…');await video.attach(receipt.slug||preview.slug);}
    if(alive.current)onPublished(receipt);
   }catch(e){if(alive.current){setError(e);setStage('');}}
   finally{if(alive.current)setBusy(false);}

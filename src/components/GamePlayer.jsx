@@ -30,7 +30,12 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   const hidden=()=>{if(document.hidden)release();};window.addEventListener('keydown',down,true);window.addEventListener('keyup',up,true);window.addEventListener('blur',release);document.addEventListener('visibilitychange',hidden);
   return()=>{release();window.removeEventListener('keydown',down,true);window.removeEventListener('keyup',up,true);window.removeEventListener('blur',release);document.removeEventListener('visibilitychange',hidden);};
  },[]);
- useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send}));
+ useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send,
+  // One canvas frame as an ImageBitmap (publish-time video capture), or null.
+  requestFrame:()=>new Promise(resolve=>{const win=frame.current?.contentWindow;if(!win)return resolve(null);const request='f'+Math.random().toString(36).slice(2,14);
+   const done=value=>{clearTimeout(timer);window.removeEventListener('message',on);resolve(value);};
+   const on=e=>{if(e.source!==win||!e.data||typeof e.data!=='object'||e.data.type!=='webFrameResult'||e.data.request!==request)return;done(e.data.bitmap?{bitmap:e.data.bitmap,background:e.data.background||null}:null);};
+   const timer=setTimeout(()=>done(null),1500);window.addEventListener('message',on);send({type:'webFrame',request});})}));
  useEffect(()=>{const query=matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
  useEffect(()=>{if(desktopRequired&&expanded)exitExpanded();},[desktopRequired,expanded]);
  useEffect(()=>{
