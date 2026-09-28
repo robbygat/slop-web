@@ -21,6 +21,7 @@ import { installGameStorage } from "../../src/lib/player-storage.js";
 import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-input.js";
 import { installRecorderClock } from "./clock.js";
 import { installRecorderInput, mobileInputFrame } from "./input.mjs";
+import { authoredInputTitle, identifyGameInput, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput } from "./game-input.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -152,6 +153,10 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
     return pending;
   }
 
+  // A reviewed control revision opts in; changed games retain generic inputs.
+  const authoredHtml = fromFiles ? source.files['index.html'] : (await fetchRemote('index.html'))?.toString('utf8');
+  const authoredGame = authoredInputTitle(authoredHtml) ? (fromFiles ? source.files['game.js'] : (await fetchRemote('game.js'))?.toString('utf8')) : null;
+  const knownInput = !desktop ? identifyGameInput(authoredHtml, authoredGame) : null;
   let port = 0;
   const base = () => `http://127.0.0.1:${port}/game/`;
   const policy = () => ["sandbox allow-scripts allow-pointer-lock", "default-src 'none'",
@@ -161,16 +166,18 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
     "object-src 'none'", "frame-src 'none'", "form-action 'none'", `base-uri ${base()}`].join("; ");
   let softGL = false;
   const noMsaa = "try{const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(typeof t==='string'&&/webgl/i.test(t))a={...(a&&typeof a==='object'?a:{}),antialias:false};return g.call(this,t,a);};}catch{}";
-  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
+  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n(${installGameObservation.toString()})(${readRecorderGame.toString()});\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
   const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#000;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style></head>
 <body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
-<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__errors=[];window.__controls=[];window.__acks=new Map();
+<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__errors=[];window.__controls=[];window.__acks=new Map();window.__observations=new Map();
 addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(!m||typeof m.type!=='string')return;
  if(m.type==='webGameError'&&window.__errors.length<12)window.__errors.push(String(m.message||'').slice(0,800));
+ if(m.type==='slopRecorderObservation'){const resolve=window.__observations.get(m.seq);if(resolve){window.__observations.delete(m.seq);resolve(m.observation);}return;}
  if(m.type==='slopRecorderControlsResult'){window.__controls=m.points;return;}
  if(m.type==='slopClockAck'){const r=window.__acks.get(m.seq);if(r){window.__acks.delete(m.seq);r();}return;}
  if(m.type==='webCaptureResult'||m.type==='webCaptureError')return;window.__events.push({type:m.type,at:performance.now()});});
 let seq=0;window.__clock=(op,dt)=>new Promise(resolve=>{const s=++seq;const t=setTimeout(()=>{window.__acks.delete(s);resolve(false)},20000);window.__acks.set(s,()=>{clearTimeout(t);resolve(true)});f.contentWindow.postMessage(JSON.stringify({type:'slopClock',op,dt,seq:s}),'*');});
+let observationSeq=0;window.__observe=kind=>new Promise(resolve=>{const seq=++observationSeq,timer=setTimeout(()=>{window.__observations.delete(seq);resolve(null)},1500);window.__observations.set(seq,value=>{clearTimeout(timer);resolve(value)});f.contentWindow.postMessage(JSON.stringify({type:'slopRecorderObserve',kind,seq}),'*');});
 window.__send=m=>f.contentWindow.postMessage(JSON.stringify(m),'*');
 void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></body></html>`;
 
@@ -243,6 +250,9 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     await sleep(softGL ? 2500 : 1200);
     if (!(await evaluate("window.__clock('freeze')"))) throw new VideoFailure("clock_unavailable", true);
 
+    let controller = null, runFrame = 0, observation = null;
+    const observe = () => evaluate(`window.__observe(${JSON.stringify(knownInput)})`);
+    const progress = { first: null, last: null, bestScore: 0, gestures: 0, moves: 0 };
     const rand = prng(seed);
     const r = (a, b) => a + rand() * (b - a);
     let touching = false;
@@ -260,9 +270,18 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     const input = async (frame) => {
       const f = frame % FPS;
       if (!desktop) {
-        for (const event of mobileInputFrame(frame, { width: W, height: H, fps: FPS })) {
+        if (controller) {
+          observation = await observe();
+          progress.last = gameInputProgress(observation);
+          progress.bestScore = Math.max(progress.bestScore, observation?.score || 0);
+        }
+        const events = controller ? controller.next(runFrame++, observation) : mobileInputFrame(frame, { width: W, height: H, fps: FPS });
+        if (controller && Array.isArray(diagnostics.inputTrace) && diagnostics.inputTrace.length < 900) diagnostics.inputTrace.push({ frame, x: observation?.x, events });
+        for (const event of events) {
           await touch(event.type, event.x, event.y);
           touching = event.type !== "touchEnd";
+          if (event.type === 'touchStart') progress.gestures++;
+          if (event.type === 'touchMove') progress.moves++;
         }
       } else {
         if (f === 0) { if (held) await key("keyUp", held); held = keys[Math.floor(rand() * 3)]; await key("keyDown", held); }
@@ -294,14 +313,25 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     await activateStart();
     if (desktop && !controlClicks) await click(W / 2, H * 0.6);
 
+    if (knownInput) {
+      observation = await observe();
+      if (observation?.kind === knownInput) {
+        controller = createGameInputController(knownInput, { width: W, height: H, fps: FPS });
+        progress.first = gameInputProgress(observation);
+      }
+    }
+    diagnostics.inputPolicy = controller ? knownInput : 'generic';
+    if (controller) diagnostics.gameplay = progress;
+
     // Settle a few virtual frames (games often spawn on their first update),
     // then record. A game over restarts the game (as the feed card would).
-    const settle = 6, total = Math.round(seconds * FPS) + 12;
+    const settle = controller ? GAME_WARMUP_FRAMES[knownInput] : 6, total = Math.round(seconds * FPS) + 12;
     let seen = await evaluate("window.__events.length");
     let restarts = 0, frames = 0, stepMs = 0;
     for (let i = 0; i < settle + total; i++) {
       if (i && i % FPS === 0) await activateStart();
       await input(i);
+      if (controller && i >= settle && !continuousGameInput(observation)) throw new VideoFailure('unstable_gameplay');
       const t0 = Date.now();
       if (!(await evaluate(`window.__clock('step',${1000 / FPS})`))) throw new VideoFailure("clock_unavailable", true);
       stepMs += Date.now() - t0;
@@ -309,7 +339,11 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       seen += fresh.length;
       if (fresh.includes("loadError")) throw new VideoFailure("boot_error");
       if (fresh.some((t) => t === "finished" || t === "gameOver" || t === "over") && restarts < 4) {
+        // Reviewed policies must deliver one continuous run, not a montage of
+        // instant deaths and restarts. A failed attempt leaves the old preview.
+        if (controller && i >= settle) throw new VideoFailure('unstable_gameplay');
         restarts++;
+        if (controller) { for (const event of controller.reset()) await touch(event.type); touching = false; runFrame = 0; }
         await evaluate(`window.__send({type:'restart',request:'video-${restarts}'})`);
       }
       if (i < settle) continue;
@@ -329,6 +363,8 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       if (process.env.SLOP_VIDEO_DEBUG && frames % 30 === 0) console.error(`video: ${frames} frames, step ${Math.round(stepMs / (i + 1))} ms`);
     }
     if (touching) await touch("touchEnd").catch(() => {});
+    if (controller) { observation = await observe(); progress.last = gameInputProgress(observation); progress.bestScore = Math.max(progress.bestScore, observation?.score || 0); }
+    if (controller && (!continuousGameInput(observation) || progress.bestScore <= (progress.first?.score || 0))) throw new VideoFailure('unstable_gameplay');
     diagnostics.frames = frames;
     diagnostics.restarts = restarts;
     diagnostics.controlClicks = controlClicks;

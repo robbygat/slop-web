@@ -49,8 +49,8 @@
 
 .feed-live-game{position:relative;isolation:isolate}
 .feed-game-backdrop{display:none}
-/* Fullscreen mobile discovery; only recorded previews crop to fill the screen.
-   The live game keeps its full canvas and a separate, reachable control row. */
+/* Mobile previews keep the entire recorded canvas. A soft poster backdrop
+   fills the space left by each screen shape; live controls remain reachable. */
 @media(max-width:700px){
  html:has(.page-feed),body:has(.page-feed),#root:has(.page-feed){scrollbar-width:none;scrollbar-gutter:auto;background:#101215}
  html:has(.page-feed)::-webkit-scrollbar,body:has(.page-feed)::-webkit-scrollbar,#root:has(.page-feed)::-webkit-scrollbar{display:none;width:0;height:0}
@@ -68,7 +68,8 @@
  .page-feed .live-feed-page .feed-item{position:relative;display:block;width:100%;height:100dvh;min-height:100svh;margin:0;padding:0;border:0;border-radius:0;background:#101215;scroll-margin-top:0;overflow:hidden}
  .page-feed .live-feed-page .feed-game{width:100%;height:100%;max-width:none;margin:0}
  .page-feed .feed-video-preview,.page-feed .live-feed-page .feed-poster{width:100%;height:100%;min-height:0;max-height:none;margin:0;aspect-ratio:auto;border:0;border-radius:0;background:#101215;box-shadow:none}
- .page-feed .feed-video-preview>video,.page-feed .feed-video-preview>.feed-video-poster,.page-feed .live-feed-page .feed-poster>img{object-fit:cover}
+ .page-feed .feed-video-preview>video,.page-feed .feed-video-preview>.feed-video-poster,.page-feed .live-feed-page .feed-poster>img{object-fit:contain}
+ .page-feed .feed-video-preview>.feed-video-backdrop{object-fit:cover;filter:blur(24px) brightness(.45);transform:scale(1.08);pointer-events:none}
  .page-feed .feed-video-play{bottom:auto;top:50%;transform:translate(-50%,-50%);z-index:2;background:#fffffff0}
  .page-feed .live-feed-page .feed-info{position:absolute;z-index:3;inset:auto 0 calc(84px + env(safe-area-inset-bottom));width:100%;max-width:none;padding:38px 18px 12px;margin:0;background:linear-gradient(transparent,#101215b3);color:#fff;pointer-events:none}
  .page-feed .feed-crown-ribbon{margin:0;text-align:left}
