@@ -183,3 +183,72 @@ export function validateMedia(kind, bytes) {
   }
   throw new BridgeError("invalid_request");
 }
+
+// Feed preview video: a faststart (moov before mdat) H.264 MP4 of 720x1280 or
+// 1280x720, 2-15 s, <= 4 MiB, with a same-size poster JPEG.
+export const VIDEO_MAX = 4_194_304;
+export const VIDEO_FAILURE = /^[a-z_]{1,40}$/;
+function boxes(bytes, start, end) {
+  const out = [];
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let p = start;
+  while (p + 8 <= end) {
+    let size = view.getUint32(p);
+    const type = String.fromCharCode(bytes[p + 4], bytes[p + 5], bytes[p + 6], bytes[p + 7]);
+    let header = 8;
+    if (size === 1) {
+      if (p + 16 > end) return null;
+      const high = view.getUint32(p + 8), low = view.getUint32(p + 12);
+      if (high) return null;
+      size = low; header = 16;
+    } else if (size === 0) size = end - p;
+    if (size < header || p + size > end) return null;
+    out.push({ type, start: p + header, end: p + size });
+    p += size;
+  }
+  return p === end ? out : null;
+}
+export function mp4Info(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length < 64) return null;
+  const top = boxes(bytes, 0, bytes.length);
+  if (!top?.length || top[0].type !== "ftyp") return null;
+  const moovIndex = top.findIndex((b) => b.type === "moov"), mdatIndex = top.findIndex((b) => b.type === "mdat");
+  if (moovIndex < 0 || mdatIndex < 0 || moovIndex > mdatIndex) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const moov = boxes(bytes, top[moovIndex].start, top[moovIndex].end);
+  const mvhd = moov?.find((b) => b.type === "mvhd");
+  if (!mvhd) return null;
+  const v1 = bytes[mvhd.start] === 1;
+  const timescale = view.getUint32(mvhd.start + (v1 ? 20 : 12));
+  const duration = v1 ? view.getUint32(mvhd.start + 28) : view.getUint32(mvhd.start + 16);
+  if (!timescale) return null;
+  const video = [];
+  for (const trak of moov.filter((b) => b.type === "trak")) {
+    const kids = boxes(bytes, trak.start, trak.end);
+    const tkhd = kids?.find((b) => b.type === "tkhd");
+    const mdia = kids?.find((b) => b.type === "mdia");
+    if (!tkhd || !mdia) return null;
+    const minf = boxes(bytes, mdia.start, mdia.end)?.find((b) => b.type === "minf");
+    const stbl = minf && boxes(bytes, minf.start, minf.end)?.find((b) => b.type === "stbl");
+    const stsd = stbl && boxes(bytes, stbl.start, stbl.end)?.find((b) => b.type === "stsd");
+    if (!stsd || stsd.end - stsd.start < 16) return null;
+    const codec = String.fromCharCode(...bytes.subarray(stsd.start + 12, stsd.start + 16));
+    const width = view.getUint32(tkhd.end - 8) >>> 16, height = view.getUint32(tkhd.end - 4) >>> 16;
+    if (width && height) video.push({ codec, width, height });
+  }
+  if (video.length !== 1) return null;
+  return { ...video[0], duration_ms: Math.round((duration / timescale) * 1000) };
+}
+export function validateVideo(bytes) {
+  const info = mp4Info(bytes);
+  requireValue(bytes.length >= 1 && bytes.length <= VIDEO_MAX && info && info.codec === "avc1" &&
+    ((info.width === 720 && info.height === 1280) || (info.width === 1280 && info.height === 720)) &&
+    info.duration_ms >= 2000 && info.duration_ms <= 15000, "media_invalid", 422);
+  return info;
+}
+export function validatePoster(bytes, width, height) {
+  const size = jpegSize(bytes);
+  requireValue(bytes.length >= 1 && bytes.length <= 716_800 && size && size.width === width && size.height === height,
+    "media_invalid", 422);
+  return size;
+}

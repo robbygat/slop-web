@@ -7,6 +7,18 @@ name: MCP auto-publish
 # names, ids or media, and uploads no artifacts.
 on:
   workflow_dispatch:
+    inputs:
+      videos:
+        description: 'Feed video pass: "incremental" (default) or "backfill" (8 parallel shards, long budget)'
+        required: false
+        default: incremental
+        type: choice
+        options: [incremental, backfill]
+      retry_failed:
+        description: Retry games whose video recording already failed twice
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: '*/5 * * * *'
 
@@ -14,13 +26,12 @@ permissions:
   contents: read
   id-token: write
 
-concurrency:
-  group: mcp-autopublish
-  cancel-in-progress: false
-
 jobs:
   publish:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.videos != 'backfill')
+    concurrency:
+      group: mcp-autopublish
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -38,4 +49,46 @@ jobs:
       - name: Allow Chrome's sandbox on Ubuntu
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Record and publish queued games
+        run: node scripts/mcp-publisher/run.mjs
+
+  # Feed videos (H.264 loop + poster) for every published game whose current
+  # release has none: new MCP, website and app publishes on the schedule, the
+  # whole catalog on a backfill dispatch. Logs carry counts and codes only.
+  videos:
+    # Runs after the publish job so a just-published game gets its video in
+    # the same run; a backfill skips publishing and still runs.
+    if: always() && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.videos == 'backfill' && 75 || 25 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(inputs.videos == 'backfill' && '[0,1,2,3,4,5,6,7]' || '[0]') }}
+    concurrency:
+      group: mcp-videos-${{ inputs.videos == 'backfill' && 'backfill' || 'incremental' }}-${{ matrix.shard }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '26'
+          cache: npm
+      - name: Install web dependencies
+        run: npm ci --ignore-scripts
+      - name: Install ffmpeg
+        run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg)
+      - name: Allow Chrome's sandbox on Ubuntu
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Record feed videos
+        env:
+          SLOP_PUBLISHER_MODE: videos
+          SLOP_VIDEO_SHARD: ${{ matrix.shard }}
+          SLOP_VIDEO_SHARDS: ${{ inputs.videos == 'backfill' && 8 || 1 }}
+          SLOP_VIDEO_BUDGET_MIN: ${{ inputs.videos == 'backfill' && 68 || 18 }}
+          SLOP_VIDEO_RETRY_FAILED: ${{ inputs.retry_failed && '1' || '0' }}
         run: node scripts/mcp-publisher/run.mjs

@@ -40,6 +40,7 @@ const knownCodes = new Set([
   "invalid_lease",
   "lease_expired",
   "media_invalid",
+  "target_unavailable",
 ]);
 async function request(
   path: string,
@@ -215,8 +216,33 @@ const deps = {
 // game-bundle admits publish_mcp_job only for its own injected service-role
 // key; both functions run in this project, so send exactly that value.
 const bundleServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const storeObject = async (bucket: string, path: string, bytes: Uint8Array, type: string, cache = "no-store") => {
+  const response = await fetch(`${base}/storage/v1/object/${bucket}/${path}`, {
+    method: "POST",
+    redirect: "error",
+    headers: {
+      apikey: service,
+      ...(service.startsWith("sb_secret_") ? {} : { Authorization: `Bearer ${service}` }),
+      "content-type": type,
+      "x-upsert": "true",
+      "cache-control": cache,
+    },
+    body: bytes as unknown as BodyInit,
+    signal: AbortSignal.timeout(30_000),
+  });
+  await response.body?.cancel();
+  if (!response.ok) throw new BridgeError("upstream_unavailable", 503);
+};
 const publisherDeps = {
   verifyPublisher: createOidcVerifier(),
+  // Content-addressed public feed media: immutable once written.
+  storeVideo: (path: string, bytes: Uint8Array, type: string) =>
+    storeObject("game-preview-videos", path, bytes, type, "public, max-age=31536000, immutable"),
+  videoService: (action: string, input: unknown) =>
+    request("/rest/v1/rpc/game_preview_video_service", service.startsWith("sb_secret_") ? null : service, "POST", {
+      p_action: action,
+      p: input,
+    }, {}, service),
   stageMedia: async (path: string, bytes: Uint8Array, type: string) => {
     const response = await fetch(
       `${base}/storage/v1/object/mcp-publisher-staging/${path}`,
