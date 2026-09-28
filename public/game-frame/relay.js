@@ -50,6 +50,16 @@
       }
       return;
     }
+    // Publish-time video capture: one transferred ImageBitmap per request,
+    // re-sent as a fixed-shape object (nothing else of the game's is kept).
+    if (game && !blocked && event.source === game.contentWindow && event.data &&
+        typeof event.data === 'object' && event.data.type === 'webFrameResult' &&
+        typeof event.data.request === 'string' && event.data.request.length <= 64) {
+      const bitmap = typeof ImageBitmap === 'function' && event.data.bitmap instanceof ImageBitmap ? event.data.bitmap : null;
+      const background = typeof event.data.background === 'string' ? event.data.background.slice(0, 64) : null;
+      parent.postMessage({type: 'webFrameResult', request: event.data.request, bitmap, background}, '*', bitmap ? [bitmap] : []);
+      return;
+    }
     if (game && !blocked && event.source === game.contentWindow &&
         typeof event.data === 'string' && event.data.length <= maxMessageChars) {
       // Control messages belong to the relay; game code cannot forge them.
