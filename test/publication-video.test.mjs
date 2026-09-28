@@ -15,6 +15,6 @@ test('failed or incomplete recordings block publication',async()=>{
  }
 });
 test('completed MP4 and poster can proceed without discarding the real clip',async()=>{
- const clip={video:new Uint8Array(8),poster:new Uint8Array(4),durationMs:7000};
+ const clip={video:new Uint8Array(8),poster:new Uint8Array(4),durationMs:7000,width:720,height:1280,quality:{frames:210,moving:100,lit:210}};
  assert.equal(await finishPublicationVideo({supported:true,finish:async()=>clip}),clip);
 });
