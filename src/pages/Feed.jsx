@@ -7,6 +7,9 @@ import {visibleFeedGame} from '../lib/feed-focus.js';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
 import {feedPromoAfter} from '../lib/feed-promo.js';
 import {loadFeedCrown} from '../lib/leaderboard.js';
+import {getSession} from '../lib/supabase.js';
+import {createFeedCrownSync} from '../lib/feed-crown-sync.js';
+import {isCurrentScoreSavedEvent} from '../lib/score-saved-event.js';
 import {useAuth} from '../auth.jsx';
 import {Button,Empty,Loading,Notice,Slop} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
@@ -25,6 +28,8 @@ export default function Feed(){
  const [leaders,setLeaders]=useState({});
  const sentinel=useRef(null),generation=useRef(0),busy=useRef(false),cursor=useRef(null),hasMore=useRef(true),cards=useRef(new Map()),promos=useRef(new Map()),activeRef=useRef(active),touchStart=useRef(null);
  activeRef.current=active;
+ const crownSync=useRef(null),crownGame=useRef(null),crownEpoch=getSession()?.epoch;
+ crownGame.current=games.find(game=>game.id===active)||null;
  async function more(reset=false){
   if(busy.current&&!reset)return;
   const epoch=reset?++generation.current:generation.current;busy.current=true;setLoading(true);setError(null);
@@ -52,11 +57,20 @@ export default function Feed(){
  },[games]);
  useEffect(()=>{let current=true;setLikes(new Set());if(user)likedGames().then(rows=>{if(current)setLikes(new Set(rows.map(r=>r.game_id)));}).catch(()=>{});return()=>{current=false;};},[user?.id]);
  useEffect(()=>{let current=true;const game=games.find(g=>g.id===active);if(game)socialCounts([game.slug]).then(rows=>{if(current&&rows[0])setCounts(old=>({...old,[game.slug]:rows[0]}));}).catch(()=>{});return()=>{current=false;};},[active]);
- useEffect(()=>{let current=true;const game=games.find(item=>item.id===active);if(game&&!Object.hasOwn(leaders,game.slug))loadFeedCrown(game.slug).then(holder=>{if(current)setLeaders(old=>({...old,[game.slug]:holder}));}).catch(()=>{if(current)setLeaders(old=>({...old,[game.slug]:null}));});return()=>{current=false;};},[active,games,leaders]);
+ useEffect(()=>{
+  const sync=createFeedCrownSync({load:loadFeedCrown,getContext:()=>{
+   const game=crownGame.current,session=getSession();
+   return game?.id===activeRef.current?{gameId:game.id,slug:game.slug,ownerId:session?.user?.id,sessionEpoch:session?.epoch}:null;
+  },onHolder:(slug,holder)=>setLeaders(old=>({...old,[slug]:holder}))});crownSync.current=sync;
+  const resume=()=>{if(!document.hidden)sync.refresh();};
+  window.addEventListener('focus',resume);window.addEventListener('pageshow',resume);document.addEventListener('visibilitychange',resume);
+  return()=>{sync.dispose();crownSync.current=null;window.removeEventListener('focus',resume);window.removeEventListener('pageshow',resume);document.removeEventListener('visibilitychange',resume);};
+ },[]);
+ useEffect(()=>{if(!selected&&!document.hidden)crownSync.current?.refresh();},[active,crownGame.current?.slug,user?.id,crownEpoch,selected]);
  async function toggleLike(game){if(likeBusy||!requireAuth())return;const liked=likes.has(game.slug)||likes.has(game.id);setLikeBusy(true);setActionError(null);try{await likeGame(game.slug,!liked,game.id);setLikes(old=>{const value=new Set(old);value.delete(game.id);if(liked)value.delete(game.slug);else value.add(game.slug);return value;});setCounts(old=>({...old,[game.slug]:{...old[game.slug],likes:Math.max(0,(old[game.slug]?.likes||0)+(liked?-1:1))}}));}catch(e){setActionError(e);}finally{setLikeBusy(false);}}
  async function share(game){try{const url=canonicalGameUrl(game);if(navigator.share)await navigator.share({title:game.name,url});else await navigator.clipboard.writeText(url);setShared(game.id);}catch(e){if(e.name!=='AbortError')setActionError(new Error('Could not share this game. Try again.'));}}
  function nextGame(index,skipPromo=false){const nextCard=(!skipPromo&&promos.current.get(index))||cards.current.get(games[index+1]?.id);if(nextCard)nextCard.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});else sentinel.current?.scrollIntoView({behavior:'smooth',block:'center'});}
- function playerEvent(event){if(event.type==='webScroll'&&!selected&&!document.querySelector('.game-player.is-expanded'))window.scrollBy({top:Math.max(-480,Math.min(480,event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1))),behavior:'instant'});}
+ function playerEvent(event){if(crownGame.current?.id===activeRef.current&&isCurrentScoreSavedEvent(event,{game:crownGame.current,session:getSession()}))crownSync.current?.refresh({force:true});if(event.type==='webScroll'&&!selected&&!document.querySelector('.game-player.is-expanded'))window.scrollBy({top:Math.max(-480,Math.min(480,event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1))),behavior:'instant'});}
  return <div className="for-you-page live-feed-page">
   <header className="live-feed-intro"><div><h1>For you<span>.</span></h1></div><div className="feed-mode" aria-label="Game order"><button className={order==='popular'?'selected':''} aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>For you</button><button className={order==='newest'?'selected':''} aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Newest</button></div></header>
   <Notice error={actionError}/>

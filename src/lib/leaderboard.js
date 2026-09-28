@@ -10,11 +10,13 @@ export async function loadLeaderboard(slug) {
   } catch(error) {if(!['PGRST202','42883'].includes(error.code))throw error;}
   return parseLeaderboard(await result(supabase.rpc('top_scores',{p_game:slug,p_limit:10})));
 }
-// Feed crowns require explicit receipt authority; legacy scores are not a fallback.
+// Use the same authoritative display-crown selection as the mobile feed.
 export async function loadFeedCrown(slug) {
   if(!SLUG.test(slug))throw new SlopError('invalid_response');
-  const rows=await result(supabase.rpc('competitive_top_scores',{p_game:slug,p_limit:1}).abortSignal(AbortSignal.timeout(6000)));
-  return parseFeedCrown(rows);
+  const rows=await result(supabase.rpc('game_crowns',{p_games:[slug]}).abortSignal(AbortSignal.timeout(6000)));
+  if(!Array.isArray(rows)||rows.length!==1||rows[0]?.game_key!==slug)return null;
+  const row=rows[0];
+  return parseFeedCrown([{...row,user_id:row.holder_user_id,username:row.holder_username,avatar_url:row.holder_avatar_url,slop_look:row.holder_slop_look}]);
 }
 export function scoreRun(slug) {
   return createScoreRun({game:slug,getSession,submit:expected=>asOwner((owner,client)=>{

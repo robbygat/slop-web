@@ -5,6 +5,8 @@ import {gamePlatform} from '../lib/game-platforms.js';
 import {canonicalGameUrl} from '../lib/game-links.js';
 import {scoreRun} from '../lib/leaderboard.js';
 import {validRunScore} from '../lib/score-contracts.js';
+import {scoreSavedEvent} from '../lib/score-saved-event.js';
+import {getSession} from '../lib/supabase.js';
 import {createRestartGate} from '../lib/player-restart.js';
 import {legacyControlSpec} from '../lib/player-input.js';
 import {gameControlKey} from '../lib/player-focus.js';
@@ -23,6 +25,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
  const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart};const format=gameFormat(game),controls=legacyControlSpec(url);
  const send=message=>frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');
+ function newRun(interacted){const session=getSession();return {score:0,ended:false,interacted,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview?scoreRun(game.slug):null};}
  useEffect(()=>{
   const release=()=>{for(const key of heldKeys.current)send({type:'hostKey',key,down:false});heldKeys.current.clear();};
   const down=event=>{if(state.current.paused||state.current.finished!==null||state.current.board)return;const key=gameControlKey(event);if(!key)return;event.preventDefault();event.stopPropagation();frame.current?.contentWindow?.focus();if(!event.repeat){heldKeys.current.add(key);send({type:'hostKey',key,down:true});const current=run.current;if(current&&!current.ended)current.interacted=true;}};
@@ -41,14 +44,14 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  useEffect(()=>{
   restartGate.current.cancel();
   if(desktopRequired){run.current=null;setDoc(null);setReady(false);setError(null);return;}
-  const controller=new AbortController();const current={score:0,ended:false,interacted:!requireInteraction||replayIntent.current,save:game&&!preview?scoreRun(game.slug):null};run.current=current;replayIntent.current=false;
+  const controller=new AbortController();const current=newRun(!requireInteraction||replayIntent.current);run.current=current;replayIntent.current=false;
   setDoc(null);setError(null);setReady(false);setFinished(null);setSave(null);setBoard(false);setWaitingStart(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
   else loadDocument(url,{signal:controller.signal,preview}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
   return()=>{restartGate.current.cancel();controller.abort();run.current=null;};
- },[url,restart,preview,game?.slug,requireInteraction,desktopRequired]);
+ },[url,restart,preview,game?.id,game?.slug,requireInteraction,desktopRequired]);
  useEffect(()=>{
   const onMessage=e=>{
    const event=acceptPlayerEvent(e.source,frame.current?.contentWindow,e.data);if(!event)return;
@@ -66,7 +69,14 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
     // as the player's result.
     if(requireInteraction&&!current.interacted){current.ended=true;setReady(true);setWaitingStart(true);send({type:'pause'});return;}
     current.ended=true;current.score=score;setReady(true);setFinished(score);setBoard(false);send({type:'pause'});
-    if(current.save&&current.interacted)current.save.finish(score).then(receipt=>{if(run.current===current)setSave(receipt);}).catch(()=>{if(run.current===current)setSave({state:'failed'});});
+    if(current.save&&current.interacted)current.save.finish(score).then(receipt=>{
+     if(run.current!==current)return;
+     const savedEvent=scoreSavedEvent(receipt,current.scoreContext,getSession());
+     if(receipt.state==='saved'&&!savedEvent)return;
+     setSave(receipt);
+     // Emitted only after the server receipt passed owner/game/request checks.
+     if(savedEvent)callbacks.current?.(savedEvent);
+    },()=>{if(run.current===current)setSave({state:'failed'});});
     else if(current.save)setSave({state:'idle'});
     else setSave({state:preview?'preview':'guest'});
    }
@@ -102,7 +112,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   current.ended=true;send({type:'pause'});
   const request=restartGate.current.begin({frame:source,onFallback:()=>{if(frame.current?.contentWindow===source&&run.current===current)reload();},onHandled:()=>{
    if(frame.current?.contentWindow!==source||run.current!==current)return;
-   run.current={score:0,ended:false,interacted:true,save:game&&!preview?scoreRun(game.slug):null};
+   run.current=newRun(true);
    state.current={...state.current,finished:null,board:false};
    setFinished(null);setSave(null);setBoard(false);setError(null);setReady(true);
    send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused?'pause':'resume'});

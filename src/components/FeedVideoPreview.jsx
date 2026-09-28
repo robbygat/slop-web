@@ -19,7 +19,7 @@ export function FeedVideoPreview({game, paused, onEvent}) {
   }, [paused, playing, video?.src]);
   if (playing) return <div className="feed-live-game">{poster&&<img className="feed-game-backdrop" src={poster} alt=""/>}<GamePlayer url={gameEntry(game)} game={game} title={game.name} initialMuted requireInteraction paused={paused} onEvent={onEvent}/></div>;
   return <button type="button" className="feed-video-preview" aria-label={`Play ${game.name}`} onClick={() => setPlaying(true)}>
-    {poster && <img className="feed-video-poster" src={poster} alt=""/>}
+    {poster && <><img className="feed-video-backdrop" src={poster} alt=""/><img className="feed-video-poster" src={poster} alt=""/></>}
     {video && !failed && <video ref={el} src={video.src} poster={video.poster} autoPlay muted loop playsInline preload="auto" disablePictureInPicture onError={() => setFailed(true)}/>}
     <span className="feed-video-play">Play<span aria-hidden="true"> ▶</span></span>
   </button>;

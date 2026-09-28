@@ -125,9 +125,11 @@ cannot spend coins or change the account.
    complete bundle with `slop_send_draft` and the same target.
 4. The draft appears in the same account's computer connection inbox on web and
    mobile. Select **Try on my phone** or **Playtest & publish** on the website.
-   Play the real build while Slop records an H.264 MP4 feed preview and poster.
+   Play the real build while Slop records gameplay frames directly into an
+   H.264 MP4 feed preview and poster; never convert a GIF into the feed video.
    A moving GIF and cover are also retained for older clients; their existing
-   validation still applies. A validated, immutable private preview opens
+   validation still applies, and they cannot replace the required MP4.
+   A validated, immutable private preview opens
    after approval. Browser capture requires H.264 encoding support; the
    server video pass backfills missing previews for published games.
 5. For another iteration, ask your agent to send the next revision. Review it
@@ -146,12 +148,14 @@ Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
 Switch on **Auto-publish** for a connected app at slop.game/#/connect. The agent
 can then call `slop_publish` with a `submission_id` (or pass `publish: true` to
 `slop_send_draft`). Slop's server playtests the latest revision in a headless
-browser and records a moving H.264 MP4 feed loop and JPEG poster, plus a GIF
-and cover for older clients. Video recording must succeed before publication
+browser and records gameplay frames directly into a moving H.264 MP4 feed loop
+and JPEG poster, plus a legacy GIF and cover for older clients. The MP4 is never
+a converted GIF. Video recording must succeed before publication
 proceeds; a failed recording leaves the job retryable. Staff accounts go live
 immediately, everyone else goes to review. Feed videos are 720×1280 (9:16),
-or 1280×720 (16:9) for desktop games, at 30 fps for about seven seconds. A later revision of an already
-published project updates that game. `slop_draft_status` reports each
+or 1280×720 (16:9) for desktop games, at 30 fps for about seven seconds.
+Accepted video must match the current immutable release. A later revision of an
+already published project updates that game. `slop_draft_status` reports each
 revision's `publication` (`requested`, `recording`, `publishing`, `published`,
 `pending_review`, or `failed` with a `failure_code` such as `no_motion`,
 `blank_canvas` or `boot_error`). The recorder runs every five minutes.
@@ -160,9 +164,11 @@ agent can fix a bundle before the owner is asked to review it.
 
 ## Feed framing and HUD
 
-Every phone clip is 9:16, and phones are taller (~9:19.5), so the For You feed
-can trim the clip's sides. Keep the player, targets and HUD inside the centered
-~80% of the width, and frame the camera or playfield slightly wide, not tight.
+Portrait clips are 720×1280 and landscape clips are 1280×720. The For You feed
+preserves the full canvas with adaptive contain fitting and a backdrop for other
+screen shapes; gameplay and controls must not be cropped. Keep the player,
+targets and HUD inside the centered ~80% of the width for readability, and frame
+the camera or playfield slightly wide, not tight.
 
 Keep the HUD tiny: one big score or number near top-center, plus at most one or
 two small icons. No sentences and no `SCORE:` / `LEVEL:` labels. A control hint

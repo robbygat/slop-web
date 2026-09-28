@@ -26,7 +26,9 @@ The fragment contains a confirmation challenge, not the desktop access token.
   expires_at, pairing_expires_at, last_seen_at, requires_confirmation,
   scopes:["drafts:send","drafts:status"]}`.
 - Explain the requested permission: this named agent can send private game drafts
-  and read their delivery status. Each revision still requires phone approval.
+  and read their delivery status. Private preview revisions require owner
+  confirmation; publication is separate and needs owner submission or an
+  explicitly enabled Auto-publish grant for this connection.
   Treat client_name as plain untrusted text. Explicit "Allow this agent" invokes
   `POST /pair/confirm` with `{pairing_id,code}`. Same response, now `status:active`,
   `requires_confirmation:false`, expiry thirty days from approval.
@@ -53,7 +55,8 @@ The fragment contains a confirmation challenge, not the desktop access token.
   Open it with the existing private preview runtime, not the published feed or
   share route. A ready private draft has **no public share URL**. Reconfirm the
   same latest submission to mint a fresh preview after expiry. Pending revisions
-  never appear as public games, trigger publication, award XP, or spend credits.
+  do not become public games merely by being uploaded. A private preview alone
+  never awards XP or spends credits.
 - Old revisions are rejected after a newer revision is submitted. Each revision
   uses its own draft slug, so a previous valid preview remains immutable. Keep
   the last valid preview and show a clear retry if upload/validation fails.
@@ -87,9 +90,20 @@ original `#id=<uuid>&code=<32hex>` in the browser. Opening it only reviews the
 request; explicit signed-in owner approval is still required. The local tool
 returns this API-host authorization link alongside the canonical native QR.
 
-The website owner may play a confirmed private draft, capture its real canvas,
-reserve a game link, and explicitly submit through the existing game-bundle
-review authority. Agents receive no publication capability. Covers use
-720×1280, 1280×720 or 1280×1280; corresponding GIFs use 360×640, 640×360 or
-640×640, with 3–40 frames and at most 2 MiB. Exact source digests, storage byte
-receipts and review nonce checks remain mandatory.
+The website owner may play a confirmed private draft, record its real canvas,
+reserve a game link, and submit through the existing game-bundle review
+authority. An agent may request publication only after the owner enables
+Auto-publish for that connection. The server then playtests the latest revision;
+staff releases go live, while other releases enter review. Neither path bypasses
+owner, revision, media, or review checks.
+
+Feed previews are recorded directly from real gameplay as H.264 MP4 at 30 fps:
+720×1280 portrait or 1280×720 landscape, with a JPEG poster. Never convert a GIF
+into the feed video. Preserve the full canvas with adaptive contain fitting;
+screen shape must not crop gameplay or controls. Publication requires accepted
+video for the exact current immutable release. Source digests, release keys,
+owner/session checks, storage byte receipts, and review nonces remain mandatory.
+
+GIFs and covers remain legacy compatibility media only. Covers use 720×1280,
+1280×720 or 1280×1280; corresponding GIFs use 360×640, 640×360 or 640×640, with
+3–40 frames and at most 2 MiB. They do not replace the required MP4 preview.
