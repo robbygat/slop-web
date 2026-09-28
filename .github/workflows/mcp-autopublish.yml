@@ -15,7 +15,7 @@ on:
         type: choice
         options: [incremental, backfill]
       retry_failed:
-        description: Allow one forced retry claim per shard for previously failed videos
+        description: Retry each previously failed video once during this pass
         required: false
         default: false
         type: boolean

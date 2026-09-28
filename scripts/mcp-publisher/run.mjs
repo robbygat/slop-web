@@ -7,7 +7,7 @@
 // never game names, source, owner or submission ids, leases or media.
 import { recordGame, RecorderFailure } from "./record.mjs";
 import { recordVideo, VideoFailure } from "./video.mjs";
-import { checkApiHealth, ApiHealthFailure, PUBLISHABLE_KEY, retryFailedForClaim } from "./safety.mjs";
+import { checkApiHealth, ApiHealthFailure, PUBLISHABLE_KEY, createVideoRetryPass } from "./safety.mjs";
 
 const API = process.env.SLOP_MCP_URL ?? "https://api.slop.game/functions/v1/slop-mcp";
 const AUDIENCE = "https://api.slop.game/functions/v1/slop-mcp";
@@ -124,12 +124,14 @@ async function videos() {
   }
   const budget = Date.now() + Number(process.env.SLOP_VIDEO_BUDGET_MIN ?? 15) * 60_000;
   const retryFailed = process.env.SLOP_VIDEO_RETRY_FAILED === "1";
+  const retryPass = createVideoRetryPass(retryFailed);
   let recorded = 0, failed = 0, n = 0;
   while (Date.now() < budget - 6 * 60_000) {
     if (n) await new Promise((resolve) => setTimeout(resolve, 3000));
     await checkApiHealth();
-    const claim = await call("/publisher/videos/claim", await oidcToken(), { json: { limit: 1, shard, shards, retry_failed: retryFailedForClaim(retryFailed, n) } });
+    const claim = await call("/publisher/videos/claim", await oidcToken(), { json: { limit: 1, shard, shards, ...retryPass.claimInput() } });
     if (claim.status !== 200) { console.log(`video claim refused: ${claim.status} ${claim.body?.code ?? ""}`); process.exitCode = 1; break; }
+    retryPass.acceptClaim(claim.body);
     const game = claim.body?.games?.[0];
     if (!game) break;
     n++;

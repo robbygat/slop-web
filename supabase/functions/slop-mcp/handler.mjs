@@ -183,8 +183,14 @@ export function createHandler(deps, config = {}) {
           await deps.verifyPublisher(bearer);
           if (path === "/publisher/videos/claim") {
             const input = await readBody(req);
+            if (input.retry_before !== undefined) {
+              requireValue(input.retry_failed === true && typeof input.retry_before === "string" &&
+                input.retry_before.length <= 40 && /^\d{4}-\d{2}-\d{2}T/.test(input.retry_before) &&
+                Number.isFinite(Date.parse(input.retry_before)), "invalid_request");
+            }
             return json(await deps.videoService("claim", {
               limit: input.limit, shard: input.shard, shards: input.shards, retry_failed: input.retry_failed === true,
+              ...(input.retry_before === undefined ? {} : { retry_before: input.retry_before }),
             }));
           }
           const video = path.match(/^\/publisher\/videos\/([0-9a-f-]{36})\/(media|fail)$/);
