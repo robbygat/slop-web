@@ -1,3 +1,4 @@
+import {publicRead} from './public-read.js';
 import {asOwner,supabase,result} from './supabase.js';
 import {SLUG,SlopError} from './contracts.js';
 import {validGameName} from './game-links.js';
@@ -7,6 +8,6 @@ export const myGameName=slug=>asOwner(async(owner,client)=>receipt(await result(
 export const previewGameName=(slug,title)=>asOwner(async(owner,client)=>{if(!SLUG.test(slug)||typeof title!=='string'||title.length>80)throw new Error('Choose a game title first.');const value=receipt(await result(client.rpc('preview_game_url',{p_owner:owner,p_game_slug:slug,p_title:title})),owner,slug);if(typeof value?.claimed!=='boolean')throw new SlopError('invalid_response');return value;});
 export async function publicGameNames(games){
  if(!games?.length)return games;
- try{const rows=await result(supabase.rpc('game_public_names',{p_game_slugs:games.map(g=>g.slug)}));const names=new Map((Array.isArray(rows)?rows:[]).filter(r=>SLUG.test(r.game_slug)&&validGameName(r.name)).map(r=>[r.game_slug,r.name]));return games.map(g=>({...g,public_name:names.get(g.slug)||null}));}
+ try{const rows=await publicRead(supabase.rpc('game_public_names',{p_game_slugs:games.map(g=>g.slug)}),{timeoutMs:1500});const names=new Map((Array.isArray(rows)?rows:[]).filter(r=>SLUG.test(r.game_slug)&&validGameName(r.name)).map(r=>[r.game_slug,r.name]));return games.map(g=>({...g,public_name:names.get(g.slug)||null}));}
  catch{return games;} // The immutable original slug remains a valid share URL.
 }

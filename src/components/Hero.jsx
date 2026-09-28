@@ -4,7 +4,6 @@ import {gameEntry} from '../lib/contracts.js';
 import {Icon} from './Icon.jsx';
 import {Loading} from './ui.jsx';
 import {GameplayReel, MobileGameplayReel} from './GameplayReel.jsx';
-import HeroComposer from './HeroComposer.jsx';
 import './hero.css';
 
 const LiveGame = lazy(() => import('./GamePlayer.jsx').then(module => ({default: module.GamePlayer})));
@@ -74,13 +73,12 @@ export default function Hero() {
           <div className="arcade-game-name"><h2>{featured.name}</h2><span>@{featured.creator}</span></div>
           <button className="arcade-play" onClick={play} disabled={busy} aria-label={`Play ${featured.name}`}>{busy ? 'Opening…' : 'Play now'}<Icon name="arrow" size={21}/></button>
         </div>
-        <div className="arcade-create"><HeroComposer/></div>
         {error && <p className="arcade-error" role="alert">{error}</p>}
       </>}
     </div>
     <div className="arcade-footer">
       {game ? <button onClick={closeGame} className="arcade-link"><Icon name="close" size={17}/>Close game</button> : <a className="arcade-link" href="#/feed">Browse games<Icon name="arrow" size={18}/></a>}
-      {game && <a className="arcade-make" href="#/build">Make a game<Icon name="plus" size={19}/></a>}
+      {game && <a className="arcade-make" href="#/quests">Daily quests<Icon name="quest" size={19}/></a>}
     </div>
   </section>;
 }

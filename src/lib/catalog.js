@@ -1,3 +1,4 @@
+import {publicRead} from './public-read.js';
 import {supabase,result,asOwner} from './supabase.js';
 import {discoveryBoundary} from './catalog-cursor.js';
 import {publicGameNames} from './game-name-claims.js';
@@ -11,12 +12,12 @@ export async function loadGames({category='all',platform='all',search='',offset=
   if(search.trim())query=query.ilike('name',`%${search.trim().replace(/[%_\\]/g,'').slice(0,80)}%`);
   if(owner)query=query.eq('owner_id',owner);
   query=filterPlatform(query,platform);
-  return publicGameNames(await result(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).range(offset,offset+23)));
+  return publicGameNames(await publicRead(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).range(offset,offset+23)));
 }
 export async function loadGame(name){
- const resolved=await result(supabase.rpc('resolve_public_game_name',{p_name:name}));
+ const resolved=await publicRead(supabase.rpc('resolve_public_game_name',{p_name:name}));
  if(!resolved?.slug)throw new Error('This game is not available.');
- const game=await result(supabase.from('games').select(columns).eq('slug',resolved.slug).eq('status','published').eq('media_delete_authorized',false).single());
+ const game=await publicRead(supabase.from('games').select(columns).eq('slug',resolved.slug).eq('status','published').eq('media_delete_authorized',false).single());
  return {...game,public_name:resolved.name||null};
 }
 export const socialCounts=(ids)=>result(supabase.rpc('game_social_counts',{p_ids:ids}));
@@ -46,12 +47,12 @@ export async function loadDiscoveryPage({cursor=null,order='popular',platform='a
   query=query.or(discoveryBoundary(cursor,order));
  }
  if(order==='popular')query=query.order(metric,{ascending:false});
- const rows=await result(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).limit(limit+1));
+ const rows=await publicRead(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).limit(limit+1));
  const games=rows.slice(0,limit),last=games.at(-1);
  return {games:await publicGameNames(games),next:rows.length>limit&&last?{slug:last.slug,created_at:last.created_at,plays:Number(last.qualified_play_count)||0}:null};
 }
 export const popularGames=async(platform='all')=>{
  let query=supabase.from('games').select(columns+',qualified_play_count').eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%').gt('qualified_play_count',0);
  query=filterPlatform(query,platform);
- return publicGameNames(await result(query.order('qualified_play_count',{ascending:false}).order('slug').limit(8)));
+ return publicGameNames(await publicRead(query.order('qualified_play_count',{ascending:false}).order('slug').limit(8)));
 };
