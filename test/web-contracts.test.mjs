@@ -60,7 +60,7 @@ test('untrusted games have no authenticated origin, navigation, or unrelated net
  assert.throws(()=>gamePolicy('https://attacker.example/'));assert.equal(trustedEntry(base+'index.html?token=secret'),false);
  const frame={};assert.equal(acceptPlayerEvent({},frame,JSON.stringify({type:'ready'})),null);assert.equal(acceptPlayerEvent(null,null,JSON.stringify({type:'ready'})),null);
  assert.equal(acceptPlayerEvent(frame,frame,JSON.stringify({type:'score',value:-1})),null);assert.equal(acceptPlayerEvent(frame,frame,JSON.stringify({type:'publish',slug:'victim'})),null);
- assert.deepEqual(acceptPlayerEvent(frame,frame,'slop-player-loaded-v1'),{type:'loaded'});
+ assert.deepEqual(acceptPlayerEvent(frame,frame,'slop-player-loaded-v1'),{type:'ready',source:'document'});
 });
 test('public pairing fallback preserves only a valid fragment challenge and never grants access',async()=>{
  const code='a'.repeat(32),source=await readFile(new URL('../public/mcp/pair/pair.js',import.meta.url),'utf8');

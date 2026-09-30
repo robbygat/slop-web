@@ -14,7 +14,7 @@ import {safeGifUrl} from '../lib/giphy-contracts.js';
 import './game-detail.css';
 const ManualPreviewRecorder=lazy(()=>import('../components/ManualPreviewRecorder.jsx'));
 
-export default function GameDetail({game,onClose,discussionOnly=false}){
+export default function GameDetail({game,onClose,discussionOnly=false,onPrevious,onNext}){
  const{user,requireAuth}=useAuth();
  const[liked,setLiked]=useState(false),[likeBusy,setLikeBusy]=useState(false),[text,setText]=useState(''),[posting,setPosting]=useState(false),[error,setError]=useState(null),[shared,setShared]=useState(false),[phone,setPhone]=useState(false);
  const[gifOpen,setGifOpen]=useState(false),[gifQuery,setGifQuery]=useState(''),[gifs,setGifs]=useState([]),[gifLoading,setGifLoading]=useState(false),[selectedGif,setSelectedGif]=useState(null);
@@ -22,15 +22,15 @@ export default function GameDetail({game,onClose,discussionOnly=false}){
  const [details,setDetails]=useState(discussionOnly);
  const mayRecord=!!user&&!user.is_anonymous&&game.owner_id===user.id&&game.status==='published';
  const socialId=game.slug;
- const thread=useAsync(()=>comments(socialId),[game.id,user?.id]);const counts=useAsync(()=>socialCounts([socialId]),[game.id,liked]);
- useEffect(()=>{let alive=true;setLiked(false);if(user)likedGames().then(rows=>{if(alive)setLiked(rows.some(r=>r.game_id===socialId||r.game_id===game.id));}).catch(()=>{});return()=>{alive=false;};},[user?.id,game.id]);
+ const thread=useAsync(()=>details?comments(socialId):Promise.resolve(null),[game.id,user?.id,details]);const counts=useAsync(()=>details?socialCounts([socialId]):Promise.resolve(null),[game.id,liked,details]);
+ useEffect(()=>{let alive=true;setLiked(false);if(user&&details)likedGames().then(rows=>{if(alive)setLiked(rows.some(r=>r.game_id===socialId||r.game_id===game.id));}).catch(()=>{});return()=>{alive=false;};},[user?.id,game.id,details]);
  async function toggle(){if(!requireAuth())return;setLikeBusy(true);setError(null);try{await likeGame(socialId,!liked,game.id);setLiked(v=>!v);}catch(e){setError(e);}finally{setLikeBusy(false);}}
  async function loadGifs(query=''){if(!requireAuth())return;setGifLoading(true);setError(null);try{setGifs(await findGifs(query));}catch(e){setError(e);}finally{setGifLoading(false);}}
  async function comment(e){e.preventDefault();if(!requireAuth()||(!text.trim()&&!selectedGif))return;setPosting(true);setError(null);try{await postComment(socialId,text,selectedGif?.url||null);setText('');setSelectedGif(null);setGifOpen(false);thread.refresh();}catch(e){setError(e);}finally{setPosting(false);}}
  async function share(){const url=canonicalGameUrl(game);try{if(navigator.share)await navigator.share({title:game.name,url});else await navigator.clipboard.writeText(url);setShared(true);}catch(e){if(e.name!=='AbortError')setError(new Error('Could not share this game. Copy its page address instead.'));}}
  if(recordPreview&&mayRecord)return <ManualPreviewRecorder key={`${game.id}:${user.id}`} game={game} onClose={()=>setRecordPreview(false)}/>;
  return <Modal title={game.name} onClose={onClose} className={`game-detail theater-modal ${discussionOnly?'discussion-only':''} ${details?'show-details':''} ${!discussionOnly&&gameFormat(game).orientation!=='portrait'?'game-detail-wide':'theater-phone'}`}>
-  {!discussionOnly&&<div className="theater-toolbar"><span><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/>by @{game.profiles?.username||'slop'}</span><div><button onClick={share}><Icon name="share" size={16}/>{shared?'Link copied':'Share'}</button><button aria-expanded={details} onClick={()=>setDetails(v=>!v)}><Icon name="social" size={17}/>{details?'Hide details':'Details & comments'}</button></div></div>}
+  {!discussionOnly&&<div className="theater-toolbar"><span><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/>@{game.profiles?.username||'slop'}</span><div className="theater-browse"><button disabled={!onPrevious} onClick={onPrevious} aria-label="Previous game">←</button><button disabled={!onNext} onClick={onNext} aria-label="Next game">→</button></div><div><button onClick={share} aria-label="Share game"><Icon name="share" size={16}/><span>{shared?'Link copied':'Share'}</span></button><button aria-expanded={details} aria-label={details?'Hide comments':'Show comments'} onClick={()=>setDetails(v=>!v)}><Icon name="social" size={17}/><span>{details?'Hide':'Comments'}</span></button></div></div>}
   <div className="theater-layout">
    {!discussionOnly&&<GamePlayer game={game} url={gameEntry(game)} title={game.name} previewVideo={previewVideo(game)} requireInteraction theater/>}
    <div className="game-discussion">

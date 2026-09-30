@@ -15,7 +15,9 @@ export default function RobotStage({look,shell='core',face,finish,glow,crowd=fal
       sync();
     },{rootMargin:'80px'});
     observer.observe(node);motion.addEventListener('change',sync);
-    return()=>{dead=true;observer.disconnect();motion.removeEventListener('change',sync);stage.current?.dispose();stage.current=null;};
+    const lost=()=>setReady(false),restored=()=>{if(stage.current){setReady(true);sync();}};
+    node.addEventListener('webglcontextlost',lost);node.addEventListener('webglcontextrestored',restored);
+    return()=>{dead=true;observer.disconnect();motion.removeEventListener('change',sync);node.removeEventListener('webglcontextlost',lost);node.removeEventListener('webglcontextrestored',restored);stage.current?.dispose();stage.current=null;};
   },[crowd,crown]);
   useEffect(()=>{stage.current?.setActive(visible.current&&!paused,matchMedia('(prefers-reduced-motion: reduce)').matches);},[paused]);
   useEffect(()=>{stage.current?.select(spec);},[JSON.stringify(spec)]);

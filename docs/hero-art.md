@@ -1,3 +1,5 @@
+> Historical art notes from the earlier website. The current character hero and MCP-only direction are documented in `brand-redesign.md` and `release/2026-09-30-mobile-player-rebuild.md`. These notes are not current implementation instructions.
+
 # Home direction and art provenance
 
 The user explicitly rejected the mascot with two phones. That composition has been removed from the homepage, together with its device-frame CSS. Do not reintroduce it as a variation.

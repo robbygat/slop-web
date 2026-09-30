@@ -6,6 +6,10 @@ export function createPreviewPool(limit=6) {
     const chosen=new Set(eligible.slice(0,limit));
     for(const entry of entries.values()){const active=chosen.has(entry);if(entry.active!==active){entry.active=active;entry.notify(active);}}
   }
-  return {register(id,notify){const entry={notify,visible:false,priority:0,active:false,order:sequence++};entries.set(id,entry);return {set(visible,priority=0){entry.visible=visible;entry.priority=priority;update();},release(){if(entry.active)entry.notify(false);entries.delete(id);update();}};},get activeCount(){return [...entries.values()].filter(e=>e.active).length;}};
+  return {register(id,notify){const entry={notify,visible:false,priority:0,active:false,order:sequence++};entries.set(id,entry);return {set(visible,priority=0){entry.visible=visible;entry.priority=priority;update();},release(){if(entry.active)entry.notify(false);entries.delete(id);update();}};},setLimit(value){limit=value;update();},get activeCount(){return [...entries.values()].filter(e=>e.active).length;}};
 }
 export const previewPool=createPreviewPool(4);
+if(typeof matchMedia==='function'){
+ const phone=matchMedia('(max-width:900px), (pointer:coarse)');
+ const update=()=>previewPool.setLimit(phone.matches?2:4);phone.addEventListener('change',update);update();
+}

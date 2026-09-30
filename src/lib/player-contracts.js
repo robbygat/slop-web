@@ -6,7 +6,9 @@ export function gamePolicy(base){
 }
 export function acceptPlayerEvent(source,frame,data){
  if(!frame || source!==frame || typeof data!=='string' || data.length>750000)return null;
- if(data==='slop-player-loaded-v1')return {type:'loaded'};
+ // This string is reserved by the relay and cannot be forwarded by game code.
+ // Legacy games do not always emit an SDK ready event after their document loads.
+ if(data==='slop-player-loaded-v1')return {type:'ready',source:'document'};
  try {const event=JSON.parse(data);if(!event||Array.isArray(event)||typeof event!=='object')return null;
  const types=['restart-ack','ready','score','finished','gameOver','over','loadError','webGameError','webCaptureResult','webCaptureError','webInteraction','webScroll','webEscape','webPointerLock','webPointerError'];
  if(!types.includes(event.type))return null;

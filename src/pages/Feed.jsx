@@ -6,11 +6,9 @@ import {loadFeedCrown} from '../lib/leaderboard.js';
 import {getSession} from '../lib/supabase.js';
 import {createFeedCrownSync} from '../lib/feed-crown-sync.js';
 import {useAuth} from '../auth.jsx';
-import {Appearance} from '../theme.jsx';
 import {Button,Loading,Notice} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import RobotPortrait from '../components/RobotPortrait.jsx';
-import RobotStage from '../components/RobotStage.jsx';
 import GamePreview from '../components/GamePreview.jsx';
 import {GameDetail} from './Play.jsx';
 import './feed.css';
@@ -50,9 +48,10 @@ export default function Feed(){
  async function share(game){try{if(navigator.share)await navigator.share({title:game.name,url:canonicalGameUrl(game)});else await navigator.clipboard.writeText(canonicalGameUrl(game));setShared(game.id);}catch(e){if(e.name!=='AbortError')setActionError(new Error('Could not share this game. Try again.'));}}
  function move(delta){const game=games[Math.max(0,Math.min(games.length-1,index+delta))];if(game)cards.current.get(game.id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}
  function open(game,comments=false){setDiscussion(comments);setSelected(game);}
+ const selectedIndex=games.findIndex(g=>g.id===selected?.id);
  return <div className="reels-page">
   <h1 className="sr-only">Play</h1>
-  <header className="reels-toolbar"><div className="reels-theme"><Appearance compact/></div><div className="reels-order" role="group" aria-label="Game order"><button aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Fresh</button><button aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>Popular</button></div><div className="reels-platforms" role="group" aria-label="Game platform">{[['all','All games'],['mobile','Mobile'],['desktop','Desktop']].map(([id,label])=><button key={id} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div><a href="#/home">Home <Icon name="arrow" size={15}/></a></header>
+  <header className="reels-toolbar"><div className="reels-order" role="group" aria-label="Game order"><button aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Fresh</button><button aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>Popular</button></div><div className="reels-platforms" role="group" aria-label="Game platform">{[['all','All games'],['mobile','Mobile'],['desktop','Desktop']].map(([id,label])=><button key={id} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div><a href="#/home">Home <Icon name="arrow" size={15}/></a></header>
   {actionError&&<div className="reels-error"><Notice error={actionError}/></div>}
   <div className="reel-stream" ref={stream} tabIndex={0} aria-label="Swipe games, or use the up and down arrow keys" onKeyDown={e=>{if(e.target.closest('button,a,input,textarea')||selected)return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1);}}}>
    {games.map(game=>{const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],wide=gameFormat(game).orientation==='landscape';return <article className={`reel ${wide?'reel-wide':''}`} key={game.id} data-game={game.id} ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} aria-label={game.name}>
@@ -61,13 +60,13 @@ export default function Feed(){
      <div className="reel-caption"><p>@{game.profiles?.username||'slop'}</p><h2>{game.name}</h2>{game.description&&<p className="reel-description">{game.description}</p>}</div>
      <div className="reel-rail">{holder&&<CrownHolder holder={holder} live={live&&!selected} compact/>}<button className="reel-start" onClick={()=>open(game)} aria-label={`Start ${game.name}`} tabIndex={live?0:-1}><Icon name="play" fill="currentColor"/><span>Play</span></button><button className={liked?'is-liked':''} onClick={()=>toggleLike(game)} disabled={busy} aria-label={liked?'Unlike this game':'Like this game'} tabIndex={live?0:-1}><Icon name="heart" fill={liked?'currentColor':'none'}/><span>{counts[game.slug]?.likes??'Like'}</span></button><button onClick={()=>open(game,true)} aria-label={`Comments for ${game.name}`} tabIndex={live?0:-1}><Icon name="social"/><span>Chat</span></button><button onClick={()=>share(game)} aria-label={`Share ${game.name}`} tabIndex={live?0:-1}><Icon name="share"/><span>{shared===game.id?'Copied':'Share'}</span></button></div>
     </div>
-    <aside className="reel-side"><div className="reel-side-title"><h2>{game.name}</h2><p>Made by @{game.profiles?.username||'slop'}</p></div>{holder?<CrownHolder holder={holder} live={live&&!selected}/>:holder===null?<div className="reel-open-crown"><Icon name="crown" size={26}/><strong>The crown is open.</strong><span>Make the first score yours.</span></div>:null}<Button onClick={()=>open(game)} tabIndex={live?0:-1}>Play this game <Icon name="play" size={16}/></Button><p>Scroll to discover.<br/>Press play to take over.</p></aside>
+    <aside className="reel-side"><div className="reel-side-title"><h2>{game.name}</h2><p>Made by @{game.profiles?.username||'slop'}</p></div>{holder?<CrownHolder holder={holder} live={live&&!selected}/>:holder===null?<div className="reel-open-crown"><Icon name="crown" size={26}/><strong>The crown is open.</strong><span>Make the first score yours.</span></div>:null}<Button onClick={()=>open(game)} tabIndex={live?0:-1}>Play this game <Icon name="play" size={16}/></Button><p className="reel-side-description">{game.description}</p></aside>
    </article>;})}
    <div className="reels-end">{loading?<Loading label="Finding your next game…"/>:error?<Notice error={error} onRetry={()=>more(!games.length)}/>:!games.length?<p>No games in this format yet.</p>:<><h2>All caught up.</h2><a className="button" href="#/home">Back to the arcade</a></>}</div>
   </div>
   <div className="reel-navigation"><button aria-label="Previous game" disabled={index<=0} onClick={()=>move(-1)}>↑</button><button aria-label="Next game" disabled={index>=games.length-1} onClick={()=>move(1)}>↓</button></div>
-  {selected&&<GameDetail game={selected} discussionOnly={discussion} onClose={()=>setSelected(null)}/>}
+  {selected&&<GameDetail game={selected} onPrevious={selectedIndex>0?()=>setSelected(games[selectedIndex-1]):undefined} onNext={selectedIndex<games.length-1?()=>setSelected(games[selectedIndex+1]):undefined} discussionOnly={discussion} onClose={()=>setSelected(null)}/>}
  </div>;
 }
 
-function CrownHolder({holder,live,compact=false}){return <a className={`reel-champion ${compact?'champion-compact':''}`} href={`#/social?player=${encodeURIComponent(holder.user_id)}`} aria-label={`First place: ${holder.username}, ${holder.score.toLocaleString()} points. Open profile.`} tabIndex={live?0:-1}><div className="champion-character">{live?<RobotStage look={holder.slop_look} crown="gold" alt=""/>:<RobotPortrait look={holder.slop_look} animated={false} alt=""/>}</div><div className="champion-record"><span><Icon name="crown" size={13}/>First place</span><strong>@{holder.username}</strong><b>{holder.score.toLocaleString()}</b><small>points to beat</small></div></a>;}
+function CrownHolder({holder,live,compact=false}){return <a className={`reel-champion ${compact?'champion-compact':''}`} href={`#/social?player=${encodeURIComponent(holder.user_id)}`} aria-label={`First place: ${holder.username}, ${holder.score.toLocaleString()} points. Open profile.`} tabIndex={live?0:-1}><div className="champion-character"><Icon name="crown" className="champion-crown" size={18}/><RobotPortrait look={holder.slop_look} animated={live} alt=""/></div><div className="champion-record"><span><Icon name="crown" size={13}/>First place</span><strong>@{holder.username}</strong><b>{holder.score.toLocaleString()}</b><small>points to beat</small></div></a>;}

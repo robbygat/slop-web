@@ -6,8 +6,13 @@ import SlopMark from './SlopMark.jsx';
 import RobotPortrait from './RobotPortrait.jsx';
 import DownloadLinks from './DownloadLinks.jsx';
 import {Appearance} from '../theme.jsx';
+import './site-chrome.css';
 
-export function BrandHeader({user,profile,signIn}){return <header className="site-masthead"><a className="masthead-brand" href="#/home" aria-label="Slop.game home"><SlopMark/><span>Slop.game</span></a><div className="masthead-actions"><Appearance compact/><a className="masthead-shop" href="#/shop"><NavIcon name="shop" size={22}/><span>Shop</span></a><a className="masthead-download" href="#/download">Get the app <Icon name="arrow" size={16}/></a><a className="masthead-avatar" href="#/you" aria-label="Your profile"><Slop look={profile?.slop_look} avatar={profile?.avatar_url} alt=""/></a>{!user&&<Button variant="small dark" onClick={signIn}>Sign in</Button>}</div></header>;}
+export function BrandHeader({user,profile,signIn,navigation}){
+ const header=useRef(null);
+ useEffect(()=>{const node=header.current;const update=()=>document.documentElement.style.setProperty('--site-chrome-height',`${node.getBoundingClientRect().height}px`);const ro=new ResizeObserver(update);ro.observe(node);update();return()=>ro.disconnect();},[]);
+ return <header className="site-masthead" ref={header}><a className="masthead-brand" href="#/home" aria-label="Slop.game home"><SlopMark/><span>Slop.game</span></a><div className="masthead-navigation">{navigation}</div><div className="masthead-actions"><Appearance compact/><a className="masthead-shop" href="#/shop"><NavIcon name="shop" size={22}/><span>Shop</span></a><a className="masthead-download" href="#/download">Get the app <Icon name="arrow" size={16}/></a><a className="masthead-avatar" href="#/you" aria-label="Your profile"><Slop look={profile?.slop_look} avatar={profile?.avatar_url} loading="eager" alt=""/></a>{!user&&<Button variant="small dark" onClick={signIn}>Sign in</Button>}</div></header>;
+}
 export function BrandFooter(){
  const root=useRef(null),[visible,setVisible]=useState(false);
  useEffect(()=>{const observer=new IntersectionObserver(([entry])=>setVisible(entry.isIntersecting));observer.observe(root.current);return()=>observer.disconnect();},[]);
