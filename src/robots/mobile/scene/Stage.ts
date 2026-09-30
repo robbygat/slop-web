@@ -3,6 +3,7 @@ import { createBlocky, createChip } from './shells/special';
 import { createClicky, createCore, createNeko, createNoir, createGatekeeper } from './shells/heads';
 import type { Shell } from './shells/common';
 import { DESKTOP, INITIAL, MOBILE, MOBILE_BAND, SEATS, isPortrait, type Orbit, type SlotId } from './layout';
+import {heroComposition} from '../../../lib/hero-composition.js';
 import { updateSharedUniforms } from './toon';
 import { mind, type Expr } from './face';
 import { VISUAL_WEIGHT, visibleBounds } from './bounds';
@@ -150,6 +151,7 @@ export class Stage {
   private introStarted = false;
   /** QA: no intro, frozen idle (headless screenshots / OG image). */
   still = false;
+  framed = false;
   measure: () => { ctaBottom: number; dockTop: number } = () => ({ ctaBottom: 0, dockTop: 0 });
   onParallax?: (x: number, y: number) => void;
 
@@ -242,7 +244,7 @@ export class Stage {
   resize(w: number, h: number) {
     this.w = w;
     this.h = h;
-    this.portrait = isPortrait(w, h);
+    this.portrait = !this.framed && isPortrait(w, h);
     this.renderer.setPixelRatio(this.dprCap);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
@@ -301,7 +303,10 @@ export class Stage {
     let map: (x: number, y: number) => { x: number; y: number };
     let k: number;
     let ky: number;
-    if (this.portrait) {
+    if (this.framed) {
+      const frame=heroComposition(this.w,this.h);k=frame.scale;ky=k;
+      map=(x,y)=>({x:frame.x+(x-DESKTOP.center.x)*k,y:frame.y+(y-DESKTOP.center.y)*k});
+    } else if (this.portrait) {
       const sx = this.w / MOBILE_BAND.width;
       const m = this.measure();
       const bandTop = m.ctaBottom || this.h * 0.36;

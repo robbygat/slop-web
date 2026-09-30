@@ -8,7 +8,7 @@ import {Button, Loading, Notice, useAsync, Modal} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import {PUBLIC_PROFILE_COLUMNS, profileBackdrop} from '../lib/profile-banners.js';
 import RobotPortrait from '../components/RobotPortrait.jsx';
-import RobotBody from '../components/RobotBody.jsx';
+import PlayerPass from '../components/PlayerPass.jsx';
 import PlayerCardShare from '../components/PlayerCardShare.jsx';
 import SlopMark from '../components/SlopMark.jsx';
 import './social-club.css';
@@ -84,7 +84,7 @@ export default function Social({params}) {
   }
 
   return <div className="social-club">
-    <header className="social-club-cover"><div><h1>Your kind<br/>of players.</h1><p>Find a familiar face. Meet your next rival.</p><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Your player card</Button><button onClick={()=>{if(requireAuth())setMessageTarget(null);}}><Icon name="social" size={18}/>Messages</button></div></div><div className="social-card-fan"><SlopMark/>{people.data?.slice(0,3).map((player,i)=><button key={player.id} className={`fan-card fan-card-${i}`} onClick={()=>openProfile(player)} aria-label={`Meet ${personName(player)}`}><img src={profileBackdrop(player.profile_banner_id)} alt=""/><RobotPortrait look={player.slop_look} alt=""/><span><strong>{personName(player)}</strong><small>{handle(player)}</small></span></button>)}</div></header>
+    <header className="social-club-cover"><div><h1>Your kind<br/>of players.</h1><p>Find a familiar face. Meet your next rival.</p><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Your player card</Button><button onClick={()=>{if(requireAuth())setMessageTarget(null);}}><Icon name="social" size={18}/>Messages</button></div></div><div className="social-card-fan"><SlopMark/>{people.data?.slice(0,3).map((player,i)=><button key={player.id} className={`fan-card fan-card-${i}`} onClick={()=>openProfile(player)} aria-label={`Meet ${personName(player)}`}><img src={profileBackdrop(player.profile_banner_id)} alt=""/><RobotPortrait look={player.slop_look} loading="eager" alt=""/><span><strong>{personName(player)}</strong><small>{handle(player)}</small></span></button>)}</div></header>
     <div className="social-club-toolbar"><div role="group" aria-label="Players to show"><button aria-pressed={view==='all'} onClick={()=>setView('all')}>Discover</button><button aria-pressed={view==='following'} onClick={()=>{if(requireAuth())setView('following');}}>Following</button></div><label className="social-club-search"><Icon name="search" size={18}/><input aria-label="Search people" placeholder="Find your people" value={term} onChange={event=>setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>{term&&<button aria-label="Clear people search" onClick={()=>setTerm('')}><Icon name="close" size={18}/></button>}</label></div>
     <div className="social-results-heading"><h2>{query.trim()?'Search results':view==='following'?'Your circle.':'The Slop club.'}</h2><span role="status">{people.loading?'Finding people…':!people.error?`${visibleList.length} players`:''}</span></div>
     <Notice error={error}/>
@@ -133,19 +133,12 @@ function PersonProfile({person, following, busy, own, onFollow, onMessage, onClo
   const stats = useAsync(() => profileStats(person.id), [person.id, following]);
   const [selected, setSelected] = useState(null),[sharing,setSharing]=useState(false);
   const profile = details.data || person;
-  const backdrop = profileBackdrop(profile.profile_banner_id);
-  return <Modal title={handle(profile)} onClose={onClose} className="circle-profile-modal room-profile-modal">
-    <section className="profile-room has-body" style={{viewTransitionName:transition?'slop-person-profile':'none'}}>
-      <img src={backdrop} className="profile-room-world" alt=""/>
-      <div className="profile-room-character"><RobotBody look={profile.slop_look} paused={!!selected||sharing}/></div>
-      <div className="profile-room-identity"><h2>{personName(profile)}</h2><p>{handle(profile)}</p>{profile.bio&&<p className="profile-room-bio">{profile.bio}</p>}</div>
-    </section>
-    <div className="profile-room-bar"><dl>{['Games','Followers','Following'].map((label,index)=><div key={label}><dd>{stats.data?.[index]==null?'—':new Intl.NumberFormat().format(stats.data[index])}</dd><dt>{label}</dt></div>)}</dl>{own?<a className="button secondary small" href="#/you" onClick={onClose}>Your profile <Icon name="arrow" size={17}/></a>:<div className="profile-room-actions"><Button variant="secondary small" icon="social" onClick={onMessage}>Message</Button><Button variant="small" icon={following?'check':'plus'} disabled={!!busy} onClick={onFollow}>{busy===person.id?'Saving…':following?'Following':'Follow'}</Button></div>}</div>
-    <div className="public-profile-share"><Button variant="secondary small" icon="share" onClick={()=>setSharing(true)}>Share player card</Button></div><section className="circle-profile-games"><h3>Games</h3><Notice error={details.error} onRetry={details.refresh}/><Notice error={games.error} onRetry={games.refresh}/>
-      {games.loading ? <Loading label="Loading games…"/> : games.data?.length ? <div className="game-grid">{games.data.map(game => <GameCard key={game.id} game={game} onOpen={setSelected}/>)}</div> : !games.error && <div className="circle-profile-no-games"><Icon name="play" size={24}/><p>No published games yet.</p></div>}
-    </section>
-    {sharing&&<PlayerCardShare profile={profile} onClose={()=>setSharing(false)}/>}
-    {selected && <GameDetail game={selected} onClose={() => setSelected(null)}/>}
+  return <Modal title={handle(profile)} onClose={onClose} className="player-profile-modal">
+    <div className="player-space"><PlayerPass profile={profile} transition={transition} paused={!!selected||sharing} stats={['Games','Followers','Following'].map((label,i)=>[label,stats.data?.[i]])} actions={<>{own?<a className="button" href="#/you" onClick={onClose}>Your profile <Icon name="arrow" size={17}/></a>:<><Button icon={following?'check':'plus'} disabled={!!busy} onClick={onFollow}>{busy===person.id?'Saving…':following?'Following':'Follow player'}</Button><Button variant="secondary" icon="social" onClick={onMessage}>Message</Button></>}<Button variant="secondary" icon="share" onClick={()=>setSharing(true)}>Share card</Button></>}/>
+      <section className="player-space-content"><h2>{own?'Your games.':'Their games.'}</h2><Notice error={details.error} onRetry={details.refresh}/><Notice error={games.error} onRetry={games.refresh}/>
+        {games.loading?<Loading label="Loading games…"/>:games.data?.length?<div className="game-grid">{games.data.map(game=><GameCard key={game.id} game={game} onOpen={setSelected} paused={!!selected||sharing}/>)}</div>:!games.error&&<div className="circle-empty"><Icon name="play" size={27}/><h3>The next favorite starts here.</h3><p>No published games yet.</p></div>}
+      </section>
+    </div>{sharing&&<PlayerCardShare profile={profile} onClose={()=>setSharing(false)}/>}{selected&&<GameDetail game={selected} onClose={()=>setSelected(null)}/>}
   </Modal>;
 }
 

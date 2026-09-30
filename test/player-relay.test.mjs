@@ -60,6 +60,15 @@ test('relay refuses focus and messages after navigation and rejects unrelated me
  assert.equal(JSON.parse(f.parentMessages.at(-1)).code,'main_frame_failure');
 });
 
+test('legacy documents become playable without an SDK ready message, but game code cannot forge the relay signal',()=>{
+ const f=relayFixture();f.initialize();
+ f.message('slop-player-loaded-v1',f.frame.contentWindow);assert.equal(f.parentMessages.length,0);
+ f.load();const signal=f.parentMessages.at(-1),hostFrame={};
+ assert.deepEqual(acceptPlayerEvent(hostFrame,hostFrame,signal),{type:'ready',source:'document'});
+ assert.equal(acceptPlayerEvent({},hostFrame,signal),null);
+ f.load();assert.equal(acceptPlayerEvent(hostFrame,hostFrame,f.parentMessages.at(-1)).type,'loadError');
+});
+
 test('host keydown followed by native game keyup releases creator-v1 input and allows another press',()=>{
  const listeners=new Map(),parent={postMessage(){}};
  const listen=(type,fn)=>{if(!listeners.has(type))listeners.set(type,[]);listeners.get(type).push(fn);};

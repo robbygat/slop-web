@@ -34,7 +34,7 @@ export function createHeroScene(canvas:HTMLCanvasElement, options:any) {
     uniforms.uGlow.value.set(spec.glow);
     faces.push({actor,spec:{...spec,seed:actor.seed},surface,texture});
   }
-  stage.stopShowcase();stage.measure=options.measure;stage.world.useBrandBackdrop();
+  stage.stopShowcase();stage.framed=true;stage.world.useBrandBackdrop();
   // Paper is behind the cast. Neither a CSS veil nor world fog belongs over it.
   stage.scene.fog=null;
   stage.world.synapses.group.traverse((object:any)=>{

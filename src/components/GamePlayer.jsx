@@ -12,7 +12,7 @@ import {legacyControlSpec} from '../lib/player-input.js';
 import {gameControlKey} from '../lib/player-focus.js';
 import {lockBodyScroll} from '../lib/scroll-lock.js';
 import {useAuth} from '../auth.jsx';
-import {Loading,Notice,IconButton,Button} from './ui.jsx';
+import {Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
 export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
@@ -21,7 +21,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
- const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
+ const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
  const[pointerMode,setPointerMode]=useState(false),[pointerLocked,setPointerLocked]=useState(false),[pointerError,setPointerError]=useState('');
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
  const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart};const format=gameFormat(game),controls=legacyControlSpec(url);
@@ -40,7 +40,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    const done=value=>{clearTimeout(timer);window.removeEventListener('message',on);resolve(value);};
    const on=e=>{if(e.source!==win||!e.data||typeof e.data!=='object'||e.data.type!=='webFrameResult'||e.data.request!==request)return;done(e.data.bitmap?{bitmap:e.data.bitmap,background:e.data.background||null}:null);};
    const timer=setTimeout(()=>done(null),1500);window.addEventListener('message',on);send({type:'webFrame',request});})}));
- useEffect(()=>{const query=matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
+ useEffect(()=>{const query=matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
  useEffect(()=>{if(desktopRequired&&expanded)exitExpanded();},[desktopRequired,expanded]);
  useEffect(()=>{
   restartGate.current.cancel();
@@ -59,6 +59,8 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    if(event.type==='restart-ack'){restartGate.current.receive(e.source,event);return;}
    if(restartGate.current.pending){if(event.type==='loadError')restartGate.current.fail(e.source);return;}
    const current=run.current;if(!current)return;
+   // The relay's completed document is playable even when a legacy game never
+   // emits SDK ready. Only the trusted outer frame can send the loaded signal.
    if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board||state.current.waitingStart?'pause':'resume'});}
    if(event.type==='webInteraction'&&!current.ended)current.interacted=true;
    if(event.type==='webPointerLock'){setPointerLocked(event.locked);if(event.locked)setPointerError('');}
@@ -133,14 +135,14 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  return <div ref={container} className={`game-player ${theater?'theater-player':''} ${expanded?'is-expanded':''} ${pointerLocked?'has-pointer-lock':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad; fullscreen" allowFullScreen referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
-   {previewVideo&&!error&&<PreviewVideo key={previewVideo.src} video={previewVideo} done={ready}/>}
-   <div className={`player-loading ${ready&&!error?'hidden':''} ${previewVideo&&!error?'over-preview':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
-   {waitingStart&&!error&&<button className="player-start-overlay" onClick={startFromRest}><span>Play</span></button>}
+   {previewVideo&&!error&&!ready&&<PlayerPoster key={previewVideo.poster} poster={previewVideo.poster}/>}
+   {!ready&&!error&&<div className="player-boot-status" role="status"><i aria-hidden="true"/><span>Opening game…</span></div>}
+   {error&&<div className="player-error"><Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/></div>}
    {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay}/>}
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
-  <div className="player-controls"><span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':title}</span><div>
+  <div className="player-controls">{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':title}</span>}<div>
    {!smallScreen&&<IconButton name="cursor" label={pointerMode?'Turn off mouse capture':'Capture mouse for this game'} aria-pressed={pointerMode} onClick={()=>{const enabled=!pointerMode;setPointerMode(enabled);setPointerError('');send({type:'hostPointerMode',enabled});frame.current?.focus();}}/>}
    {game&&!preview&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}
    <IconButton name={muted?'mute':'volume'} label={muted?'Unmute game':'Mute game'} onClick={()=>{send({type:'mute',on:!muted});setMuted(!muted);}}/>
@@ -150,16 +152,8 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  </div>;
 }
 
-// Feed handoff: the recorded loop plays instantly (muted, inline) while the
-// real game boots underneath, then fades out once the game is ready. A video
-// that fails simply disappears and the normal loading surface shows.
-function PreviewVideo({video,done}){
- const [failed,setFailed]=useState(false),[gone,setGone]=useState(false),el=useRef(null);
- useEffect(()=>{if(!done)return;const t=setTimeout(()=>{setGone(true);el.current?.pause();},700);return()=>clearTimeout(t);},[done]);
- useEffect(()=>{const v=el.current;if(!v)return;v.muted=true;const p=v.play();if(p&&p.catch)p.catch(()=>{});},[]);
- if(failed||gone)return null;
- return <div className={`player-preview-video ${done?'is-done':''} ${video.width>video.height?'is-wide':''}`} aria-hidden="true" data-preview-video="">
-  <img src={video.poster} alt="" className="player-preview-fill"/>
-  <video ref={el} src={video.src} poster={video.poster} muted autoPlay loop playsInline preload="auto" disablePictureInPicture onError={()=>setFailed(true)}/>
- </div>;
+// The existing cover holds the stage while game assets take network priority.
+function PlayerPoster({poster}){
+ const [failed,setFailed]=useState(false);
+ return poster&&!failed?<img className="player-poster" src={poster} alt="" onError={()=>setFailed(true)}/>:null;
 }

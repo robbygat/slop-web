@@ -3,7 +3,7 @@ import {ROBOTS} from '../lib/robot-catalog.js';
 import RobotPortrait from './RobotPortrait.jsx';
 const cast=['core','neko','blocky','clicky','gatekeeper','chip','noir'];
 
-export default function HeroScene({heroRef,copyRef,paused}) {
+export default function HeroScene({paused}) {
   const canvas=useRef(null),scene=useRef(null),buttons=useRef(new Map()),pause=useRef(paused);
   const [ready,setReady]=useState(false),[selected,setSelected]=useState('core');
   const visible=useRef(false);pause.current=paused;
@@ -21,7 +21,6 @@ export default function HeroScene({heroRef,copyRef,paused}) {
           // Let the lightweight cast paint before compiling the interactive scene.
           await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));if(dead)return;
           scene.current=createHeroScene(node,{
-            measure:()=>({ctaBottom:copyRef.current.getBoundingClientRect().bottom-heroRef.current.getBoundingClientRect().top+12,dockTop:node.clientHeight-50}),
             onSelect:id=>{if(!dead)setSelected(id);},
             onPosition:(id,x,y,flying)=>{const button=buttons.current.get(id);if(button){button.style.left=`${x*100}%`;button.style.top=`${y*100}%`;button.style.visibility=flying?'hidden':'visible';}},
           });
@@ -30,7 +29,7 @@ export default function HeroScene({heroRef,copyRef,paused}) {
       }
       sync();
     },{threshold:0});
-    const ro=new ResizeObserver(resize);ro.observe(node);if(copyRef.current)ro.observe(copyRef.current);observer.observe(node);
+    const ro=new ResizeObserver(resize);ro.observe(node);observer.observe(node);
     document.addEventListener('visibilitychange',sync);motion.addEventListener('change',sync);
     const lost=e=>{e.preventDefault();scene.current?.setActive(false,true);setReady(false);};
     const restored=()=>{resize();setReady(true);sync();};
