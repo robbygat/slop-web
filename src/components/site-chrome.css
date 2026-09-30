@@ -43,6 +43,7 @@ html:has(.is-playing),body:has(.is-playing){overflow:hidden;scrollbar-gutter:aut
 #root .site-masthead .masthead-signin{background:var(--masthead-ink);color:var(--masthead-bg);border-color:var(--masthead-ink)}
 #root .site-masthead .masthead-signin:hover{background:#283c22;color:var(--masthead-bg);border-color:#283c22}
 #root .site-masthead .masthead-brand:focus-visible,#root .site-masthead .masthead-actions>a:focus-visible,#root .site-masthead .masthead-actions>.button:focus-visible,.site-masthead .masthead-theme:focus-within{outline:2px solid var(--masthead-ink);outline-offset:3px}
+.site-masthead .theme-trigger{min-width:44px;min-height:44px;flex:none}
 .site-masthead .theme-trigger:focus-visible{outline:0}
 .site-masthead .activity-count{background:var(--masthead-ink);color:var(--masthead-bg);border-color:var(--masthead-bg)}
 .site-masthead .theme-menu{color:var(--ink)}
