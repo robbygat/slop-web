@@ -50,3 +50,15 @@ html:has(.reels-page),body:has(.reels-page){overflow:hidden;background:#101715;s
 @media(prefers-reduced-motion:reduce){.reel-stream{scroll-behavior:auto}}
 .reels-page{--site-chrome-height:0px}
 @media(max-width:600px){.reels-page{--feed-toolbar:0px}.reels-toolbar{position:absolute;inset:0 0 auto;height:calc(62px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);z-index:6;background:linear-gradient(#07110cd9,transparent);pointer-events:none}.reels-toolbar>*{pointer-events:auto}.reel-caption{bottom:max(23px,env(safe-area-inset-bottom))}.reel-rail{bottom:max(23px,env(safe-area-inset-bottom))}}
+
+/* Give immersive Play an obvious exit at every viewport size. */
+.reels-toolbar{grid-template-columns:minmax(80px,1fr) auto minmax(80px,1fr);padding-inline:clamp(16px,4vw,60px)}
+.reels-toolbar>.reels-filter{justify-self:end}
+.reels-back{display:inline-flex;align-items:center;justify-self:start;gap:8px;min-height:44px;padding:8px 13px;border:1px solid #ffffff26;border-radius:13px;background:#22332be6;color:#f0f6ed;font-size:12px;font-weight:550}
+.reels-back:hover{background:#334638}.reels-back:focus-visible,.reels-filter:focus-visible,.reels-order>button:focus-visible,.reel-rail>button:focus-visible{outline:2px solid #c5f564;outline-offset:3px}
+@media(max-width:600px){.reels-toolbar{grid-template-columns:74px minmax(0,1fr) 44px;gap:4px;padding-inline:12px}.reels-back{padding:8px 9px;font-size:11px;gap:5px}.reels-back>svg{width:17px}.reels-order{gap:13px}.reels-filter{background:#10171580}}
+
+.reels-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;justify-self:end}
+.reels-tools .activity-link{background:#22332b;color:#edf4e9;border-color:#ffffff26;width:40px;height:40px}
+.reels-tools .activity-count{border-color:#101715;background:#c5f564;color:#17231d}
+@media(max-width:600px){.reels-toolbar{grid-template-columns:74px minmax(0,1fr) 88px;padding-inline:10px}.reels-tools{gap:3px}.reels-tools .activity-link{width:39px}.reels-order{gap:10px}.reels-order>button{font-size:13px}}

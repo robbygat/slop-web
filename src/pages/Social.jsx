@@ -1,6 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {searchPeople, followPerson, loadGames} from '../lib/catalog.js';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {searchPeople, followPerson, loadGames, loadGame, loadDiscoveryPage} from '../lib/catalog.js';
 import {supabase, result} from '../lib/supabase.js';
+import {publicRead} from '../lib/public-read.js';
+import {crownBoardEntries, filterCrownBoard, rivalChallenge} from '../lib/social-rivals.js';
+import {activityConversation} from '../lib/social-activity-contracts.js';
 import {UUID} from '../lib/contracts.js';
 import {useAuth} from '../auth.jsx';
 import {Button, Loading, Notice, useAsync, Modal} from '../components/ui.jsx';
@@ -10,6 +13,8 @@ import RobotPortrait from '../components/RobotPortrait.jsx';
 import PlayerPass from '../components/PlayerPass.jsx';
 import PlayerCardShare from '../components/PlayerCardShare.jsx';
 import SlopMark from '../components/SlopMark.jsx';
+import GamePreview from '../components/GamePreview.jsx';
+import SocialActivity from '../components/SocialActivity.jsx';
 import './social-club.css';
 import {GameCard, GameDetail} from './Play.jsx';
 import {chatInbox,chatMessages,createDirectChat,markChatRead,sendChatMessage} from '../lib/chat.js';
@@ -18,6 +23,11 @@ import './social.css';
 const personName = person => person.display_name || person.username || 'Slop player';
 const handle = person => person.username ? `@${person.username}` : 'Slop player';
 export default function Social({params}) {
+  const {user}=useAuth();
+  return <SocialSpace key={user?.id||'guest'} params={params}/>;
+}
+
+function SocialSpace({params}) {
   const {user, profile:myProfile, requireAuth} = useAuth();
   const [term, setTerm] = useState('');
   const [view,setView]=useState('all'),[sharing,setSharing]=useState(false);
@@ -26,7 +36,12 @@ export default function Social({params}) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [person, setPerson] = useState(null);
+  const [rivalGame, setRivalGame] = useState(null);
+  const [crownRevision, setCrownRevision] = useState(0);
+  const [section,setSection]=useState('rivals'),[hasActivity,setHasActivity]=useState(false),[activityOpening,setActivityOpening]=useState(null);
+  const activityRequest=useRef(0);
   const [messageTarget,setMessageTarget]=useState(undefined);
+  const [initialConversationId,setInitialConversationId]=useState(null);
   const [visiblePeople,setVisiblePeople]=useState(24);
   const peopleSentinel=useRef(null);
   const pending = useRef(false);
@@ -70,12 +85,31 @@ export default function Social({params}) {
   }
 
   function openProfile(next) {setPerson(next);}
+  function openMessages(conversationId=null,target=null) {
+    if(!requireAuth())return false;
+    setInitialConversationId(UUID.test(conversationId)?conversationId:null);setMessageTarget(target);return true;
+  }
+  useEffect(()=>()=>{activityRequest.current++;},[]);
+  useEffect(()=>{if(params?.get('tab')==='activity')setSection('activity');},[params?.get('tab')]);
+  async function openActivityGame(slug) {
+    if(activityOpening)return;
+    const current=++activityRequest.current;setActivityOpening(slug);setError(null);
+    try {const game=await loadGame(slug);if(current===activityRequest.current)setRivalGame(game);}
+    catch(failure){if(current===activityRequest.current)setError(new Error('This game could not be opened. It may no longer be available.'));}
+    finally{if(current===activityRequest.current)setActivityOpening(null);}
+  }
 
   return <div className="social-club">
-    <header className="social-club-cover"><div><h1>Find your people.</h1><p>A familiar face. A friendly rival. Your next game together.</p></div><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Share your player card</Button><button onClick={()=>{if(requireAuth())setMessageTarget(null);}}><Icon name="social" size={18}/>Messages</button></div></header>
-    <div className="social-club-toolbar"><div role="group" aria-label="Players to show"><button aria-pressed={view==='all'} onClick={()=>setView('all')}>Discover</button><button aria-pressed={view==='following'} onClick={()=>{if(requireAuth())setView('following');}}>Following</button></div><label className="social-club-search"><Icon name="search" size={18}/><input aria-label="Search people" placeholder="Find your people" value={term} onChange={event=>setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>{term&&<button aria-label="Clear people search" onClick={()=>setTerm('')}><Icon name="close" size={18}/></button>}</label></div>
-    <div className="social-results-heading"><h2>{query.trim()?'Search results':view==='following'?'Following':'Players'}</h2><span role="status">{people.loading?'Finding people…':!people.error?`${visibleList.length} players`:''}</span></div>
+    <header className="social-club-cover"><div><h1>Better with a rival.</h1><p>Meet through a game. Stay for the rematch.</p></div><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Share your player card</Button><button onClick={()=>openMessages()}><Icon name="social" size={18}/>Messages</button></div></header>
+    <div className="social-section-tabs" role="group" aria-label="Social section"><button aria-pressed={section==='rivals'} onClick={()=>setSection('rivals')}><Icon name="crown" size={18}/>Crown board</button><button aria-pressed={section==='activity'} onClick={()=>setSection('activity')}><Icon name="social" size={18}/>Activity{hasActivity&&<span className="social-unread-dot" aria-label="New activity"/>}</button><button aria-pressed={section==='people'} onClick={()=>setSection('people')}><Icon name="user" size={18}/>People</button></div>
+    {section==='rivals'&&<CrownBoard user={user} following={following} requireAuth={requireAuth} revision={crownRevision}
+      paused={!!person||sharing||messageTarget!==undefined||!!rivalGame} onPlay={setRivalGame}
+      onProfile={holder=>openProfile({id:holder.user_id,username:holder.username,slop_look:holder.slop_look})}/>}
+    <SocialActivity key={user?.id||'guest'} user={user} active={section==='activity'} onUnread={setHasActivity} requireAuth={requireAuth} onProfile={openProfile} onPlay={openActivityGame} onMessages={openMessages} opening={activityOpening} paused={!!person||sharing||messageTarget!==undefined||!!rivalGame}/>
     <Notice error={error}/>
+    {section!=='activity'&&<>
+    <div className="social-club-toolbar"><div role="group" aria-label="Players to show"><button aria-pressed={view==='all'} onClick={()=>setView('all')}>Discover</button><button aria-pressed={view==='following'} onClick={()=>{if(requireAuth())setView('following');}}>Following</button></div><label className="social-club-search"><Icon name="search" size={18}/><input aria-label="Search people" placeholder="Find your people" value={term} onChange={event=>setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>{term&&<button aria-label="Clear people search" onClick={()=>setTerm('')}><Icon name="close" size={18}/></button>}</label></div>
+    <div className="social-results-heading"><div><h2>{query.trim()?'Search results':view==='following'?'Your people.':'Find your people.'}</h2>{!query.trim()&&<p>{view==='following'?'Familiar faces, ready for the next round.':'Find a friend, a creator, or your next friendly rival.'}</p>}</div><span role="status">{people.loading?'Finding people…':''}</span></div>
     <Notice error={people.error} onRetry={people.refresh}/>
     {people.loading && !people.data ? <Loading label="Finding people…"/> : !people.error && !visibleList.length ?
       <div className="circle-empty"><Icon name="search" size={30}/><h3>{view==='following'?'Your circle starts here.':'No matching usernames'}</h3><p>{view==='following'?'Follow a player to find them here.':'Try another name.'}</p>{term && <Button variant="secondary small" onClick={() => setTerm('')}>Clear search</Button>}</div> :
@@ -83,14 +117,66 @@ export default function Social({params}) {
         {visibleList.slice(0,visiblePeople).map(profile => <PersonRibbon key={profile.id} person={profile}
           following={following.has(profile.id)} busy={busy} own={profile.id === user?.id}
           onFollow={() => follow(profile.id)} onOpen={() => openProfile(profile)}
-          animated={!person&&!sharing&&messageTarget===undefined}/>) }
+          animated={!person&&!sharing&&messageTarget===undefined&&!rivalGame}/>) }
       </div>}
     {!people.error&&visiblePeople<visibleList.length&&<div ref={peopleSentinel} className="circle-people-sentinel"><span className="loader"/><span>More people</span></div>}
+    </>}
     {person && <PersonProfile person={person} own={person.id === user?.id} following={following.has(person.id)} busy={busy}
-      onFollow={() => follow(person.id)} onMessage={()=>{setPerson(null);setMessageTarget(person);}} onClose={closeProfile}/>}
+      onFollow={() => follow(person.id)} onMessage={()=>{if(openMessages(null,person))setPerson(null);}} onClose={closeProfile}/>}
     {sharing&&user&&<PlayerCardShare profile={{...myProfile,id:user.id}} onClose={()=>setSharing(false)}/>}
-    {messageTarget!==undefined&&<ChatModal key={messageTarget?.id||'inbox'} startPerson={messageTarget} currentUser={user} onClose={()=>setMessageTarget(undefined)}/>}
+    {user&&messageTarget!==undefined&&<ChatModal key={`${user.id}:${initialConversationId||messageTarget?.id||'inbox'}`} startPerson={messageTarget} initialConversationId={initialConversationId} currentUser={user} onClose={()=>{setMessageTarget(undefined);setInitialConversationId(null);}}/>}
+    {rivalGame&&<GameDetail game={rivalGame} backLabel="Back to Social" onClose={()=>{setRivalGame(null);setCrownRevision(value=>value+1);}}/>}
   </div>;
+}
+
+function CrownBoard({user, following, requireAuth, revision, paused, onPlay, onProfile}) {
+  const [entries,setEntries]=useState(null),[scope,setScope]=useState('everyone');
+  const [loading,setLoading]=useState(true),[error,setError]=useState(null),[copied,setCopied]=useState(null),[copyError,setCopyError]=useState(null);
+  const live=useRef(false),request=useRef(0),pending=useRef(false),timer=useRef(null);
+  const refresh=useCallback(async()=>{
+    if(pending.current)return;
+    pending.current=true;const current=++request.current;setLoading(true);setError(null);
+    try {
+      const page=await loadDiscoveryPage({order:'popular',limit:12});
+      const rows=page.games.length?await publicRead(supabase.rpc('game_crowns',{p_games:page.games.map(game=>game.slug)}),{timeoutMs:7000}):[];
+      if(live.current&&current===request.current)setEntries(crownBoardEntries(page.games,rows));
+    } catch(failure) {if(live.current&&current===request.current)setError(new Error('The crown board could not refresh. Try again in a moment.'));}
+    finally {if(live.current&&current===request.current){pending.current=false;setLoading(false);}}
+  },[]);
+  useEffect(()=>{
+    live.current=true;void refresh();
+    const resume=()=>{if(!document.hidden)void refresh();};
+    window.addEventListener('focus',resume);document.addEventListener('visibilitychange',resume);
+    return()=>{live.current=false;request.current++;pending.current=false;clearTimeout(timer.current);window.removeEventListener('focus',resume);document.removeEventListener('visibilitychange',resume);};
+  },[refresh]);
+  useEffect(()=>{if(revision)void refresh();},[revision,refresh]);
+  useEffect(()=>{setScope('everyone');setCopied(null);},[user?.id]);
+  async function copyChallenge(entry) {
+    setCopyError(null);
+    try {await navigator.clipboard.writeText(rivalChallenge(entry));if(!live.current)return;setCopied(entry.game.id);clearTimeout(timer.current);timer.current=setTimeout(()=>setCopied(null),3000);}
+    catch {if(live.current)setCopyError(new Error('Could not copy the challenge. Open the game and use its share option.'));}
+  }
+  const visible=filterCrownBoard(entries||[],{scope,following,userId:user?.id});
+  const ordered=[...visible.filter(entry=>entry.state==='crowned'),...visible.filter(entry=>entry.state!=='crowned')].slice(0,6);
+  return <section className="social-arena" aria-labelledby="social-arena-title">
+    <div className="social-arena-heading"><div><span className="social-arena-eyebrow"><Icon name="crown" size={16}/>The crown board</span><h2 id="social-arena-title">A name. A score.<br/>Your next rival.</h2><p>Real crown holders. A game you can jump into. A score worth chasing.</p></div><div className="social-arena-path" aria-label="How to start a rivalry"><span><b>01</b>Pick a crown</span><Icon name="arrow" size={18}/><span><b>02</b>Beat the score</span><Icon name="arrow" size={18}/><span><b>03</b>Invite a rematch</span></div></div>
+    <div className="social-arena-toolbar"><div role="group" aria-label="Crown board players">{[['everyone','Everyone'],['following','Following'],['mine','Your crowns']].map(([id,label])=><button key={id} aria-pressed={scope===id} onClick={()=>{if(id==='everyone'||requireAuth())setScope(id);}}>{label}</button>)}</div><button className="social-arena-refresh" aria-label="Refresh crown board" disabled={loading} onClick={refresh}><Icon name="refresh" size={16}/><span>{loading?'Refreshing…':'Refresh'}</span></button></div>
+    <Notice error={error} onRetry={refresh}/>{error&&entries&&<p className="social-arena-stale">Showing the last crown board we received.</p>}
+    {loading&&!entries?<div className="social-arena-skeleton" role="status" aria-label="Finding crown holders">{[0,1,2].map(id=><div key={id}><span/><i/><i/></div>)}</div>:ordered.length?<div className={`social-rival-grid ${loading?'is-loading':''}`} aria-busy={loading}>{ordered.map(entry=><RivalCard key={entry.game.id} entry={entry} own={entry.holder?.user_id===user?.id} paused={paused} copied={copied===entry.game.id} onCopy={()=>copyChallenge(entry)} onPlay={()=>onPlay(entry.game)} onProfile={()=>onProfile(entry.holder)}/>)}</div>:!error&&<div className="social-arena-empty"><Icon name="crown" size={30}/><h3>{scope==='following'?'Your next rivalry starts with a follow.':scope==='mine'?'Put your name on the board.':'The next game is waiting.'}</h3><p>{scope==='following'?'No one you follow holds a crown in these featured games yet. Explore the board or find your people below.':scope==='mine'?'You don’t hold a crown in these featured games yet. Pick a game and make a run at it.':'Find a game, set a score, and bring a friend.'}</p>{scope==='everyone'?<a className="button secondary" href="#/feed">Find a game<Icon name="arrow" size={16}/></a>:<Button variant="secondary small" onClick={()=>setScope('everyone')}>Explore the crown board<Icon name="arrow" size={16}/></Button>}</div>}
+    <Notice error={copyError}/>
+    {entries?.length>0&&<p className="social-arena-note">Crown holders in featured popular games. Scores refresh when you return from a run.</p>}
+  </section>;
+}
+
+function RivalCard({entry, own, paused, copied, onCopy, onPlay, onProfile}) {
+  const {game,holder,state}=entry;
+  return <article className={`social-rival-card ${own?'is-yours':''}`}>
+    <button className="social-rival-preview" onClick={onPlay} aria-label={`Play ${game.name}`}><GamePreview game={game} paused={paused}/><span className="social-rival-play"><Icon name="play" fill="currentColor" size={18}/></span><span className="social-rival-game-name">{game.name}</span></button>
+    <div className="social-rival-body">{holder?<><div className="social-rival-target"><button className="social-rival-person" onClick={onProfile} aria-label={`Meet crown holder @${holder.username}`}><RobotPortrait look={holder.slop_look} alt="" animated={!paused}/><span><small>{own?'Your crown':'Crown holder'}</small><strong>@{holder.username}</strong></span></button><Icon name="crown" size={22}/></div><div className="social-rival-score"><span>{own?'Your score':'Score to beat'}</span><strong>{holder.score.toLocaleString()}</strong></div></>:<div className="social-rival-no-holder"><Icon name="crown" size={25}/><strong>{state==='open'?'Make the first mark.':'Find your next game.'}</strong><p>{state==='open'?'No crown holder yet. Your next run could start a rivalry.':'The crown holder is unavailable right now. You can still play.'}</p></div>}
+      <div className="social-rival-actions"><Button onClick={onPlay}>{own?'Defend your score':holder?'Play for the crown':'Play this game'}<Icon name="arrow" size={16}/></Button>{holder&&<button type="button" className="social-rival-copy" onClick={onCopy} aria-label={copied?`Challenge for ${game.name} copied`:`Copy challenge for ${game.name}`} title={copied?'Challenge copied':'Copy a challenge to share'}><Icon name={copied?'check':'share'} size={18}/><span>{copied?'Copied':'Challenge'}</span></button>}</div>
+      {copied&&<span className="social-rival-copy-status" role="status">Score and game link copied. Send it to your next rival.</span>}
+    </div>
+  </article>;
 }
 
 function PersonRibbon({person, following, busy, own, onFollow, onOpen, animated}) {
@@ -125,21 +211,22 @@ function PersonProfile({person, following, busy, own, onFollow, onMessage, onClo
       <section className="player-space-content"><h2>{own?'Your games.':'Their games.'}</h2><Notice error={details.error} onRetry={details.refresh}/><Notice error={games.error} onRetry={games.refresh}/>
         {games.loading?<Loading label="Loading games…"/>:games.data?.length?<div className="game-grid">{games.data.map(game=><GameCard key={game.id} game={game} onOpen={setSelected} paused={!!selected||sharing}/>)}</div>:!games.error&&<div className="circle-empty"><Icon name="play" size={27}/><h3>The next favorite starts here.</h3><p>No published games yet.</p></div>}
       </section>
-    </div>{sharing&&<PlayerCardShare profile={profile} onClose={()=>setSharing(false)}/>}{selected&&<GameDetail game={selected} onClose={()=>setSelected(null)}/>}
+    </div>{sharing&&<PlayerCardShare profile={profile} onClose={()=>setSharing(false)}/>}{selected&&<GameDetail game={selected} backLabel="Back to profile" onClose={()=>setSelected(null)}/>}
   </Modal>;
 }
 
 function conversationName(thread){return thread?.title||thread?.people?.map(personName).join(', ')||'Conversation';}
 function conversationHandle(thread){return thread?.people?.map(handle).join(', ')||'';}
 
-function ChatModal({startPerson,currentUser,onClose}){
+function ChatModal({startPerson,initialConversationId=null,currentUser,onClose}){
  const[threads,setThreads]=useState([]),[room,setRoom]=useState(null),[messages,setMessages]=useState([]),[loading,setLoading]=useState(true),[roomLoading,setRoomLoading]=useState(false),[error,setError]=useState(null),[draft,setDraft]=useState(''),[sending,setSending]=useState(false);
- const bottom=useRef(null);
- async function refreshMessages(id){const rows=await chatMessages(id);setMessages(rows);await markChatRead(id).catch(()=>{});}
- useEffect(()=>{let alive=true;(async()=>{setLoading(true);setError(null);try{let preferred=null;if(startPerson)preferred=await createDirectChat(startPerson.id);const rows=await chatInbox();if(!alive)return;setThreads(rows);setRoom(rows.find(row=>row.id===preferred)||rows[0]||(preferred?{id:preferred,title:'',people:[startPerson],unread:0}:null));}catch(e){if(alive)setError(e);}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[startPerson?.id]);
+ const bottom=useRef(null),live=useRef(false);
+ useEffect(()=>{live.current=true;return()=>{live.current=false;};},[currentUser?.id]);
+ async function refreshMessages(id){const rows=await chatMessages(id);if(!live.current)return;setMessages(rows);await markChatRead(id).catch(()=>{});}
+ useEffect(()=>{let alive=true;(async()=>{setLoading(true);setError(null);try{let preferred=null;if(!initialConversationId&&startPerson)preferred=await createDirectChat(startPerson.id);const rows=await chatInbox();if(!alive)return;setThreads(rows);if(initialConversationId){const target=activityConversation(rows,initialConversationId);setRoom(target);if(!target)setError(new Error('This conversation is no longer available. Choose another conversation from your inbox.'));}else setRoom(rows.find(row=>row.id===preferred)||rows[0]||(preferred?{id:preferred,title:'',people:[startPerson],unread:0}:null));}catch(e){if(alive)setError(e);}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[startPerson?.id,initialConversationId,currentUser?.id]);
  useEffect(()=>{if(!room?.id){setMessages([]);return;}let alive=true;const load=async quiet=>{try{const rows=await chatMessages(room.id);if(alive){setMessages(rows);await markChatRead(room.id).catch(()=>{});}}catch(e){if(alive&&!quiet)setError(e);}finally{if(alive)setRoomLoading(false);}};setRoomLoading(true);load(false);const timer=setInterval(()=>load(true),4000);return()=>{alive=false;clearInterval(timer);};},[room?.id]);
  useEffect(()=>{bottom.current?.scrollIntoView({block:'nearest'});},[messages.length,room?.id]);
- async function send(event){event.preventDefault();const body=draft.trim();if(!body||sending||!room?.id)return;setSending(true);setError(null);try{await sendChatMessage(room.id,body);setDraft('');await refreshMessages(room.id);setThreads(await chatInbox());}catch(e){setError(e);}finally{setSending(false);}}
+ async function send(event){event.preventDefault();const body=draft.trim();if(!body||sending||!room?.id)return;setSending(true);setError(null);try{await sendChatMessage(room.id,body);if(!live.current)return;setDraft('');await refreshMessages(room.id);if(!live.current)return;const inbox=await chatInbox();if(live.current)setThreads(inbox);}catch(e){if(live.current)setError(e);}finally{if(live.current)setSending(false);}}
  return <Modal title="Messages" onClose={onClose} className="circle-chat-modal"><div className="circle-chat-shell">
   <aside className={`circle-chat-inbox ${room?'has-room':''}`}><div className="circle-chat-title"><h2>Messages</h2><span>{threads.reduce((total,item)=>total+Number(item.unread||0),0)||''}</span></div>{loading?<Loading label="Opening messages…"/>:threads.length?<div className="circle-chat-list">{threads.map(thread=><button key={thread.id} className={thread.id===room?.id?'active':''} onClick={()=>setRoom(thread)}><RobotPortrait look={thread.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><span><strong>{conversationName(thread)}</strong><small>{thread.last_message||conversationHandle(thread)}</small></span>{Number(thread.unread)>0&&<b>{thread.unread}</b>}</button>)}</div>:<div className="circle-chat-empty"><Icon name="social" size={25}/><p>Your conversations will appear here.</p></div>}</aside>
   <section className={`circle-chat-room ${room?'is-open':''}`}>{room?<><header><button className="circle-chat-back" type="button" aria-label="Back to messages" onClick={()=>setRoom(null)}><Icon name="chevron" size={18}/></button><RobotPortrait look={room.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><div><strong>{conversationName(room)}</strong><small>{conversationHandle(room)}</small></div></header><div className="circle-chat-messages">{roomLoading&&!messages.length?<Loading label="Loading conversation…"/>:messages.length?messages.map(message=><article key={message.id} className={message.sender?.id===currentUser?.id?'mine':''}><RobotPortrait look={message.sender?.slop_look} className="circle-chat-message-avatar" alt=""/><div><small>{message.sender?.id===currentUser?.id?'You':personName(message.sender)}</small><p>{message.body}</p></div></article>):<div className="circle-chat-empty"><p>Say hello.</p></div>}<div ref={bottom}/></div><form className="circle-chat-compose" onSubmit={send}><input aria-label={`Message ${conversationName(room)}`} maxLength="2000" value={draft} onChange={event=>setDraft(event.target.value)} placeholder="Write a message…"/><button type="submit" disabled={sending||!draft.trim()} aria-label="Send message"><Icon name="arrow" size={18}/></button></form></>:<div className="circle-chat-empty room"><Icon name="social" size={30}/><h3>Your messages</h3><p>Pick a conversation.</p></div>}</section>
