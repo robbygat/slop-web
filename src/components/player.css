@@ -53,3 +53,14 @@
 .player-start-round{min-height:36px;padding:8px 14px;border-radius:99px;background:#c5f564;color:#17231d;font-size:11px;white-space:nowrap}
 
 .player-frame>.player-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#101715;z-index:3;pointer-events:none}
+
+/* Live viewport choices resize the existing sandbox, preserving the current run. */
+.game-player .player-controls>.player-control-context{min-width:0;flex:1;align-items:center;gap:14px}
+.game-player .player-control-context>.fine{min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.game-player .player-view-modes{display:flex;flex:none;gap:3px;align-items:center;padding:3px;border:1px solid #ffffff29;border-radius:12px;background:#1b2b22}
+.game-player .player-view-modes>button{min-height:34px;padding:6px 12px;border:0;border-radius:8px;background:transparent;color:#c9d8cd;font:600 11px var(--font);cursor:pointer}
+.game-player .player-view-modes>button[aria-pressed=true]{background:#c5f564;color:#17231d}
+.game-player .player-view-modes>button:hover{background:#385040;color:#fff}
+.game-player .player-view-modes>button[aria-pressed=true]:hover{background:#d2ff79;color:#17231d}
+.game-player .player-view-modes>button:focus-visible{outline:2px solid #f6ffe7;outline-offset:1px}
+@media(min-width:761px){.game-player .player-view-modes>button{min-height:36px}}
