@@ -20,3 +20,23 @@ test('expired or invalid return state cannot replace fresh discovery',()=>{
  assert.equal(store.write({order:'newest',platform:'all',games,active:'missing'}),false);
  store.write({order:'newest',platform:'all',games,active:'g1',next:null});time=300001;assert.equal(store.read(),null);
 });
+
+
+test('Cross-play restores the same game, ordering and cursor after opening details',()=>{
+ for(const order of ['newest','popular']){
+  const store=createFeedReturnStore(),next={slug:'older-both',created_at:'2026-09-29T00:00:00Z',plays:4};
+  assert.equal(store.write({order,platform:'cross-play',games:games.slice(0,12),active:'g8',next}),true);
+  const context=store.read();assert.equal(context.platform,'cross-play');assert.equal(context.order,order);assert.equal(context.active,'g8');assert.deepEqual(context.games,games.slice(0,12));assert.deepEqual(context.next,next);
+ }
+});
+test('a bounded Cross-play return window continues from its actual last game',()=>{
+ const store=createFeedReturnStore();assert.equal(store.write({order:'popular',platform:'cross-play',games,active:'g40',next:null}),true);
+ const context=store.read(),last=context.games.at(-1);
+ assert.equal(context.platform,'cross-play');assert.equal(context.games.length,96);assert.ok(context.games.some(game=>game.id===context.active));
+ assert.deepEqual(context.next,{slug:last.slug,created_at:last.created_at,plays:last.qualified_play_count});
+});
+test('unsupported platform return states cannot overwrite a saved Cross-play context',()=>{
+ const store=createFeedReturnStore();store.write({order:'popular',platform:'cross-play',games:games.slice(0,12),active:'g8',next:null});
+ for(const platform of ['racing','cross-platform','',null])assert.equal(store.write({order:'popular',platform,games,active:'g1',next:null}),false);
+ assert.equal(store.read().platform,'cross-play');assert.equal(store.read().active,'g8');
+});

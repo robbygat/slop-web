@@ -1,7 +1,7 @@
 import React,{useEffect,useImperativeHandle,useRef,useState} from 'react';
 import {loadDocument,acceptPlayerEvent} from '../lib/player.js';
-import {gameFormat} from '../lib/game-format.js';
-import {gamePlatform} from '../lib/game-platforms.js';
+import {gamePlayFormat} from '../lib/game-play-format.js';
+import {gamePlatform,reviewedDesktopGame} from '../lib/game-platforms.js';
 import {canonicalGameUrl} from '../lib/game-links.js';
 import {scoreRun} from '../lib/leaderboard.js';
 import {validRunScore} from '../lib/score-contracts.js';
@@ -21,9 +21,13 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
  const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
+ const[desktopLayout,setDesktopLayout]=useState(()=>matchMedia('(min-width:761px) and (hover:hover) and (pointer:fine)').matches),[viewChoice,setViewChoice]=useState(null);
  const[pointerMode,setPointerMode]=useState(false),[pointerLocked,setPointerLocked]=useState(false),[pointerError,setPointerError]=useState('');
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
- const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart,ready,error,desktopRequired};const format=gameFormat(game),controls=legacyControlSpec(url);
+ const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart,ready,error,desktopRequired};const desktop=desktopLayout&&!preview,mode=viewChoice?.url===url?viewChoice.mode:'auto',format=gamePlayFormat(game,{desktop,mode,stageAspect}),controls=legacyControlSpec(url);
+ const originalFormat=gamePlayFormat(game,{desktop,mode:'original',stageAspect}),wideFormat=gamePlayFormat(game,{desktop,mode:'wide',stageAspect});
+ const desktopHint=desktop?(reviewedDesktopGame(game)?.hint||controls?.hint):null;
+ const canChangeView=desktop&&!stageAspect&&originalFormat.playerAspect!==wideFormat.playerAspect,wideView=canChangeView&&format.playerAspect===wideFormat.playerAspect;
  const send=message=>{if(['pause','restart','hostReleaseKeys'].includes(message.type))keyboard.current?.release();frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');};
  const focusFrame=target=>{frame.current?.focus({preventScroll:true});target?.postMessage(JSON.stringify({type:'hostFocus'}),'*');target?.focus();};
  const focusGame=()=>{if(!state.current.paused&&!state.current.board&&state.current.finished===null&&!state.current.waitingStart&&!document.hidden)focusFrame(frame.current?.contentWindow);};
@@ -52,6 +56,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    const on=e=>{if(e.source!==win||!e.data||typeof e.data!=='object'||e.data.type!=='webFrameResult'||e.data.request!==request)return;done(e.data.bitmap?{bitmap:e.data.bitmap,background:e.data.background||null}:null);};
    const timer=setTimeout(()=>done(null),1500);window.addEventListener('message',on);send({type:'webFrame',request});})}));
  useEffect(()=>{const query=matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)');const changed=()=>setSmallScreen(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
+ useEffect(()=>{const query=matchMedia('(min-width:761px) and (hover:hover) and (pointer:fine)');const changed=()=>setDesktopLayout(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
  useEffect(()=>{if(desktopRequired&&expanded)exitExpanded();},[desktopRequired,expanded]);
  useEffect(()=>{
   restartGate.current.cancel();
@@ -137,6 +142,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   }});
   if(request)send({type:'restart',request});
  }
+ function changeView(mode){send({type:'hostReleaseKeys'});setViewChoice({url,mode});focusGame();}
  function startFromRest(){focusAtStart.current=true;replayIntent.current=true;setWaitingStart(false);setRestart(v=>v+1);}
  if(desktopRequired)return <div ref={container} className="game-player desktop-required">
   <svg width="44" height="44" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="3" y="4" width="26" height="18" rx="3"/><path d="M16 22v6m-6 0h12"/></svg>
@@ -144,7 +150,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   {!preview&&game?.slug&&<><input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
   <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button></>}
  </div>;
- return <div ref={container} className={`game-player ${theater?'theater-player':''} ${expanded?'is-expanded':''} ${pointerLocked?'has-pointer-lock':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
+ return <div ref={container} className={`game-player ${theater?'theater-player':''} ${expanded?'is-expanded':''} ${pointerLocked?'has-pointer-lock':''} ${format.orientation}`} data-view={canChangeView?(wideView?'wide':'original'):undefined} style={{'--game-aspect':format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerDownCapture={event=>{if(!event.target.closest?.('button,input,textarea,select,a'))focusGame();}}>
    {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad; fullscreen" allowFullScreen referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
    {previewVideo&&!error&&!ready&&<PlayerPoster key={previewVideo.poster} poster={previewVideo.poster}/>}
@@ -154,7 +160,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
-  <div className="player-controls">{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':title}</span>}<div>
+  <div className="player-controls"><div className="player-control-context">{canChangeView&&<div className="player-view-modes" role="group" aria-label="Game display"><button type="button" aria-pressed={!wideView} onClick={()=>changeView('original')} title="Use the game's original shape">Original</button><button type="button" aria-pressed={wideView} onClick={()=>changeView('wide')} title="Use a wider desktop playfield">Wide</button></div>}{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':desktopHint||title}</span>}</div><div>
    {!smallScreen&&<IconButton name="cursor" label={pointerMode?'Turn off mouse capture':'Capture mouse for this game'} aria-pressed={pointerMode} onClick={()=>{const enabled=!pointerMode;setPointerMode(enabled);setPointerError('');send({type:'hostPointerMode',enabled});focusGame();}}/>}
    {game&&!preview&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}
    <IconButton name={muted?'mute':'volume'} label={muted?'Unmute game':'Mute game'} onClick={()=>{send({type:'mute',on:!muted});setMuted(!muted);focusGame();}}/>
