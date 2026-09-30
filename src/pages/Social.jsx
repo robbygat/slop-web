@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {flushSync} from 'react-dom';
 import {searchPeople, followPerson, loadGames} from '../lib/catalog.js';
 import {supabase, result} from '../lib/supabase.js';
 import {UUID} from '../lib/contracts.js';
@@ -27,7 +26,6 @@ export default function Social({params}) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [person, setPerson] = useState(null);
-  const [transitionId, setTransitionId] = useState(null);
   const [messageTarget,setMessageTarget]=useState(undefined);
   const [visiblePeople,setVisiblePeople]=useState(24);
   const peopleSentinel=useRef(null);
@@ -71,49 +69,38 @@ export default function Social({params}) {
     finally {pending.current = false; setBusy(null);}
   }
 
-  function openProfile(next) {
-    // The same silhouette grows into the profile. Unsupported browsers and
-    // Reduced Motion use the ordinary accessible dialog without a delay.
-    if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setPerson(next);
-      return;
-    }
-    flushSync(() => setTransitionId(next.id));
-    const transition = document.startViewTransition(() => flushSync(() => setPerson(next)));
-    transition.finished.catch(() => {}).finally(() => setTransitionId(null));
-  }
+  function openProfile(next) {setPerson(next);}
 
   return <div className="social-club">
-    <header className="social-club-cover"><div><h1>Your kind<br/>of players.</h1><p>Find a familiar face. Meet your next rival.</p><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Your player card</Button><button onClick={()=>{if(requireAuth())setMessageTarget(null);}}><Icon name="social" size={18}/>Messages</button></div></div><div className="social-card-fan"><SlopMark/>{people.data?.slice(0,3).map((player,i)=><button key={player.id} className={`fan-card fan-card-${i}`} onClick={()=>openProfile(player)} aria-label={`Meet ${personName(player)}`}><img src={profileBackdrop(player.profile_banner_id)} alt=""/><RobotPortrait look={player.slop_look} loading="eager" alt=""/><span><strong>{personName(player)}</strong><small>{handle(player)}</small></span></button>)}</div></header>
+    <header className="social-club-cover"><div><h1>Find your people.</h1><p>A familiar face. A friendly rival. Your next game together.</p></div><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Share your player card</Button><button onClick={()=>{if(requireAuth())setMessageTarget(null);}}><Icon name="social" size={18}/>Messages</button></div></header>
     <div className="social-club-toolbar"><div role="group" aria-label="Players to show"><button aria-pressed={view==='all'} onClick={()=>setView('all')}>Discover</button><button aria-pressed={view==='following'} onClick={()=>{if(requireAuth())setView('following');}}>Following</button></div><label className="social-club-search"><Icon name="search" size={18}/><input aria-label="Search people" placeholder="Find your people" value={term} onChange={event=>setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>{term&&<button aria-label="Clear people search" onClick={()=>setTerm('')}><Icon name="close" size={18}/></button>}</label></div>
-    <div className="social-results-heading"><h2>{query.trim()?'Search results':view==='following'?'Your circle.':'The Slop club.'}</h2><span role="status">{people.loading?'Finding people…':!people.error?`${visibleList.length} players`:''}</span></div>
+    <div className="social-results-heading"><h2>{query.trim()?'Search results':view==='following'?'Following':'Players'}</h2><span role="status">{people.loading?'Finding people…':!people.error?`${visibleList.length} players`:''}</span></div>
     <Notice error={error}/>
     <Notice error={people.error} onRetry={people.refresh}/>
     {people.loading && !people.data ? <Loading label="Finding people…"/> : !people.error && !visibleList.length ?
       <div className="circle-empty"><Icon name="search" size={30}/><h3>{view==='following'?'Your circle starts here.':'No matching usernames'}</h3><p>{view==='following'?'Follow a player to find them here.':'Try another name.'}</p>{term && <Button variant="secondary small" onClick={() => setTerm('')}>Clear search</Button>}</div> :
       <div className={`player-cards ${people.loading ? 'is-loading' : ''}`} aria-busy={people.loading}>
-        {visibleList.slice(0,visiblePeople).map((profile, index) => <PersonRibbon key={profile.id} person={profile} index={index}
+        {visibleList.slice(0,visiblePeople).map(profile => <PersonRibbon key={profile.id} person={profile}
           following={following.has(profile.id)} busy={busy} own={profile.id === user?.id}
           onFollow={() => follow(profile.id)} onOpen={() => openProfile(profile)}
-          transition={transitionId === profile.id && !person}/>) }
+          animated={!person&&!sharing&&messageTarget===undefined}/>) }
       </div>}
     {!people.error&&visiblePeople<visibleList.length&&<div ref={peopleSentinel} className="circle-people-sentinel"><span className="loader"/><span>More people</span></div>}
     {person && <PersonProfile person={person} own={person.id === user?.id} following={following.has(person.id)} busy={busy}
-      onFollow={() => follow(person.id)} onMessage={()=>{setPerson(null);setMessageTarget(person);}} onClose={closeProfile} transition={transitionId === person.id}/>}
+      onFollow={() => follow(person.id)} onMessage={()=>{setPerson(null);setMessageTarget(person);}} onClose={closeProfile}/>}
     {sharing&&user&&<PlayerCardShare profile={{...myProfile,id:user.id}} onClose={()=>setSharing(false)}/>}
     {messageTarget!==undefined&&<ChatModal key={messageTarget?.id||'inbox'} startPerson={messageTarget} currentUser={user} onClose={()=>setMessageTarget(undefined)}/>}
   </div>;
 }
 
-function PersonRibbon({person, index, following, busy, own, onFollow, onOpen, transition}) {
-  return <article className="player-card" style={{viewTransitionName:transition?'slop-person-profile':'none'}}>
+function PersonRibbon({person, following, busy, own, onFollow, onOpen, animated}) {
+  return <article className="player-card">
     <button className="player-card-open" onClick={onOpen} aria-label={`Open ${personName(person)}, ${handle(person)}`}>
-      <span className="player-card-brand"><SlopMark/>Slop.game</span><img src={profileBackdrop(person.profile_banner_id)} className="player-card-world" alt="" loading="lazy"/>
-      <RobotPortrait look={person.slop_look} avatar={person.avatar_url} className="player-card-robot" alt=""/>
+      <span className="player-card-scene"><img src={profileBackdrop(person.profile_banner_id)} className="player-card-world" alt="" loading="lazy"/><RobotPortrait look={person.slop_look} className="player-card-robot" animated={animated} alt=""/><SlopMark className="player-card-stamp"/></span>
       <span className="player-card-identity"><strong>{personName(person)}</strong><span>{handle(person)}</span></span>
-      <span className="player-card-enter" aria-hidden="true"><Icon name="arrow" size={20}/></span>
+      <span className="player-card-enter" aria-hidden="true"><Icon name="arrow" size={18}/></span>
     </button>
-    <div className="player-card-footer"><p>{person.bio||''}</p>{own?<a href="#/you">Your profile</a>:<button type="button" className={following?'is-following':''} disabled={!!busy} onClick={onFollow} aria-label={`${following?'Unfollow':'Follow'} ${handle(person)}`}><Icon name={following?'check':'plus'} size={16}/>{busy===person.id?'Saving…':following?'Following':'Follow'}</button>}</div>
+    <div className="player-card-footer"><p>{person.bio||''}</p>{own?<a href="#/you">Your profile <Icon name="arrow" size={14}/></a>:<button type="button" className={following?'is-following':''} disabled={!!busy} onClick={onFollow} aria-label={`${following?'Unfollow':'Follow'} ${handle(person)}`}><Icon name={following?'check':'plus'} size={16}/>{busy===person.id?'Saving…':following?'Following':'Follow'}</button>}</div>
   </article>;
 }
 
@@ -127,14 +114,14 @@ async function profileStats(id) {
   return rows.map(row => row.error ? null : row.count);
 }
 
-function PersonProfile({person, following, busy, own, onFollow, onMessage, onClose, transition}) {
+function PersonProfile({person, following, busy, own, onFollow, onMessage, onClose}) {
   const details = useAsync(() => result(supabase.from('profiles').select(PUBLIC_PROFILE_COLUMNS).eq('id', person.id).single()), [person.id]);
   const games = useAsync(() => loadGames({owner: person.id}), [person.id]);
   const stats = useAsync(() => profileStats(person.id), [person.id, following]);
   const [selected, setSelected] = useState(null),[sharing,setSharing]=useState(false);
   const profile = details.data || person;
   return <Modal title={handle(profile)} onClose={onClose} className="player-profile-modal">
-    <div className="player-space"><PlayerPass profile={profile} transition={transition} paused={!!selected||sharing} stats={['Games','Followers','Following'].map((label,i)=>[label,stats.data?.[i]])} actions={<>{own?<a className="button" href="#/you" onClick={onClose}>Your profile <Icon name="arrow" size={17}/></a>:<><Button icon={following?'check':'plus'} disabled={!!busy} onClick={onFollow}>{busy===person.id?'Saving…':following?'Following':'Follow player'}</Button><Button variant="secondary" icon="social" onClick={onMessage}>Message</Button></>}<Button variant="secondary" icon="share" onClick={()=>setSharing(true)}>Share card</Button></>}/>
+    <div className="player-space"><PlayerPass profile={profile} paused={!!selected||sharing} stats={['Games','Followers','Following'].map((label,i)=>[label,stats.data?.[i]])} actions={<>{own?<a className="button" href="#/you" onClick={onClose}>Your profile <Icon name="arrow" size={17}/></a>:<><Button icon={following?'check':'plus'} disabled={!!busy} onClick={onFollow}>{busy===person.id?'Saving…':following?'Following':'Follow player'}</Button><Button variant="secondary" icon="social" onClick={onMessage}>Message</Button></>}<Button variant="secondary" icon="share" onClick={()=>setSharing(true)}>Share card</Button></>}/>
       <section className="player-space-content"><h2>{own?'Your games.':'Their games.'}</h2><Notice error={details.error} onRetry={details.refresh}/><Notice error={games.error} onRetry={games.refresh}/>
         {games.loading?<Loading label="Loading games…"/>:games.data?.length?<div className="game-grid">{games.data.map(game=><GameCard key={game.id} game={game} onOpen={setSelected} paused={!!selected||sharing}/>)}</div>:!games.error&&<div className="circle-empty"><Icon name="play" size={27}/><h3>The next favorite starts here.</h3><p>No published games yet.</p></div>}
       </section>
