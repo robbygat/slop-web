@@ -6,16 +6,17 @@ import { addOutline, toon } from '../toon';
 /** The charging pedestal the equipped shell floats above. */
 export class Pedestal {
   readonly group = new THREE.Group();
-  private ringMat: THREE.MeshBasicMaterial;
-  private haloMat: THREE.ShaderMaterial;
-  private beamMat: THREE.ShaderMaterial;
-  private spillMat: THREE.ShaderMaterial;
-  private beam: THREE.Mesh;
+  private ringMat!: THREE.MeshBasicMaterial;
+  private haloMat!: THREE.ShaderMaterial;
+  private beamMat!: THREE.ShaderMaterial;
+  private spillMat!: THREE.ShaderMaterial;
+  private beam!: THREE.Mesh;
   private pulseV = 0;
   readonly radius = 0.57;
   readonly height = 0.24;
 
-  constructor() {
+  constructor(enabled = true) {
+    if (!enabled) {this.group.visible = false; return;}
     const r = this.radius;
     const h = this.height;
 

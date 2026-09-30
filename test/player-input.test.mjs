@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import {installLegacyKeyboard,legacyControlSpec,auditedCursorStyle} from '../src/lib/player-input.js';
+import {installLegacyKeyboard,legacyControlSpec,auditedCursorStyle,hostKeyboardInput,createHostKeyboardBridge} from '../src/lib/player-input.js';
 import {acceptPlayerEvent} from '../src/lib/player-contracts.js';
 function fixture(mode) {
  const listeners={},events=[],rafs=new Map();let n=0;
@@ -39,4 +39,37 @@ test('painted cursor fixes bind audited immutable originals and leave menus and 
  assert.equal(auditedCursorStyle(zombies.replace('1.0.0','2.0.0')),'');
  assert.equal(auditedCursorStyle(zombies.replace('api.slop.game','evil.test')),'');
  assert.equal(auditedCursorStyle('https://api.slop.game/storage/v1/object/public/games/a-new-game/1.0.0/index.html'),'');
+});
+
+const keyboardEvent=(key,code,extra={})=>({key,code,keyCode:code.startsWith('Key')?code.charCodeAt(3):0,isTrusted:true,target:{closest:()=>false},
+  defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},stopPropagation(){this.stopped=true;},...extra});
+test('the host bridge preserves authored physical keys, layout, Shift and legacy keyCode',()=>{
+  const value=hostKeyboardInput(keyboardEvent('a','KeyQ',{shiftKey:true,keyCode:65}));
+  assert.equal(value.key,'a');assert.equal(value.code,'KeyQ');assert.equal(value.shiftKey,true);assert.equal(value.keyCode,65);
+  for(const [key,code] of [['w','KeyW'],['a','KeyA'],['s','KeyS'],['d','KeyD'],[' ','Space'],['Escape','Escape'],['Enter','Enter'],['Shift','ShiftLeft']])assert.equal(hostKeyboardInput(keyboardEvent(key,code)).code,code);
+  for(const extra of [{ctrlKey:true},{metaKey:true},{isComposing:true},{defaultPrevented:true},{target:{closest:()=>true}}])assert.equal(hostKeyboardInput(keyboardEvent('w','KeyW',extra)),null);
+  assert.equal(hostKeyboardInput(keyboardEvent('Tab','Tab')),null);
+});
+test('only an active player owns keyboard input; inactive games, editable fields and shortcuts retain site behavior',()=>{
+  const sent=[],frame={};let enabled=true,ownsKeyboard=false,interactions=0;
+  const bridge=createHostKeyboardBridge({getContext:()=>({enabled,ownsKeyboard,frame}),send:(target,message)=>sent.push({target,message}),onInteraction:()=>interactions++});
+  const outside=keyboardEvent('w','KeyW');assert.equal(bridge.down(outside),false);assert.equal(outside.defaultPrevented,false);
+  ownsKeyboard=true;enabled=false;assert.equal(bridge.down(keyboardEvent('w','KeyW')),false);
+  enabled=true;assert.equal(bridge.down(keyboardEvent('w','KeyW',{target:{closest:()=>true}})),false);
+  assert.equal(bridge.down(keyboardEvent('w','KeyW',{isTrusted:false})),false);
+  const down=keyboardEvent('W','KeyW',{shiftKey:true});assert.equal(bridge.down(down),true);assert.equal(down.defaultPrevented,true);assert.equal(down.stopped,true);assert.equal(interactions,1);
+  bridge.up(keyboardEvent('w','KeyW'));assert.equal(sent.length,2);assert.equal(sent[0].message.code,'KeyW');assert.equal(sent[1].message.down,false);
+});
+test('held host keys are released to their original frame on pause, cleanup and frame changes',()=>{
+  const first={},second={},sent=[];let frame=first;
+  const bridge=createHostKeyboardBridge({getContext:()=>({enabled:true,ownsKeyboard:true,frame}),send:(target,message)=>sent.push({target,message})});
+  bridge.down(keyboardEvent('w','KeyW'));bridge.down(keyboardEvent('Shift','ShiftLeft',{shiftKey:true}));frame=second;bridge.release();bridge.release();
+  assert.deepEqual(sent.map(entry=>[entry.target===first,entry.message.code,entry.message.down]),[[true,'KeyW',true],[true,'ShiftLeft',true],[true,'KeyW',false],[true,'ShiftLeft',false]]);
+  bridge.down(keyboardEvent('a','KeyA'));frame=first;bridge.down(keyboardEvent('a','KeyA'));
+  assert.equal(sent.at(-2).target,second);assert.equal(sent.at(-2).message.down,false);assert.equal(sent.at(-1).target,first);
+});
+test('host first press focuses the inner playfield before forwarding keydown',()=>{
+  const events=[],frame={};
+  const bridge=createHostKeyboardBridge({getContext:()=>({enabled:true,ownsKeyboard:true,frame}),focus:()=>events.push('focus'),send:(_frame,message)=>events.push(message.down?'keydown':'keyup')});
+  bridge.down(keyboardEvent('w','KeyW'));bridge.up(keyboardEvent('w','KeyW'));assert.deepEqual(events,['focus','keydown','keyup']);
 });

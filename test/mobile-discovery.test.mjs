@@ -1,12 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {lightHero,HERO_CAST,HERO_SEATS,swapHeroSeat} from '../src/lib/hero-policy.js';
+import {lightHero,heroRenderBudget,HERO_CAST,HERO_SEATS,swapHeroSeat} from '../src/lib/hero-policy.js';
 import {appendCatalogPage} from '../src/lib/catalog-window.js';
 import {createPreviewPool} from '../src/lib/preview-pool.js';
 
-test('phones, touch devices and constrained connections avoid automatic WebGL hero loading',()=>{
- for(const hints of [{compact:true},{coarse:true},{saveData:true},{effectiveType:'2g'},{effectiveType:'3g'}])assert.equal(lightHero(hints),true);
- assert.equal(lightHero({compact:false,coarse:false,effectiveType:'4g'}),false);
+test('normal phones keep the real 3D cast while explicit constraints use the fallback',()=>{
+ for(const hints of [{compact:true},{coarse:true},{compact:true,coarse:true,effectiveType:'4g'},{}])assert.equal(lightHero(hints),false);
+ for(const hints of [{reducedMotion:true},{saveData:true},{effectiveType:'slow-2g'},{effectiveType:'2g'},{effectiveType:'3g'}])assert.equal(lightHero(hints),true);
+});
+test('real phone and desktop scenes stay within frame, pixel and texture budgets',()=>{
+ for(const [width,height,dpr,coarse] of [[350,340,3,true],[390,360,3,false],[620,500,2,false],[900,700,3,false]]){
+  const b=heroRenderBudget({width,height,dpr,coarse});
+  assert.ok(b.dprCap<=dpr);assert.ok(width*height*b.dprCap*b.dprCap<=850000);
+  assert.ok(b.faceSize<=256);assert.ok(b.faceFPS<=15);assert.ok(b.particles<=180);
+  if(coarse||width<500){assert.equal(b.maxFPS,24);assert.ok(b.dprCap<=1.25);assert.equal(b.faceSize,192);}else assert.equal(b.maxFPS,30);
+ }
 });
 test('mobile character swaps retain every character and every target stays inside the frame',()=>{
  let order=HERO_CAST;

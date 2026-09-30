@@ -10,12 +10,55 @@
  const errors=[];
  let interacted=false;
  let pointerMode=false;
+ let keyboardPaused=false;
+ const pressedKeys=new Map();
+ const physicalCode=/^(?:Key[A-Z]|Digit[0-9]|Numpad[0-9]|Arrow(?:Left|Right|Up|Down)|Space|Enter|Escape|Tab|Shift(?:Left|Right)|Control(?:Left|Right)|Alt(?:Left|Right)|Backspace|Delete|Home|End|PageUp|PageDown|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|Backquote|Numpad(?:Add|Subtract|Multiply|Divide|Decimal|Enter))$/;
+ const editable=target=>target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
+ const codeFor=event=>physicalCode.test(event.code)?event.code:event.code==='Space'||event.key==='Space'||event.key===' '?'Space':/^Arrow(?:Left|Right|Up|Down)$/.test(event.key)?event.key:null;
+ function focusPlayfield() {
+  const active=document.activeElement;
+  // Preserve a game's own input, menu or focused playfield. Only its default
+  // document focus needs a target so canvas, document and window all get keys.
+  if(document.hidden||keyboardPaused||(active&&active!==document.body&&active!==document.documentElement))return;
+  const canvas=document.querySelector('[data-slop-playfield] canvas')||document.querySelector('canvas');
+  if(!canvas?.focus)return;
+  if(!canvas.hasAttribute('tabindex'))canvas.setAttribute('tabindex','-1');
+  canvas.focus({preventScroll:true});
+ }
+ const legacyKeyCode=code=>/^Key[A-Z]$/.test(code)?code.charCodeAt(3):/^Digit[0-9]$/.test(code)?code.charCodeAt(5):({Space:32,Enter:13,Escape:27,Tab:9,ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,ShiftLeft:16,ShiftRight:16,ControlLeft:17,ControlRight:17,AltLeft:18,AltRight:18,Backspace:8,Delete:46,Home:36,End:35,PageUp:33,PageDown:34})[code]||0;
+ function dispatchKey(type,input,release=false) {
+  const keyCode=Number.isInteger(input.keyCode)&&input.keyCode>0&&input.keyCode<=255?input.keyCode:legacyKeyCode(input.code);
+  const event=new KeyboardEvent(type,{key:input.key,code:input.code,bubbles:true,cancelable:true,repeat:!!input.repeat,
+   shiftKey:!!input.shiftKey,ctrlKey:!!input.ctrlKey,altKey:!!input.altKey,metaKey:!!input.metaKey,location:input.location||0});
+  Object.defineProperty(event,'__slopHost',{value:true});
+  if(release)Object.defineProperty(event,'__slopRelease',{value:true});
+  for(const name of ['keyCode','which']){try{Object.defineProperty(event,name,{value:keyCode});}catch{}}
+  const target=input.target&&input.target.isConnected!==false&&typeof input.target.dispatchEvent==='function'?input.target:
+   document.activeElement&&typeof document.activeElement.dispatchEvent==='function'?document.activeElement:
+   document.body&&typeof document.body.dispatchEvent==='function'?document.body:null;
+  if(target)target.dispatchEvent(event);else if(typeof window.dispatchEvent==='function')window.dispatchEvent(event);else if(typeof dispatchEvent==='function')dispatchEvent(event);
+ }
+ function releaseKeys() {
+  const keys=[...pressedKeys.values()];pressedKeys.clear();
+  for(const input of keys)dispatchKey('keyup',{...input,repeat:false,shiftKey:false,ctrlKey:false,altKey:false,metaKey:false},true);
+ }
+ addEventListener('keydown',event=>{
+  if((!event.isTrusted&&!event.__slopHost)||event.__slopRelease||editable(event.target))return;
+  const code=codeFor(event);if(!code)return;
+  if(keyboardPaused||document.hidden){event.preventDefault();event.stopImmediatePropagation?.();return;}
+  pressedKeys.set(code,{key:event.key,code,target:event.target,keyCode:event.keyCode,location:event.location,
+   shiftKey:!!event.shiftKey,ctrlKey:!!event.ctrlKey,altKey:!!event.altKey,metaKey:!!event.metaKey,origin:event.__slopHost?'host':'native'});
+ },true);
+ addEventListener('keyup',event=>{const code=codeFor(event);if(code)pressedKeys.delete(code);},true);
+ addEventListener('blur',releaseKeys);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseKeys();});
+ document.addEventListener('focusin',event=>{if(editable(event.target)||event.target?.closest?.('button,a'))releaseKeys();});
  addEventListener('pointerdown',event=>{if(!pointerMode||!event.isTrusted||document.pointerLockElement||event.target.closest?.('button,input,textarea,a,select'))return;const canvas=event.target.closest?.('canvas')||document.querySelector('[data-slop-playfield] canvas')||document.querySelector('canvas');try{canvas?.requestPointerLock()?.catch?.(()=>send({type:'webPointerError'}));}catch{send({type:'webPointerError'});}});
  document.addEventListener('pointerlockchange',()=>send({type:'webPointerLock',locked:!!document.pointerLockElement}));
  document.addEventListener('pointerlockerror',()=>send({type:'webPointerError'}));
  const input=event=>{if(!interacted&&event.isTrusted){interacted=true;send({type:'webInteraction'});}};
  addEventListener('pointerdown',input,{passive:true});addEventListener('keydown',input,{passive:true});
- addEventListener('keydown',event=>{if(event.isTrusted&&event.key==='Escape')send({type:'webEscape'});});
+ addEventListener('keydown',event=>{if((event.isTrusted||event.__slopHost)&&event.key==='Escape'&&!editable(event.target)){event.preventDefault();send({type:'webEscape'});}});
  // A feed can scroll over games that do not consume the wheel themselves.
  // Touch stays with the game; the feed provides a separate swipe/next rail.
  addEventListener('wheel',event=>{queueMicrotask(()=>{if(event.isTrusted&&!event.defaultPrevented&&!event.ctrlKey&&Number.isFinite(event.deltaY))send({type:'webScroll',deltaY:Math.max(-240,Math.min(240,event.deltaY)),deltaMode:event.deltaMode});});},{passive:true});
@@ -29,10 +72,20 @@
  addEventListener('message',event=>{
   if(event.source!==parent || typeof event.data!=='string' || event.data.length>4096)return;
   let value;try{value=JSON.parse(event.data);}catch{return;}
+  if(value.type==='pause'||value.type==='restart'){keyboardPaused=true;releaseKeys();return;}
+  if(value.type==='resume'){keyboardPaused=false;return;}
+  if(value.type==='hostFocus'){focusPlayfield();return;}
+  if(value.type==='hostReleaseKeys'){releaseKeys();return;}
   if(value.type==='hostPointerMode'&&typeof value.enabled==='boolean'){pointerMode=value.enabled;if(!pointerMode&&document.pointerLockElement)document.exitPointerLock();return;}
-  if(value.type==='hostKey'&&typeof value.down==='boolean'&&['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(value.key)){
-   const keyEvent=new KeyboardEvent(value.down?'keydown':'keyup',{key:value.key==='Space'?' ':value.key,code:value.key,bubbles:true,cancelable:true});
-   Object.defineProperty(keyEvent,'__slopHost',{value:true});dispatchEvent(keyEvent);return;
+  if(value.type==='hostKey'&&typeof value.down==='boolean'){
+   const code=typeof value.code==='string'?value.code:['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(value.key)?value.key:null;
+   const key=value.key==='Space'?' ':value.key;
+   if(!physicalCode.test(code)||code==='Tab'||typeof key!=='string'||!key||key.length>64||/[\u0000-\u001f\u007f]/.test(key)||value.metaKey||(value.ctrlKey&&!/^Control/.test(code))||(value.altKey&&!/^Alt/.test(code)))return;
+   if(value.down&&(keyboardPaused||document.hidden||editable(document.activeElement)))return;
+   const previous=pressedKeys.get(code);
+   if(value.down&&previous&&!value.repeat)return;
+   if(!value.down&&!previous)return;
+   dispatchKey(value.down?'keydown':'keyup',{...value,key,code,target:previous?.target});return;
   }
   // Publish-time video capture: the playfield canvas as a transferred bitmap.
   if(value.type==='webFrame'&&typeof value.request==='string'&&value.request.length<=64){

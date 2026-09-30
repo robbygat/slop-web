@@ -9,8 +9,30 @@
   const send = (message) => parent.postMessage(message, '*');
   // The host focuses this outer relay. Hand that focus to the actual game so
   // native keydown/keyup (including a release after a hostKey) reach its code.
-  const focusGame = () => { if (game && loaded && !blocked) game.contentWindow.focus(); };
+  const focusGame = () => {
+    if (!game || !loaded || blocked) return;
+    game.focus({preventScroll: true});
+    game.contentWindow.focus();
+    game.contentWindow.postMessage(JSON.stringify({type: 'hostFocus'}), '*');
+  };
   addEventListener('focus', focusGame);
+  // There is one browser task between focusing this relay and focusing the
+  // inner game. Catch only real keys during that handoff; inner native events
+  // never bubble here, so they cannot be delivered twice.
+  const keyCode = /^(?:Key[A-Z]|Digit[0-9]|Numpad[0-9]|Arrow(?:Left|Right|Up|Down)|Space|Enter|Escape|Shift(?:Left|Right)|Control(?:Left|Right)|Alt(?:Left|Right)|Backspace|Delete|Home|End|PageUp|PageDown|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|Backquote|Numpad(?:Add|Subtract|Multiply|Divide|Decimal|Enter))$/;
+  const forwardKey = (event, down) => {
+    if (!game || !loaded || blocked || !event.isTrusted || !keyCode.test(event.code) ||
+        event.isComposing || event.metaKey || (event.ctrlKey && !/^Control/.test(event.code)) ||
+        (event.altKey && !/^Alt/.test(event.code))) return;
+    event.preventDefault();
+    focusGame();
+    game.contentWindow.postMessage(JSON.stringify({type: 'hostKey', down, key: event.key, code: event.code,
+      repeat: !!event.repeat, shiftKey: !!event.shiftKey, ctrlKey: !!event.ctrlKey, altKey: !!event.altKey,
+      metaKey: !!event.metaKey, keyCode: event.keyCode, location: event.location}), '*');
+    if (down) send(JSON.stringify({type: 'webInteraction'}));
+  };
+  addEventListener('keydown', event => forwardKey(event, true));
+  addEventListener('keyup', event => forwardKey(event, false));
 
   addEventListener('message', (event) => {
     if (event.source === parent && parent !== window) {
@@ -46,6 +68,7 @@
         document.body.appendChild(game);
       } else if (!blocked && typeof message === 'string' &&
                  message.length <= maxMessageChars) {
+        if (message === '{"type":"hostFocus"}') { focusGame(); return; }
         game.contentWindow.postMessage(message, '*');
       }
       return;

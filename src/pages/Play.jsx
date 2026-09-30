@@ -5,7 +5,7 @@ import {Icon} from '../components/Icon.jsx';
 import Hero from '../components/Hero.jsx';
 import FeaturedGames from '../components/FeaturedGames.jsx';
 import GamePreview from '../components/GamePreview.jsx';
-import {CampaignSections} from '../components/BrandSections.jsx';
+import {CrownInvitation,CharacterInvitation,CreateInvitation} from '../components/BrandSections.jsx';
 import {landscapeGame} from '../lib/game-mosaic.js';
 import {appendCatalogPage} from '../lib/catalog-window.js';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
@@ -34,7 +34,7 @@ export default function Play({params,search,term,setSearch}){
   async function loadMore(){if(pending.current||!next)return;pending.current=true;setLoading(true);setError(null);await readCatalog(next,epoch.current);}
   useEffect(()=>{if(!next||loading||error||selected||!continuation.current)return;const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting)void loadMore();},{rootMargin:'650px'});observer.observe(continuation.current);return()=>observer.disconnect();},[next,loading,error,selected]);
   const selectedIndex=games.findIndex(g=>g.id===selected?.id);
-  return <div className="brand-home"><Hero suspended={!!selected}/><FeaturedGames games={games} onOpen={setSelected} paused={paused||!!selected}/><section className={`game-universe layout-${layout}`} id="discover" aria-labelledby="catalog-title">
+  return <div className="brand-home"><Hero suspended={!!selected}/><FeaturedGames games={games} onOpen={setSelected} paused={paused||!!selected}/><CrownInvitation/><section className={`game-universe layout-${layout}`} id="discover" aria-labelledby="catalog-title">
     <div className="universe-heading"><h2 id="catalog-title">All games.</h2></div>
     <div className="universe-toolbar"><div className="catalog-tabs" role="group" aria-label="Sort games">{[['popular','Popular'],['newest','Fresh drops']].map(([id,label])=><button key={id} aria-pressed={order===id} onClick={()=>setOrder(id)}>{label}</button>)}</div><label className="universe-search"><Icon name="search" size={18}/><input type="search" aria-label="Search games" value={term} onChange={e=>setSearch(e.target.value)} placeholder="Search games"/></label><div className="grid-controls"><button aria-label={paused?'Play video previews':'Pause video previews'} aria-pressed={paused} onClick={()=>setPaused(v=>!v)}><Icon name={paused?'play':'pause'} size={17}/></button><button aria-label="Compact game gallery" aria-pressed={layout==='wall'} onClick={()=>setLayout('wall')}><span className="grid-symbol dense"/></button><button aria-label="Roomier game gallery" aria-pressed={layout==='cards'} onClick={()=>setLayout('cards')}><span className="grid-symbol"/></button></div></div>
     <div className="universe-platforms" role="group" aria-label="Game platforms">{GAME_PLATFORMS.map(([id,label])=><button key={id} aria-pressed={platform===id} onClick={()=>setPlatform(id)}>{label}</button>)}</div>
@@ -43,5 +43,5 @@ export default function Play({params,search,term,setSearch}){
     <Notice error={error} onRetry={()=>games.length?loadMore():setRetry(v=>v+1)}/>
     {!loading&&!error&&!games.length&&<Empty title="Nothing here. Yet." action={<Button onClick={()=>{setSearch('');setPlatform('all');}}>Show all games</Button>}>Try a different search or platform.</Empty>}
     {!!games.length&&next&&<div className="load-more" ref={continuation}><Button variant="secondary" disabled={loading} onClick={loadMore}>{loading?'Loading more games…':'More games'}<Icon name="plus" size={18}/></Button></div>}
-  </section><CampaignSections/>{selected&&<GameDetail game={selected} backLabel="Back to Home" onPrevious={selectedIndex>0?()=>setSelected(games[selectedIndex-1]):undefined} onNext={selectedIndex>=0&&selectedIndex<games.length-1?()=>setSelected(games[selectedIndex+1]):undefined} onClose={()=>{setSelected(null);if(params.has('game'))history.replaceState(null,'','/#/home');}}/>}</div>;
+  </section><CharacterInvitation/><CreateInvitation/>{selected&&<GameDetail game={selected} backLabel="Back to Home" onPrevious={selectedIndex>0?()=>setSelected(games[selectedIndex-1]):undefined} onNext={selectedIndex>=0&&selectedIndex<games.length-1?()=>setSelected(games[selectedIndex+1]):undefined} onClose={()=>{setSelected(null);if(params.has('game'))history.replaceState(null,'','/#/home');}}/>}</div>;
 }
