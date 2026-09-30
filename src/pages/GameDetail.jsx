@@ -1,6 +1,6 @@
 import React,{lazy,useEffect,useState} from 'react';
 import {comments,postComment,likeGame,likedGames,socialCounts} from '../lib/catalog.js';
-import {gameEntry} from '../lib/contracts.js';
+import {gameEntry,previewVideo} from '../lib/contracts.js';
 import {useAuth} from '../auth.jsx';
 import {Button,IconButton,Modal,Notice,Slop,useAsync} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
@@ -32,7 +32,7 @@ export default function GameDetail({game,onClose,discussionOnly=false}){
  return <Modal title={game.name} onClose={onClose} className={`game-detail theater-modal ${discussionOnly?'discussion-only':''} ${details?'show-details':''} ${!discussionOnly&&gameFormat(game).orientation!=='portrait'?'game-detail-wide':'theater-phone'}`}>
   {!discussionOnly&&<div className="theater-toolbar"><span><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/>by @{game.profiles?.username||'slop'}</span><div><button onClick={share}><Icon name="share" size={16}/>{shared?'Link copied':'Share'}</button><button aria-expanded={details} onClick={()=>setDetails(v=>!v)}><Icon name="social" size={17}/>{details?'Hide details':'Details & comments'}</button></div></div>}
   <div className="theater-layout">
-   {!discussionOnly&&<GamePlayer game={game} url={gameEntry(game)} title={game.name} requireInteraction theater/>}
+   {!discussionOnly&&<GamePlayer game={game} url={gameEntry(game)} title={game.name} previewVideo={previewVideo(game)} requireInteraction theater/>}
    <div className="game-discussion">
     <div className="game-author"><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/><div><h3>{game.name}</h3><p>Made by @{game.profiles?.username||'slop'}</p></div></div>
     {game.description&&<p className="game-description">{game.description}</p>}

@@ -3,9 +3,12 @@ import {useAuth} from '../auth.jsx';
 import {Button, Loading, Notice} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import RobotPortrait from '../components/RobotPortrait.jsx';
+import RobotStage from '../components/RobotStage.jsx';
+import SlopMark from '../components/SlopMark.jsx';
 import {loadQuests, claimQuest} from '../lib/quests.js';
 import {playerQuests, questAction, questExpired} from '../lib/quest-contracts.js';
 import './quests.css';
+import './quest-world.css';
 
 const categories = [['daily', 'Daily'], ['weekly', 'Weekly'], ['starting', 'Starting']];
 const number = value => value.toLocaleString();
@@ -17,24 +20,18 @@ function friendlyError(error) {
 export default function Quests() {
   const {user, ready, signIn} = useAuth();
   return <div className="quests-page">
-    <header className="quests-heading"><div><h1>Earn your crown.</h1><p>A little play. A little progress. A lot to make yours.</p></div><a className="button secondary" href="#/feed"><Icon name="play" size={18}/>Find a game</a></header>
+    {user&&<header className="quests-heading"><div><h1>Earn your crown.</h1><p>A little play. A little progress. A lot to make yours.</p></div><a className="button secondary" href="#/feed"><Icon name="play" size={18}/>Find a game</a></header>}
     {!ready ? <Loading label="Opening your quests…"/> : user ? <AccountQuests key={user.id}/> : <GuestQuests onSignIn={signIn}/>}
   </div>;
 }
 
 function GuestQuests({onSignIn}) {
+  const [period,setPeriod]=useState('daily');
+  const journeys={daily:{title:'Make today count.',copy:'Fresh goals for your next few games. Come back tomorrow for a new challenge.',art:'daily-robots'},weekly:{title:'Go after something bigger.',copy:'A whole week to play, climb, and bring home something good.',art:'weekly-crown'},starting:{title:'Your first of many.',copy:'Make yourself at home. Your first milestones are waiting, with no time limit.',art:'starter-crew'}};
+  const current=journeys[period];
   return <>
-    <section className="quest-welcome">
-      <img className="quest-welcome-art" src="/assets/quests/weekly-crown.webp" alt=""/>
-      <div><h2>Your next challenge is waiting.</h2><p>Sign in with your Slop account to see your quests, progress, and earned rewards.</p><div className="quest-actions"><Button onClick={onSignIn}>Sign in for quests</Button><a className="button secondary" href="#/feed">Keep playing</a></div></div>
-    </section>
-    <div className="quest-introductions">
-      {[
-        ['Daily', 'A new day. A new goal.', 'Fresh play goals each day.', 'daily-robots'],
-        ['Weekly', 'Go a little further.', 'Bigger goals to work toward all week.', 'weekly-crown'],
-        ['Starting', 'Start something good.', 'Your first milestones, at your own pace.', 'starter-crew'],
-      ].map(([title, heading, copy, art]) => <section key={title} className="quest-journey"><img src={`/assets/quests/${art}.webp`} alt="" loading="lazy"/><div><h3>{title}</h3><p>{heading} {copy}</p></div></section>)}
-    </div>
+    <section className="quest-launch"><div><h1>Chase your<br/>next crown.</h1><p>Small wins. New looks. A Slop that’s all yours.</p><Button onClick={onSignIn}>Find my quests <Icon name="arrow" size={18}/></Button></div><div className="quest-crown-stage"><SlopMark/><RobotStage shell="core" face="slop" glow="lime" crown="diamond"/><span className="quest-orbit orbit-one"/><span className="quest-orbit orbit-two"/></div></section>
+    <section className="quest-trail-picker" aria-label="Explore quests"><div className="quest-trail-tabs" role="group" aria-label="Quest period">{categories.map(([id,label])=><button key={id} aria-pressed={period===id} onClick={()=>setPeriod(id)}>{label}<Icon name="arrow" size={17}/></button>)}</div><div className="quest-trail-feature" key={period}><img src={`/assets/quests/${current.art}.webp`} alt=""/><div><h2>{current.title}</h2><p>{current.copy}</p><Button variant="secondary" onClick={onSignIn}>Sign in to see your progress <Icon name="arrow" size={16}/></Button></div></div></section>
     <AppProgressNote/>
   </>;
 }
@@ -44,7 +41,7 @@ function AppProgressNote() {
 }
 
 function AccountQuests() {
-  const {refreshProfile} = useAuth();
+  const {refreshProfile,profile} = useAuth();
   const [data, setData] = useState(null), [category, setCategory] = useState('daily');
   const [loading, setLoading] = useState(true), [claiming, setClaiming] = useState(null);
   const [error, setError] = useState(null), [message, setMessage] = useState('');
@@ -104,8 +101,8 @@ function AccountQuests() {
   const resetLabel = resetsAt?.toLocaleString(undefined, {weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short'});
   return <>
     <section className="quest-player-progress quest-command" aria-label="Your verified player progress">
-      <div className="quest-level-orbit" style={{'--level-progress':`${Math.min(100,progress.xp_into_level/progress.xp_for_level*100)}%`}}><div><RobotPortrait shell="core" face="slop" glow="lime" alt=""/><span>Level <strong>{number(progress.level)}</strong></span></div></div>
-      <div className="quest-level-copy"><div><h2>Keep going.<br/>You’re getting somewhere.</h2></div><progress aria-label={`Level ${progress.level}: ${progress.xp_into_level} of ${progress.xp_for_level} XP`} value={progress.xp_into_level} max={progress.xp_for_level}/><p><strong>{number(progress.xp_into_level)} / {number(progress.xp_for_level)} XP</strong><span>{number(progress.xp_for_level-progress.xp_into_level)} to level {number(progress.level+1)}</span></p></div>
+      <div className="quest-level-orbit" style={{'--level-progress':`${Math.min(100,progress.xp_into_level/progress.xp_for_level*100)}%`}}><div><RobotPortrait look={profile?.slop_look} alt=""/><span>Level <strong>{number(progress.level)}</strong></span></div></div>
+      <div className="quest-level-copy"><div><h2>Make your next<br/>level yours.</h2></div><progress aria-label={`Level ${progress.level}: ${progress.xp_into_level} of ${progress.xp_for_level} XP`} value={progress.xp_into_level} max={progress.xp_for_level}/><p><strong>{number(progress.xp_into_level)} / {number(progress.xp_for_level)} XP</strong><span>{number(progress.xp_for_level-progress.xp_into_level)} to level {number(progress.level+1)}</span></p></div>
       <a href="#/shop" className="quest-balance"><Icon name="coins" size={29}/><strong>{number(snapshot.coin_balance)}</strong><span>Slop Coins <Icon name="arrow" size={15}/></span><small>Find your next look</small></a>
     </section>
     <AppProgressNote/>
@@ -113,15 +110,15 @@ function AccountQuests() {
     <div className="quest-period-art"><img src={`/assets/quests/${category==='daily'?'daily-robots':category==='weekly'?'weekly-crown':'starter-crew'}.webp`} alt=""/><h2>{category==='daily'?'A new day. A new goal.':category==='weekly'?'Go a little further.':'Start something good.'}</h2></div><div className="quest-period-summary"><p>{completed} of {quests.length} complete</p><span>{resetLabel ? `Resets ${resetLabel}` : 'No time limit'}</span></div>
     <Notice error={error} onRetry={refresh}/>{error && <p className="fine">Showing your last verified progress.</p>}
     {message && <p className="success" role="status">{message}</p>}
-    <div className="quest-cards">{quests.map(quest => <QuestCard key={quest.id} quest={quest} expired={questExpired(snapshot, quest, serverNow)} disabled={loading || !!claiming} claiming={claiming === quest.id} onClaim={() => claim(quest)}/>)}</div>
+    <div className="quest-ticket-grid">{quests.map((quest,index) => <QuestCard key={quest.id} index={index} quest={quest} expired={questExpired(snapshot, quest, serverNow)} disabled={loading || !!claiming} claiming={claiming === quest.id} onClaim={() => claim(quest)}/>)}</div>
     {!quests.length && <div className="quest-empty"><Icon name="check" size={32}/><h2>No {category} play quests right now.</h2><p>Check another period, or find your next favorite game.</p><a className="button secondary" href="#/feed">Find a game</a></div>}
   </>;
 }
 
-function QuestCard({quest, expired, disabled, claiming, onClaim}) {
+function QuestCard({quest, index, expired, disabled, claiming, onClaim}) {
   const action = questAction(quest), status = quest.claimed ? 'Collected' : quest.completed ? 'Ready to collect' : 'In progress';
-  return <article className={`quest-card ${quest.claimed ? 'is-claimed' : quest.completed ? 'is-complete' : ''}`}>
-    <div className="quest-card-top"><span className="quest-card-icon"><Icon name={quest.completed ? 'check' : 'quest'} size={22}/></span><span className="quest-status">{expired ? 'Refreshing period' : status}</span></div>
+  return <article className={`quest-ticket ${quest.claimed ? 'is-claimed' : quest.completed ? 'is-complete' : ''}`}>
+    <div className="quest-ticket-top"><span className="quest-ticket-number">{String(index+1).padStart(2,'0')}</span><span className="quest-ticket-ring" style={{'--progress':`${Math.min(100,Math.max(0,quest.progress/Math.max(1,quest.target)*100))}%`}}><Icon name={quest.completed?'check':'quest'} size={20}/></span><span className="quest-status">{expired ? 'Refreshing period' : status}</span></div>
     <h3>{quest.title}</h3><p>{quest.description}</p>
     <div className="quest-rewards" aria-label="Quest rewards">{quest.reward.xp > 0 && <span>{number(quest.reward.xp)} XP</span>}{quest.reward.coins > 0 && <span>{number(quest.reward.coins)} Slop Coins</span>}{quest.reward.cosmetic_name && <span>{quest.reward.cosmetic_name}</span>}</div>
     <div className="quest-card-progress"><progress aria-label={`${quest.title}: ${quest.progress} of ${quest.target}`} value={quest.progress} max={quest.target}/><span>{number(quest.progress)} / {number(quest.target)}</span></div>

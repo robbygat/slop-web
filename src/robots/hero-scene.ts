@@ -35,6 +35,8 @@ export function createHeroScene(canvas:HTMLCanvasElement, options:any) {
     faces.push({actor,spec:{...spec,seed:actor.seed},surface,texture});
   }
   stage.stopShowcase();stage.measure=options.measure;stage.world.useBrandBackdrop();
+  // Paper is behind the cast. Neither a CSS veil nor world fog belongs over it.
+  stage.scene.fog=null;
   stage.world.synapses.group.traverse((object:any)=>{
     if(object.material?.uniforms?.uColor)object.material.uniforms.uColor.value.set('#c8ff63');
   });
