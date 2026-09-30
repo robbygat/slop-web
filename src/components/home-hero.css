@@ -3,6 +3,7 @@
 .hero-intro{position:relative;z-index:2;min-width:0;padding:12px 0 28px}
 .hero-intro h1{font-size:clamp(58px,6.4vw,105px);font-weight:650;letter-spacing:-.075em;line-height:.97;margin:0 0 27px;text-wrap:balance}
 .hero-intro h1 span{display:block;white-space:nowrap}
+.hero-copy-short,.hero-title-spark{display:none}
 .hero-intro>p{font-size:clamp(15px,1.25vw,18px);line-height:1.6;color:color-mix(in srgb,var(--hero-ink) 73%,transparent);margin:0 0 31px}
 .hero-entry{display:flex;align-items:center;gap:25px;flex-wrap:wrap}
 .hero-entry>.button{display:inline-flex;align-items:center;justify-content:space-between;gap:38px;min-height:54px;padding:16px 25px;border:0;border-radius:99px;background:#c5f564;color:#14271c;font-size:15px}
@@ -37,5 +38,35 @@
 @media(min-width:1680px){.home-hero{padding-inline:calc((100vw - 1512px)/2)}}
 @media(max-width:1100px){.hero-intro h1{font-size:clamp(51px,6.1vw,72px)}.hero-stage{height:440px}.hero-entry{gap:18px}}
 @media(max-width:900px){.home-hero{--perch-size:145px;grid-template-columns:1fr;padding:28px 6vw 36px;gap:22px}.hero-intro{padding:0}.hero-intro h1{font-size:clamp(56px,9vw,78px);margin:0 0 18px}.hero-intro>p{font-size:15px;margin-bottom:21px}.hero-invitation{display:none}.hero-stage{width:100%;max-width:680px;height:clamp(335px,60vw,445px);margin:0 auto;border-radius:28px 28px 66px 28px}.hero-perch{right:5vw}.brand-home .featured-heading{padding-right:155px}}
-@media(max-width:600px){.home-hero{--perch-size:108px;padding:24px 5vw 28px;gap:23px}.hero-intro h1{font-size:clamp(43px,12.3vw,64px);letter-spacing:-.065em;line-height:1;margin-bottom:15px}.hero-intro>p{font-size:13px;line-height:1.5;margin-bottom:21px}.hero-intro>p br{display:none}.hero-entry{gap:16px;flex-wrap:nowrap}.hero-entry>.button{flex:1;min-height:49px;padding:13px 21px;font-size:14px;gap:14px}.hero-entry>a:last-child{font-size:11px;gap:6px}.hero-stage{height:clamp(290px,88vw,370px);border-radius:25px 25px 58px 25px}.hero-perch{right:3vw}.brand-home .featured-heading{padding-right:110px;min-height:63px}.brand-home .featured-heading h2{font-size:27px;line-height:1.05;max-width:245px}.brand-home .featured-heading>div{display:none}}
+/* The phone opening is one arcade poster: title, world, and a floating entry. */
+@media(max-width:600px){
+ .home-hero{--perch-size:88px;--hero-base:#f0eedf;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"caption" "headline" "world" "entry";padding:21px 20px 64px;gap:0;background:radial-gradient(ellipse at 100% 15%,#e0d9fb 0,transparent 50%),linear-gradient(165deg,#f6f4e7 20%,#e8eddb 78%,#e1e8cd);border-bottom:1px solid #6178442e}
+ :root[data-theme=dark] .home-hero{--hero-base:#273b37;background:radial-gradient(ellipse at 100% 15%,#544462 0,transparent 55%),linear-gradient(165deg,#243b35 20%,#263d38 80%,#30473c);border-bottom-color:#aec58530}
+ .hero-intro{display:contents}
+ .hero-intro>p{grid-area:caption;position:relative;z-index:3;justify-self:center;margin:0 0 13px;font-size:10px;font-weight:600;line-height:1.5;letter-spacing:.13em;text-transform:uppercase;color:var(--hero-ink)}
+ .hero-copy-long{display:none}.hero-copy-short{display:inline}
+ #root .hero-intro h1{grid-area:headline;position:relative;z-index:3;justify-self:center;text-align:center;margin:0 0 -13px;max-width:100%;font-size:clamp(42px,13vw,58px);font-weight:750;letter-spacing:-.075em;line-height:.97;transform:rotate(-2deg);text-wrap:nowrap}
+ .hero-intro h1>span:first-child{font-size:.89em;margin-bottom:4px}
+ .hero-intro h1>.hero-title-finish{display:block;position:relative;width:max-content;max-width:100%;padding:2px 13px 9px;background:#c5f564;color:#173127;border-radius:8px 12px 9px 5px;box-shadow:0 4px 0 #173127;transform:rotate(1deg)}
+ .hero-title-spark{display:block;position:absolute;right:-18px;top:-23px;width:31px;height:31px;transform:rotate(12deg);background:#ff987e;clip-path:polygon(42% 0,58% 0,58% 29%,81% 13%,91% 27%,68% 43%,100% 43%,100% 60%,70% 60%,90% 79%,78% 91%,58% 70%,58% 100%,42% 100%,42% 70%,20% 91%,8% 78%,30% 60%,0 60%,0 43%,31% 43%,8% 25%,18% 12%,42% 29%)}
+ .hero-stage{grid-area:world;width:calc(100% + 40px);max-width:none;height:clamp(252px,76vw,330px);margin:0 -20px;border:0;border-radius:46% 46% 17% 17% / 23% 23% 12% 12%;background:#cde6da;box-shadow:none;overflow:hidden;isolation:isolate}
+ .hero-world>img{object-position:center 62%}
+ .hero-world-shade{z-index:1;background:linear-gradient(0deg,#e6ebd3 0,transparent 23%,transparent 82%,#f1efdf26 100%)}
+ :root[data-theme=dark] .hero-stage{border:0;box-shadow:none}
+ :root[data-theme=dark] .hero-world>img{filter:brightness(.83) saturate(1.12)}
+ :root[data-theme=dark] .hero-world-shade{background:linear-gradient(0deg,#2a413a,transparent 27%,#283b4212 84%)}
+ .hero-stage>.orbit-scene,.hero-stage>.lite-orbit{z-index:2}
+ .hero-entry{grid-area:entry;position:relative;z-index:4;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;margin-top:-13px;min-width:0;width:100%;justify-self:center}
+ .hero-entry>.button{min-width:0;min-height:55px;display:flex;justify-content:space-between;gap:12px;padding:15px 20px;font-size:15px;font-weight:650;border:1px solid #19332a;border-radius:18px;background:#19332a;color:#f9ffe9;box-shadow:0 5px 0 #aaca78}
+ .hero-entry>.button:hover{background:#294c3f;color:#fff}
+ .hero-entry>.button>svg{color:#c5f564;width:23px;height:25px}
+ .hero-entry>a:last-child{font-size:10px;gap:5px;min-height:48px;max-width:90px;color:var(--hero-ink)}
+ .hero-entry>a:last-child>svg{width:15px;height:15px}
+ .hero-invitation{display:none}
+ .hero-perch{right:8px}
+ .brand-home .featured-heading{padding-right:91px;min-height:57px;margin-bottom:15px}
+ .brand-home .featured-heading h2{font-size:26px;line-height:1.05;max-width:245px}
+ .brand-home .featured-heading>div{display:none}
+}
+@media(max-width:359px){.home-hero{padding-inline:16px;padding-top:18px;padding-bottom:61px}.hero-stage{width:calc(100% + 32px);margin-inline:-16px}.hero-intro>p{font-size:9px;margin-bottom:11px}#root .hero-intro h1{font-size:clamp(39px,13vw,47px)}.hero-title-spark{right:-14px;top:-22px;width:27px;height:27px}.hero-entry{gap:11px}.hero-entry>.button{padding-inline:16px;font-size:14px}.hero-entry>a:last-child{font-size:9px;gap:4px}}
 @media(prefers-reduced-motion:reduce){.lite-character,.lite-spin,.lite-character .robot-portrait{animation:none!important;transition:none}}
