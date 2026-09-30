@@ -1,7 +1,7 @@
 :root{--site-chrome-height:86px}.app-shell.slop-app{padding-bottom:0}
 #root .site-masthead{position:relative;display:grid;grid-template-columns:auto minmax(320px,1fr) auto;align-items:center;gap:26px;min-height:86px;height:auto;padding:15px 4vw;border-bottom:1px solid var(--line);background:var(--bg);color:var(--ink);z-index:20}
 .masthead-navigation{min-width:0;justify-self:center;width:min(420px,100%)}.masthead-navigation>nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;align-items:center;padding:4px;background:var(--field);border:1px solid var(--line);border-radius:20px}.masthead-navigation .nav-item{display:flex;align-items:center;justify-content:center;gap:5px;flex-direction:column;min-width:0;min-height:49px;padding:5px 4px;color:var(--soft);background:transparent;border:0;border-radius:15px;transform:none;margin:0;text-decoration:none}.masthead-navigation .nav-icon{display:block;width:21px;height:21px}.masthead-navigation .nav-icon>svg{width:21px;height:21px}.masthead-navigation .nav-label{font-size:9px;line-height:12px;font-weight:600}.masthead-navigation .nav-item.active{background:var(--surface);color:var(--ink)}.masthead-navigation .nav-feed,.masthead-navigation .nav-feed.active{background:#c5f564;color:#17231d}.masthead-navigation .nav-item:hover{color:var(--ink);background:var(--surface)}.masthead-navigation .nav-feed:hover{background:#d5ff8b}.masthead-navigation .nav-item:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-#root .site-masthead .masthead-actions{gap:15px}.site-masthead .masthead-brand{font-size:24px;letter-spacing:-1.1px}.site-masthead .masthead-brand>svg{width:28px;height:32px}.site-masthead .masthead-download{display:none}.site-masthead .masthead-shop span{display:none}.site-masthead .masthead-theme select{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0}.site-masthead .masthead-theme{width:38px;padding:0}.site-masthead .masthead-actions>.button{font-size:11px;padding:10px 13px}
+#root .site-masthead .masthead-actions{gap:15px}.site-masthead .masthead-brand{font-size:24px;letter-spacing:-1.1px}.site-masthead .masthead-brand>svg{width:28px;height:32px}.site-masthead .masthead-download{display:none}.site-masthead .masthead-shop span{display:none}.site-masthead .masthead-theme{width:38px;padding:0}.site-masthead .masthead-actions>.button{font-size:11px;padding:10px 13px}
 @media(max-width:1120px){#root .site-masthead{grid-template-columns:1fr auto;padding:12px 5vw 10px;gap:9px 20px;min-height:0}.masthead-navigation{grid-column:1/-1;grid-row:2;width:min(520px,100%)}.masthead-navigation .nav-item{flex-direction:row;min-height:44px;gap:7px}.masthead-navigation .nav-label{font-size:11px}.masthead-navigation>nav{border-radius:18px}.masthead-navigation .nav-item{border-radius:12px}.site-masthead .masthead-download{display:flex}.site-masthead .masthead-avatar{width:39px;height:40px}}
 @media(max-width:600px){#root .site-masthead{padding:10px 4vw 8px;gap:8px}.site-masthead .masthead-brand{font-size:22px;gap:7px}.site-masthead .masthead-brand>svg{width:25px;height:28px}#root .site-masthead .masthead-actions{gap:11px}.site-masthead .masthead-download,.site-masthead .masthead-actions>.button{display:none}.masthead-navigation{width:100%}.masthead-navigation>nav{gap:3px;padding:3px}.masthead-navigation .nav-item{min-height:45px;flex-direction:column;gap:3px}.masthead-navigation .nav-label{font-size:9px}.masthead-navigation .nav-icon,.masthead-navigation .nav-icon>svg{width:20px;height:20px}}
 .robot-portrait>.portrait-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:var(--soft);opacity:.18;pointer-events:none}.portrait-placeholder>svg{width:27%;height:32%}.robot-portrait>canvas{visibility:hidden}.robot-portrait.is-painted>canvas{visibility:visible}.robot-portrait.is-painted>.portrait-placeholder{display:none}.robot-portrait.is-unavailable>.portrait-placeholder{opacity:.28}
@@ -10,3 +10,24 @@
 html:has(.is-playing),body:has(.is-playing){overflow:hidden;scrollbar-gutter:auto;background:#101715}
 .app-shell.slop-app.is-playing{--site-chrome-height:0px;min-height:100dvh;margin:0;padding:0;background:#101715}
 #root .is-playing>.main{min-height:100dvh;max-width:none;margin:0;padding:0}
+
+/* The compact appearance control needs its own visible shell. */
+.site-masthead .masthead-theme{position:relative;display:flex;align-items:center;justify-content:center;flex:none;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--ink);cursor:pointer;transition:background .18s,border-color .18s}
+.site-masthead .masthead-theme:hover{background:var(--hover);border-color:var(--soft)}
+.site-masthead .masthead-theme:focus-within{outline:2px solid var(--ink);outline-offset:3px}
+
+.appearance-buttons{display:inline-flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--field)}
+.appearance-buttons>button{display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:50%;background:transparent;color:var(--soft)}
+.appearance-buttons>button:hover{background:var(--hover);color:var(--ink)}
+.appearance-buttons>button[aria-pressed=true]{background:var(--button-bg);color:var(--button-ink)}
+.appearance-buttons>button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.site-footer .appearance-buttons{background:#26392f;border-color:#526348}
+.site-footer .appearance-buttons>button{color:#c5d1bf}
+.site-footer .appearance-buttons>button[aria-pressed=true]{color:#172318}
+
+.theme-trigger{display:grid;place-items:center;width:100%;height:100%;padding:0;background:transparent;color:inherit;border-radius:inherit}
+.theme-menu{position:absolute;right:0;top:calc(100% + 10px);width:185px;padding:6px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 14px 40px #10201b26;z-index:30}
+.theme-menu>button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:12px;text-align:left;min-height:42px}
+.theme-menu>button:hover{background:var(--field)}
+.theme-menu>button[aria-pressed=true]{background:var(--button-bg);color:var(--button-ink)}
+.theme-selected{margin-left:auto}
