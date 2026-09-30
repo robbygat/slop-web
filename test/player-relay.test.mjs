@@ -33,18 +33,19 @@ function relayFixture({focused=false,onGameMessage=()=>{}}={}){
  const listeners=new Map(),frameListeners=new Map(),parentMessages=[],gameMessages=[],attributes=new Map();
  let focusCalls=0,removed=false;
  const parent={postMessage:message=>parentMessages.push(message)};
- const frame={contentWindow:{focus:()=>focusCalls++,postMessage:message=>{gameMessages.push(message);onGameMessage(message);}},setAttribute:(key,value)=>attributes.set(key,value),addEventListener:(type,fn)=>frameListeners.set(type,fn),remove:()=>{removed=true;}};
+ const frame={focus(){},contentWindow:{focus:()=>focusCalls++,postMessage:message=>{gameMessages.push(message);onGameMessage(message);}},setAttribute:(key,value)=>attributes.set(key,value),addEventListener:(type,fn)=>frameListeners.set(type,fn),remove:()=>{removed=true;}};
  const document={hasFocus:()=>focused,createElement:()=>frame,body:{appendChild(){}}};
  runInNewContext(relaySource,{window:{},parent,document,addEventListener:(type,fn)=>listeners.set(type,fn)});
  const message=(data,source=parent)=>listeners.get('message')({source,data});
  const initialize=()=>message({type:'slop-player-init-v1',html:'<canvas></canvas>',csp:"default-src 'none';"});
- return {frame,parent,attributes,parentMessages,gameMessages,message,initialize,load:()=>frameListeners.get('load')(),focus:()=>listeners.get('focus')(),focusCalls:()=>focusCalls,removed:()=>removed};
+ return {frame,parent,attributes,parentMessages,gameMessages,message,initialize,key:(type,event)=>listeners.get(type)(event),load:()=>frameListeners.get('load')(),focus:()=>listeners.get('focus')(),focusCalls:()=>focusCalls,removed:()=>removed};
 }
 
 test('relay sends host focus to the inner game without stealing focus during background load',()=>{
  const idle=relayFixture();idle.focus();assert.equal(idle.focusCalls(),0);
  idle.initialize();idle.load();assert.equal(idle.focusCalls(),0);
  idle.focus();assert.equal(idle.focusCalls(),1);
+ assert.equal(JSON.parse(idle.gameMessages.at(-1)).type,'hostFocus');
  assert.equal(idle.attributes.get('sandbox'),'allow-scripts allow-pointer-lock');
  assert.equal(idle.attributes.has('credentialless'),true);
  const active=relayFixture({focused:true});active.initialize();active.focus();assert.equal(active.focusCalls(),0);
@@ -53,11 +54,23 @@ test('relay sends host focus to the inner game without stealing focus during bac
 
 test('relay refuses focus and messages after navigation and rejects unrelated message sources',()=>{
  const f=relayFixture();f.initialize();f.load();f.focus();assert.equal(f.focusCalls(),1);
- f.message(JSON.stringify({type:'hostKey',key:'Space',down:true}),{});assert.equal(f.gameMessages.length,0);
+ const delivered=f.gameMessages.length;
+ f.message(JSON.stringify({type:'hostKey',key:'Space',down:true}),{});assert.equal(f.gameMessages.length,delivered);
  f.load();assert.equal(f.removed(),true);
  f.focus();assert.equal(f.focusCalls(),1);
- f.message(JSON.stringify({type:'hostKey',key:'Space',down:true}));assert.equal(f.gameMessages.length,0);
+ f.message(JSON.stringify({type:'hostKey',key:'Space',down:true}));assert.equal(f.gameMessages.length,delivered);
  assert.equal(JSON.parse(f.parentMessages.at(-1)).code,'main_frame_failure');
+});
+
+test('relay catches genuine key releases during nested focus handoff without forwarding shortcuts or synthetic events',()=>{
+ const f=relayFixture();f.initialize();f.load();let prevented=0;
+ const event={key:'w',code:'KeyW',keyCode:87,location:0,isTrusted:true,preventDefault:()=>prevented++};
+ f.key('keyup',event);assert.equal(prevented,1);
+ assert.deepEqual(JSON.parse(f.gameMessages.at(-1)),{type:'hostKey',down:false,key:'w',code:'KeyW',repeat:false,shiftKey:false,ctrlKey:false,altKey:false,metaKey:false,keyCode:87,location:0});
+ const total=f.gameMessages.length;
+ for(const extra of [{isTrusted:false},{code:'Tab',key:'Tab'},{ctrlKey:true},{metaKey:true}])f.key('keydown',{...event,...extra});
+ assert.equal(f.gameMessages.length,total);assert.equal(prevented,1);
+ f.key('keydown',event);assert.equal(JSON.parse(f.parentMessages.at(-1)).type,'webInteraction');
 });
 
 test('legacy documents become playable without an SDK ready message, but game code cannot forge the relay signal',()=>{
@@ -69,19 +82,21 @@ test('legacy documents become playable without an SDK ready message, but game co
  f.load();assert.equal(acceptPlayerEvent(hostFrame,hostFrame,f.parentMessages.at(-1)).type,'loadError');
 });
 
-test('host keydown followed by native game keyup releases creator-v1 input and allows another press',()=>{
+test('nested relay forwards first Space and WASD presses, then native game releases allow another press',()=>{
  const listeners=new Map(),parent={postMessage(){}};
  const listen=(type,fn)=>{if(!listeners.has(type))listeners.set(type,[]);listeners.get(type).push(fn);};
  const dispatch=event=>{for(const fn of listeners.get(event.type)||[])fn(event);};
  const canvas={style:{},setAttribute(){},getContext:()=>({setTransform(){}}),addEventListener(){}};
- const document={hidden:false,addEventListener(){},documentElement:{style:{}},body:{style:{},appendChild(){}},createElement:()=>canvas};
+ const document={hidden:false,addEventListener(){},documentElement:{style:{}},body:{style:{},appendChild(){}},createElement:()=>canvas,querySelector:()=>canvas};
  class KeyboardEvent {constructor(type,options){Object.assign(this,{type},options);}preventDefault(){}}
  const window={parent,addEventListener:listen,dispatchEvent:dispatch,innerWidth:360,innerHeight:640,requestAnimationFrame:()=>1,cancelAnimationFrame(){}};
  const context={window,parent,document,addEventListener:listen,dispatchEvent:dispatch,KeyboardEvent,requestAnimationFrame:()=>1};
  runInNewContext(bootstrapSource,context);runInNewContext(runtimeSource,context);window.Slop.create();
  const relay=relayFixture({onGameMessage:data=>dispatch({type:'message',source:parent,data})});relay.initialize();relay.load();relay.focus();assert.equal(relay.focusCalls(),1);
- relay.message(JSON.stringify({type:'hostKey',key:'Space',down:true}));assert.equal(window.Slop.input.keys.has('Space'),true);
- dispatch(new KeyboardEvent('keyup',{key:' ',code:'Space',isTrusted:true}));assert.equal(window.Slop.input.keys.has('Space'),false);
- dispatch(new KeyboardEvent('keydown',{key:' ',code:'Space',isTrusted:true}));assert.equal(window.Slop.input.keys.has('Space'),true);
- dispatch(new KeyboardEvent('keyup',{key:' ',code:'Space',isTrusted:true}));assert.equal(window.Slop.input.keys.has('Space'),false);
+ for(const [key,code] of [[' ','Space'],['w','KeyW'],['a','KeyA'],['s','KeyS'],['d','KeyD']]){
+  relay.message(JSON.stringify({type:'hostKey',key,code,down:true}));assert.equal(window.Slop.input.keys.has(code),true,code);
+  dispatch(new KeyboardEvent('keyup',{key,code,isTrusted:true}));assert.equal(window.Slop.input.keys.has(code),false,code);
+  dispatch(new KeyboardEvent('keydown',{key,code,isTrusted:true}));assert.equal(window.Slop.input.keys.has(code),true,code);
+  dispatch(new KeyboardEvent('keyup',{key,code,isTrusted:true}));assert.equal(window.Slop.input.keys.has(code),false,code);
+ }
 });

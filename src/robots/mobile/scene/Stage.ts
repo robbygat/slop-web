@@ -74,6 +74,15 @@ export interface StageEvents {
   beforeRender?: (time: number) => void;
 }
 
+export interface StageOptions {
+  brandBackdrop?: boolean;
+  dprCap?: number;
+  maxFPS?: number;
+  particles?: number;
+  intro?: boolean;
+  powerPreference?: WebGLPowerPreference;
+}
+
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -108,7 +117,7 @@ export class Stage {
   readonly camera = new THREE.PerspectiveCamera(34, 1, 0.1, 2000);
   readonly world: World;
   readonly actors = new Map<string, Actor>();
-  private sparkles = new Sparkles(360);
+  private sparkles: Sparkles;
   private shock = new Shockwave('#9fbcff');
   private ribbon = new Ribbon();
   private events: StageEvents;
@@ -147,6 +156,8 @@ export class Stage {
   private showcaseIdx = 0;
   private flash = 0;
   private dprCap = 2;
+  private maxFPS = 30;
+  private introEnabled = true;
   private frameTimes: number[] = [];
   private introStarted = false;
   /** QA: no intro, frozen idle (headless screenshots / OG image). */
@@ -155,18 +166,21 @@ export class Stage {
   measure: () => { ctaBottom: number; dockTop: number } = () => ({ ctaBottom: 0, dockTop: 0 });
   onParallax?: (x: number, y: number) => void;
 
-  constructor(private canvas: HTMLCanvasElement, events: StageEvents = {}) {
+  constructor(private canvas: HTMLCanvasElement, events: StageEvents = {}, options: StageOptions = {}) {
     this.events = events;
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     mind.reduced = this.reduced;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: options.powerPreference || 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.setClearColor(0x000000, 0);
     // 1.75× is visually indistinguishable from 2× with MSAA and ~25% cheaper to fill
-    this.dprCap = Math.min(window.devicePixelRatio || 1, 1.75);
+    this.dprCap = Math.min(window.devicePixelRatio || 1, options.dprCap || 1.75);
+    this.maxFPS = Math.max(15, Math.min(30, options.maxFPS || 30));
+    this.introEnabled = options.intro !== false;
+    this.sparkles = new Sparkles(Math.max(60, Math.min(360, options.particles || 360)));
 
-    this.world = new World(this.scene);
+    this.world = new World(this.scene, {brandBackdrop: options.brandBackdrop});
     this.scene.add(this.sparkles.mesh, this.ribbon.mesh);
     this.world.pedestal.group.add(this.shock.mesh);
     this.shock.mesh.position.y = this.world.pedestal.height + 0.02;
@@ -222,6 +236,11 @@ export class Stage {
 
   redraw() { if (!this.disposed) this.render(); }
 
+  setRenderBudget(dprCap: number, maxFPS: number) {
+    this.maxFPS = Math.max(15, Math.min(30, maxFPS));
+    this.dprCap = Math.max(.5, Math.min(window.devicePixelRatio || 1, 1.75, dprCap));
+  }
+
   dispose() {
     this.disposed = true;
     this.stop();
@@ -267,6 +286,7 @@ export class Stage {
     const path: THREE.Vector3[] = [];
     const seats = this.orbitSpec.seats;
     // with fixed seats the path is the halo arc they sit on (through the top), else the full ring
+    if (this.world.brandBackdrop) {this.world.layout(this.camera, center.pos, center.boxW, path, !seats); return;}
     const from = seats ? Math.min(...seats.map((a) => (a < Math.PI / 2 ? a + Math.PI * 2 : a))) - 0.35 : 0;
     const to = seats ? Math.max(...seats.map((a) => (a < Math.PI / 2 ? a + Math.PI * 2 : a))) + 0.35 : Math.PI * 2;
     for (let i = 0; i <= 96; i++) {
@@ -592,7 +612,7 @@ export class Stage {
       if (!this.running) return;
       this.raf = requestAnimationFrame(tick);
       if (!this.visible) return;
-      if (this.lastFrame && now - this.lastFrame < 1000 / 30 - 1) return;
+      if (this.lastFrame && now - this.lastFrame < 1000 / this.maxFPS - 1) return;
       const raw = this.still ? 1 / 60 : this.lastFrame ? (now - this.lastFrame) / 1000 : 1 / 60;
       this.lastFrame = now;
       const dt = Math.min(raw, 1 / 24);
@@ -611,7 +631,7 @@ export class Stage {
   /** Shells pop in one by one, the centre Jev boots last on its pedestal. */
   private intro() {
     this.introStarted = true;
-    if (this.reduced || this.still) return;
+    if (this.reduced || this.still || !this.introEnabled) return;
     const order = ['neko', 'blocky', 'clicky', 'chip', 'gatekeeper', 'noir'];
     order.forEach((id, i) => {
       const a = this.actors.get(id)!;
@@ -628,7 +648,7 @@ export class Stage {
     const p75 = sorted[Math.floor(sorted.length * 0.75)];
     this.frameTimes.length = 0;
     // step resolution down on slow devices; never below 1× device pixels
-    if (p75 > 1 / 22 && this.dprCap > 1) {
+    if (p75 > 1.4 / this.maxFPS && this.dprCap > 1) {
       this.dprCap = Math.max(1, this.dprCap - 0.35);
       this.renderer.setPixelRatio(this.dprCap);
       this.renderer.setSize(this.w, this.h, false);

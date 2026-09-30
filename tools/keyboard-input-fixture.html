@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Slop keyboard regression fixture</title>
+<style>body{margin:25px auto;max-width:1000px;padding:0 20px;background:#e9eee5;color:#18251b;font:16px system-ui}h1{font-size:28px}button,input{font:inherit;padding:10px 14px;margin:5px;border-radius:9px;border:1px solid #879784}iframe{width:100%;height:420px;border:2px solid #7b8b70;border-radius:14px;background:#17241c}pre{white-space:pre-wrap;background:#fff9;padding:15px;border-radius:12px;font-size:14px}label{display:block;margin:15px 0}#surface{outline:none}</style>
+<h1>Slop keyboard regression fixture</h1><p>Real keys through the same opaque relay, host bridge and sandbox bootstrap. This fixture has no game scores or backend writes.</p>
+<div id="surface" tabindex="0"><iframe id="game" title="Keyboard test game" sandbox="allow-scripts allow-pointer-lock" src="/game-frame/index.html"></iframe></div>
+<button id="focus">Focus game</button><button id="host-focus">Focus host surface for first key</button><button id="pause">Open leaderboard / pause</button><button id="resume">Back to game / resume</button><button id="pause-next">Pause after next press</button>
+<label>Site editable input (WASD should type here): <input id="typing" placeholder="Type wasd here"></label>
+<pre id="status" role="status">Loading the fixture…</pre>
+<script type="module">
+import {createHostKeyboardBridge} from '/src/lib/player-input.js';
+const frame=document.querySelector('#game'),surface=document.querySelector('#surface'),status=document.querySelector('#status');
+let ready=false,paused=false,hostDown=0,siteMoves=0,pauseNext=false,snapshot=null;
+const post=value=>frame.contentWindow?.postMessage(JSON.stringify(value),'*');
+const focusGame=()=>{frame.focus({preventScroll:true});post({type:'hostFocus'});frame.contentWindow.focus();};
+const paint=()=>{status.textContent=`Host bridged presses: ${hostDown}\nSite navigation events: ${siteMoves}\nPlayer state: ${paused?'Paused':'Running'}\n`+(snapshot?`Canvas keydown: ${snapshot.canvas}\nDocument keydown: ${snapshot.document}\nWindow keydown: ${snapshot.window}\nKeyup: ${snapshot.up}\nHeld keys: ${snapshot.held.join(', ')||'none'}\nLast key: ${snapshot.key} / ${snapshot.code} / keyCode ${snapshot.keyCode}\nNative keydowns: ${snapshot.native}\nBridged keydowns: ${snapshot.bridged}`:'Waiting for the game document…');};
+const bridge=createHostKeyboardBridge({getContext:()=>({frame:frame.contentWindow,enabled:ready&&!paused,ownsKeyboard:surface.contains(document.activeElement)}),send:(target,value)=>target.postMessage(JSON.stringify(value),'*'),focus:focusGame,onInteraction:()=>{hostDown++;paint();}});
+window.addEventListener('keydown',event=>bridge.down(event),true);window.addEventListener('keyup',event=>bridge.up(event),true);
+window.addEventListener('keydown',event=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(event.key)&&event.target!==document.querySelector('#typing')){siteMoves++;paint();}});
+document.addEventListener('focusin',event=>{if(!surface.contains(event.target)){bridge.release();post({type:'hostReleaseKeys'});}});
+const setPause=value=>{paused=value;bridge.release();post({type:value?'pause':'resume'});if(!value)focusGame();paint();};
+document.querySelector('#focus').onclick=focusGame;document.querySelector('#host-focus').onclick=()=>surface.focus();document.querySelector('#pause').onclick=()=>setPause(true);document.querySelector('#resume').onclick=()=>setPause(false);document.querySelector('#pause-next').onclick=()=>{pauseNext=true;surface.focus();};
+window.addEventListener('message',event=>{
+ if(event.source!==frame.contentWindow)return;
+ if(event.data==='slop-player-loaded-v1'){ready=true;paint();return;}
+ let value;try{value=JSON.parse(event.data);}catch{return;}
+ if(value.type!=='fixture-keyboard')return;snapshot=value;paint();if(pauseNext&&snapshot.held.length){pauseNext=false;setTimeout(()=>setPause(true),50);}
+});
+const bootstrap=await fetch('/src/lib/player-bootstrap.js').then(response=>response.text());
+const gameScript=`const canvas=document.querySelector('canvas'),held=new Set(),stats={canvas:0,document:0,window:0,up:0,native:0,bridged:0,key:'',code:'',keyCode:0};
+ const report=()=>parent.postMessage(JSON.stringify({type:'fixture-keyboard',...stats,held:[...held]}),'*');
+ canvas.addEventListener('keydown',()=>stats.canvas++);document.addEventListener('keydown',()=>stats.document++);
+ window.addEventListener('keydown',e=>{stats.window++;held.add(e.code);stats.key=e.key;stats.code=e.code;stats.keyCode=e.keyCode;e.__slopHost?stats.bridged++:stats.native++;if(/^Arrow|Space/.test(e.code))e.preventDefault();report();});
+ window.addEventListener('keyup',e=>{held.delete(e.code);stats.up++;report();});window.addEventListener('focus',()=>canvas.focus({preventScroll:true}));
+ const ctx=canvas.getContext('2d');let x=200,y=150;function draw(){if(held.has('KeyW')||held.has('ArrowUp'))y-=2;if(held.has('KeyS')||held.has('ArrowDown'))y+=2;if(held.has('KeyA')||held.has('ArrowLeft'))x-=2;if(held.has('KeyD')||held.has('ArrowRight'))x+=2;x=Math.max(12,Math.min(588,x));y=Math.max(12,Math.min(288,y));ctx.fillStyle='#16251d';ctx.fillRect(0,0,600,300);ctx.fillStyle='#c5f564';ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fill();requestAnimationFrame(draw);}draw();report();`;
+const html='<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#16251d;color:#fff;font:16px system-ui;padding:20px}canvas{display:block;width:100%;height:300px;outline:none}p{margin:0 0 12px}</style><p>WASD or arrows move the dot. Space, Enter, Shift and Escape retain their key/code.</p><canvas width="600" height="300" tabindex="0" aria-label="Keyboard game playfield"></canvas><script>'+bootstrap+'</scr'+'ipt><script>'+gameScript+'</scr'+'ipt>';
+const initialize=()=>frame.contentWindow.postMessage({type:'slop-player-init-v1',html,csp:"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';"},'*');
+frame.addEventListener('load',initialize,{once:true});initialize();paint();
+</script></html>

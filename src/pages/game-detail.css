@@ -17,3 +17,9 @@
 
 .theater-toolbar>.theater-first-place{min-width:0;justify-content:flex-start}.theater-first-place>.game-crown{width:100%;max-width:290px}.theater-first-place .game-crown.is-compact .game-crown-player>strong{font-size:10px}.theater-first-place .game-crown.is-compact .game-crown-score>strong{font-size:14px}.game-summary>.game-crown{padding-block:10px}
 @media(max-width:480px){.theater-first-place .game-crown-character{display:none}.theater-first-place .game-crown{gap:5px}.theater-first-place .game-crown.is-compact .game-crown-player>span{font-size:8px}.theater-first-place .game-crown.is-compact .game-crown-score>strong{font-size:12px}.theater-first-place .game-crown-state{font-size:9px;gap:5px}}
+
+.theater-modal .modal-top.has-back{justify-content:flex-start;gap:22px}
+.theater-modal .modal-back{display:inline-flex;align-items:center;gap:8px;flex:none;min-height:44px;padding:8px 13px;border:1px solid #ffffff26;border-radius:13px;background:#24342c;color:#f4f8ed;font:inherit;font-size:12px}
+.theater-modal .modal-back:hover{background:#334638}
+.theater-modal .modal-back:focus-visible{outline:2px solid #c5f564;outline-offset:3px}
+@media(max-width:600px){.theater-modal .modal-top.has-back{gap:12px}.theater-modal .modal-back{font-size:11px;padding:8px 10px}}

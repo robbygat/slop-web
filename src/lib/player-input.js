@@ -18,6 +18,61 @@ const paintedCursor = new Map([
 ]);
 export const auditedCursorStyle = url => paintedCursor.get(url) || '';
 
+const physicalKeys=/^(?:Key[A-Z]|Digit[0-9]|Numpad[0-9]|Arrow(?:Left|Right|Up|Down)|Space|Enter|Escape|Shift(?:Left|Right)|Control(?:Left|Right)|Alt(?:Left|Right)|Backspace|Delete|Home|End|PageUp|PageDown|Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Comma|Period|Slash|Backquote|Numpad(?:Add|Subtract|Multiply|Divide|Decimal|Enter))$/;
+const editableKeyboardTarget=target=>!!target?.closest?.('input,textarea,select,button,a,[contenteditable]:not([contenteditable="false"])');
+export function physicalGameKey(event) {
+  if(physicalKeys.test(event?.code))return event.code;
+  if(event?.key===' '||event?.key==='Space')return 'Space';
+  if(/^Arrow(?:Left|Right|Up|Down)$/.test(event?.key)||['Enter','Escape'].includes(event?.key))return event.key;
+  return null;
+}
+export function hostKeyboardInput(event) {
+  const code=physicalGameKey(event);
+  if(!code||event.defaultPrevented||event.isComposing||event.metaKey||editableKeyboardTarget(event.target)
+    ||(event.ctrlKey&&!/^Control/.test(code))||(event.altKey&&!/^Alt/.test(code)))return null;
+  const key=event.key==='Space'?' ':event.key;
+  if(typeof key!=='string'||!key||key.length>64||/[\u0000-\u001f\u007f]/.test(key))return null;
+  return {key,code,repeat:!!event.repeat,shiftKey:!!event.shiftKey,ctrlKey:!!event.ctrlKey,altKey:!!event.altKey,metaKey:!!event.metaKey,
+    location:Number.isInteger(event.location)?event.location:0,keyCode:Number.isInteger(event.keyCode)?event.keyCode:0};
+}
+
+// Native events inside the opaque game do not bubble to the host. This bridge
+// handles only keys aimed at this active player's host surface, preserving the
+// physical code and actual key rather than remapping WASD into other controls.
+export function createHostKeyboardBridge({getContext,send,onInteraction=()=>{},focus=()=>{}}) {
+  const held=new Map();
+  const consume=event=>{event.preventDefault();event.stopPropagation();};
+  function release() {
+    for(const {frame,input} of held.values())send(frame,{type:'hostKey',...input,down:false,repeat:false,shiftKey:false,ctrlKey:false,altKey:false,metaKey:false});
+    held.clear();
+  }
+  return {
+    release,
+    down(event) {
+      const context=getContext(),input=hostKeyboardInput(event);
+      if(!context?.enabled||!context.ownsKeyboard||!context.frame||!input||event.isTrusted===false)return false;
+      const previous=held.get(input.code);
+      if(previous&&previous.frame!==context.frame){send(previous.frame,{type:'hostKey',...previous.input,down:false,repeat:false});held.delete(input.code);}
+      consume(event);held.set(input.code,{frame:context.frame,input});
+      // Focus is an explicit relay message. It must precede this first press
+      // so canvas handlers receive it and the actual inner game owns keyup.
+      focus(context.frame);
+      send(context.frame,{type:'hostKey',...input,down:true});
+      if(event.isTrusted===true)onInteraction();
+      return true;
+    },
+    up(event) {
+      const code=physicalGameKey(event),previous=held.get(code);
+      if(!previous)return false;
+      held.delete(code);
+      send(previous.frame,{type:'hostKey',...previous.input,key:typeof event.key==='string'?event.key:previous.input.key,down:false,repeat:false,
+        shiftKey:!!event.shiftKey,ctrlKey:!!event.ctrlKey,altKey:!!event.altKey,metaKey:!!event.metaKey});
+      const context=getContext();if(context?.ownsKeyboard&&!editableKeyboardTarget(event.target))consume(event);
+      return true;
+    },
+  };
+}
+
 // Serialized into the opaque game frame. This only supplies the pointer actions
 // proven by the listed bundles. New games keep their authored keyboard handlers.
 export function installLegacyKeyboard(spec, target = window) {

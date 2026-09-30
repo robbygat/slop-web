@@ -1,5 +1,6 @@
 import React from 'react';
 const paths={
+ bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></>,
  coins:<><ellipse cx="12" cy="7" rx="8" ry="4"/><path d="M4 7v5c0 5 16 5 16 0V7M4 12v5c0 5 16 5 16 0v-5"/></>,
  cursor:<path d="m5 3 14 10-7 1-4 7Z"/>,
  quest:<><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></>,

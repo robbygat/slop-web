@@ -1,0 +1,5 @@
+.hero-perch>.hero-perch-body{transform:none;animation:none}
+.hero-perch>.hero-perch-head{animation:hero-head-look 8.6s ease-in-out infinite;animation-play-state:paused;backface-visibility:hidden}
+.hero-perch.is-active>.hero-perch-head{animation-play-state:running;will-change:transform}
+@keyframes hero-head-look{0%,100%{transform:rotate(-.2deg) translateY(0)}22%{transform:rotate(.9deg) translateY(-.35px)}48%{transform:rotate(.25deg) translateY(-.15px)}73%{transform:rotate(-1.1deg) translateY(.25px)}}
+@media(prefers-reduced-motion:reduce){.hero-perch>.hero-perch-head{animation:none;transform:none}}
