@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {PLAYER_TABS, isLegacyCreationRoute, playerRoutePath} from '../src/lib/player-navigation.js';
 import {gameNameFromPath, validGameName, canonicalGameUrl} from '../src/lib/game-links.js';
 
-test('primary destinations prioritize play and quests while creator setup remains separate', () => {
-  assert.deepEqual(PLAYER_TABS.map(([id]) => id), ['home', 'feed', 'quests', 'social', 'shop', 'you']);
+test('five primary destinations keep Play centered and MCP creation directly accessible', () => {
+  assert.deepEqual(PLAYER_TABS.map(([id]) => id), ['home', 'social', 'feed', 'quests', 'connect']);
   assert.equal(new Set(PLAYER_TABS.map(([id]) => id)).size, PLAYER_TABS.length);
 });
 

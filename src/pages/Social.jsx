@@ -1,4 +1,4 @@
-import React, {useEffect, useId, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {flushSync} from 'react-dom';
 import {searchPeople, followPerson, loadGames} from '../lib/catalog.js';
 import {supabase, result} from '../lib/supabase.js';
@@ -6,40 +6,13 @@ import {useAuth} from '../auth.jsx';
 import {Button, Loading, Notice, Slop, useAsync, Modal} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import {PUBLIC_PROFILE_COLUMNS, profileBackdrop} from '../lib/profile-banners.js';
-import NativeEyePortrait from '../components/NativeEyePortrait.jsx';
+import RobotPortrait from '../components/RobotPortrait.jsx';
 import {GameCard, GameDetail} from './Play.jsx';
 import {chatInbox,chatMessages,createDirectChat,markChatRead,sendChatMessage} from '../lib/chat.js';
 import './social.css';
 
-const palettes = {
-  tangerine: ['#ffb13b', '#ff8a22', '#8a361e'],
-  mint: ['#9bf3c6', '#48dc96', '#165d43'],
-  bubblegum: ['#ffaad0', '#ff6fae', '#8b2757'],
-  grape: ['#c79bff', '#9a5cf6', '#4e2b80'],
-  lavender: ['#d1b6ff', '#ae88ea', '#61467e'],
-  blueberry: ['#93c6ff', '#4a93ff', '#284a84'],
-  aqua: ['#8aebf7', '#32c8df', '#176276'],
-  lime: ['#ddf97c', '#aee62e', '#4b641e'],
-  peach: ['#ffd6c0', '#ffa785', '#865142'],
-  void: ['#6e778c', '#434b5c', '#272c38'],
-  cocoa: ['#cba37c', '#9e7350', '#41291a'],
-  cherry: ['#ff8a8a', '#f04848', '#750b0b'],
-  seafoam: ['#a8f0dc', '#5fd6b8', '#0f6552'],
-  ultraviolet: ['#b07bff', '#7a3be8', '#250459'],
-  porcelain: ['#f3f1ec', '#ddd9d0', '#686256'],
-  butter: ['#ffeb8f', '#ffd43b', '#8f6c00'],
-  rose: ['#ffb3c6', '#f5789b', '#8c2145'],
-  ember: ['#ff8b5e', '#f4522e', '#751007'],
-  slate: ['#aebdd1', '#7a8ca5', '#2c3646'],
-  toxic: ['#b6ff4d', '#7be800', '#2a6100'],
-};
 const personName = person => person.display_name || person.username || 'Slop player';
 const handle = person => person.username ? `@${person.username}` : 'Slop player';
-function personPalette(person) {
-  const [light, mid, shade] = palettes[person.slop_look?.palette] || palettes.tangerine;
-  return {'--ribbon-light': light, '--ribbon-mid': mid, '--ribbon-shade': shade};
-}
-
 export default function Social() {
   const {user, requireAuth} = useAuth();
   const [term, setTerm] = useState('');
@@ -100,35 +73,18 @@ export default function Social() {
     transition.finished.catch(() => {}).finally(() => setTransitionId(null));
   }
 
-  return <div className="circle-page">
-    <section className="circle-intro">
-      <img className="circle-sky" src="/assets/illustrations/desert-dusk.webp" alt=""/>
-      <div className="circle-intro-copy">
-        <h1>Discover people</h1>
-        <p>Find a player. Follow their games.</p>
-        <label className="circle-search">
-          <Icon name="search" size={20}/>
-          <input aria-label="Search people" placeholder="Search usernames" value={term} onChange={event => setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>
-          {term && <button type="button" aria-label="Clear people search" onClick={() => setTerm('')}><Icon name="close" size={18}/></button>}
-        </label>
-        <Button className="circle-messages-button" icon="social" onClick={()=>{if(requireAuth())setMessageTarget(null);}}>Messages</Button>
-      </div>
-      <div className="circle-residents" aria-hidden="true">
-        <NativeEyePortrait body="heart" color="bubblegum" className="circle-resident resident-heart" alt=""/>
-        <NativeEyePortrait body="ghost" color="tangerine" className="circle-resident resident-ghost" alt=""/>
-        <NativeEyePortrait body="star" color="mint" className="circle-resident resident-star" alt=""/>
-      </div>
-    </section>
-
+  return <div className="community-page">
+    <header className="community-heading community-cover"><div><h1>Good games.<br/>Great company.</h1><p>Meet the people behind your next favorite.</p><Button icon="social" onClick={()=>{if(requireAuth())setMessageTarget(null);}}>Open messages</Button></div><div className="community-cover-cast">{people.data?.slice(0,3).map((person,i)=><button key={person.id} onClick={()=>openProfile(person)} aria-label={`Meet ${personName(person)}`} style={{'--cast-position':i}}><img src={profileBackdrop(person.profile_banner_id)} alt=""/><RobotPortrait look={person.slop_look} avatar={person.avatar_url} alt=""/><span>@{person.username||'player'}</span></button>)}</div></header>
+    <div className="community-toolbar"><label className="community-search"><Icon name="search" size={20}/><input aria-label="Search people" placeholder="Find someone on Slop" value={term} onChange={event=>setTerm(event.target.value)} autoComplete="off" spellCheck="false"/>{term&&<button aria-label="Clear people search" onClick={()=>setTerm('')}><Icon name="close" size={18}/></button>}</label><a href="#/you">Your room <Icon name="arrow" size={17}/></a></div>
     <div className="circle-results-heading">
-      <h2>{query.trim() ? 'Search results' : 'People on Slop'}</h2>
+      <h2>{query.trim() ? 'Search results' : 'Make yourself known.'}</h2>
       <span role="status">{people.loading ? 'Finding people…' : !people.error ? `${Math.min(visiblePeople,people.data?.length||0)} of ${people.data?.length||0}` : ''}</span>
     </div>
     <Notice error={error}/>
     <Notice error={people.error} onRetry={people.refresh}/>
     {people.loading && !people.data ? <Loading label="Finding people…"/> : !people.error && !people.data?.length ?
       <div className="circle-empty"><Icon name="search" size={30}/><h3>No matching usernames</h3><p>Try another name.</p>{term && <Button variant="secondary small" onClick={() => setTerm('')}>Clear search</Button>}</div> :
-      <div className={`circle-people ${people.loading ? 'is-loading' : ''}`} aria-busy={people.loading}>
+      <div className={`people-worlds ${people.loading ? 'is-loading' : ''}`} aria-busy={people.loading}>
         {people.data?.slice(0,visiblePeople).map((profile, index) => <PersonRibbon key={profile.id} person={profile} index={index}
           following={following.has(profile.id)} busy={busy} own={profile.id === user?.id}
           onFollow={() => follow(profile.id)} onOpen={() => openProfile(profile)}
@@ -142,23 +98,14 @@ export default function Social() {
 }
 
 function PersonRibbon({person, index, following, busy, own, onFollow, onOpen, transition}) {
-  const paintId = `ribbon-${useId().replaceAll(':', '')}`;
-  return <article className="slop-person-ribbon" style={{...personPalette(person), '--ribbon-order': index % 4, viewTransitionName: transition ? 'slop-person-profile' : 'none'}}>
-    <svg className="person-ribbon-surface" viewBox="0 0 260 330" preserveAspectRatio="none" aria-hidden="true">
-      <defs><linearGradient id={paintId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ribbon-light)"/><stop offset=".32" stopColor="var(--ribbon-mid)"/><stop offset="1" stopColor="var(--ribbon-shade)"/></linearGradient></defs>
-      <path fill={`url(#${paintId})`} d="M29 104 C13 104 7 116 8 137 C10 175 4 240 9 286 C12 314 30 326 58 326 L202 326 C230 326 248 314 251 286 C256 240 250 175 252 137 C253 116 247 104 231 104 Z"/>
-    </svg>
-    <button className="person-ribbon-open" onClick={onOpen} aria-label={`Open ${personName(person)}, ${handle(person)}`}>
-      <NativeEyePortrait look={person.slop_look} avatar={person.avatar_url} className="person-ribbon-slop" alt="" loading="lazy"/>
-      <span className="person-ribbon-identity"><span className="person-ribbon-name">{personName(person)}</span><span className="person-ribbon-handle">{handle(person)}</span></span>
-      {person.bio && <span className="person-ribbon-bio" title={person.bio}>{person.bio}</span>}
-      <span className="person-ribbon-enter"><span>View profile</span><Icon name="arrow" size={18}/></span>
+  return <article className="person-world" style={{viewTransitionName:transition?'slop-person-profile':'none'}}>
+    <button className="person-world-open" onClick={onOpen} aria-label={`Open ${personName(person)}, ${handle(person)}`}>
+      <img src={profileBackdrop(person.profile_banner_id)} className="person-world-art" alt="" loading="lazy"/>
+      <RobotPortrait look={person.slop_look} avatar={person.avatar_url} className="person-world-robot" alt=""/>
+      <span className="person-world-identity"><strong>{personName(person)}</strong><span>{handle(person)}</span></span>
+      <span className="person-world-enter" aria-hidden="true"><Icon name="arrow" size={20}/></span>
     </button>
-    <div className="person-ribbon-actions">
-      {own ? <span className="person-ribbon-self">You</span> : <button type="button" className={`person-ribbon-follow ${following ? 'is-following' : ''}`} disabled={!!busy} onClick={onFollow} aria-label={`${following ? 'Unfollow' : 'Follow'} ${handle(person)}`}>
-        <Icon name={following ? 'check' : 'plus'} size={17}/>{busy === person.id ? 'Saving…' : following ? 'Following' : 'Follow'}
-      </button>}
-    </div>
+    <div className="person-world-footer"><p>{person.bio||''}</p>{own?<a href="#/you">Your profile</a>:<button type="button" className={following?'is-following':''} disabled={!!busy} onClick={onFollow} aria-label={`${following?'Unfollow':'Follow'} ${handle(person)}`}><Icon name={following?'check':'plus'} size={16}/>{busy===person.id?'Saving…':following?'Following':'Follow'}</button>}</div>
   </article>;
 }
 
@@ -179,19 +126,13 @@ function PersonProfile({person, following, busy, own, onFollow, onMessage, onClo
   const [selected, setSelected] = useState(null);
   const profile = details.data || person;
   const backdrop = profileBackdrop(profile.profile_banner_id);
-  return <Modal title={handle(profile)} onClose={onClose} className="circle-profile-modal">
-    <div className="circle-profile-surface" style={{...personPalette(profile), viewTransitionName: transition ? 'slop-person-profile' : 'none'}}>
-      <div className="circle-profile-scene">
-        <img src={backdrop} alt="" className="circle-profile-world"/>
-        <Slop interactive look={profile.slop_look} paused={!!selected} controls className="circle-profile-character" alt={`${personName(profile)}'s Slop`}/>
-      </div>
-      <div className="circle-profile-identity">
-        <div><h2>{personName(profile)}</h2><p>{handle(profile)}</p></div>
-        {own ? <a className="button secondary small" href="#/you" onClick={onClose}>Your profile<Icon name="arrow" size={17}/></a> : <div className="circle-profile-actions"><Button icon="social" variant="secondary" onClick={onMessage}>Message</Button><Button icon={following ? 'check' : 'plus'} variant={following ? 'secondary' : ''} disabled={!!busy} onClick={onFollow}>{busy === person.id ? 'Saving…' : following ? 'Following' : 'Follow'}</Button></div>}
-      </div>
-      {profile.bio && <p className="circle-profile-bio">{profile.bio}</p>}
-      <dl className="circle-profile-stats">{['Games', 'Followers', 'Following'].map((label, index) => <div key={label}><dt>{label}</dt><dd>{stats.data?.[index] == null ? '—' : new Intl.NumberFormat().format(stats.data[index])}</dd></div>)}</dl>
-    </div>
+  return <Modal title={handle(profile)} onClose={onClose} className="circle-profile-modal room-profile-modal">
+    <section className="profile-room" style={{viewTransitionName:transition?'slop-person-profile':'none'}}>
+      <img src={backdrop} className="profile-room-world" alt=""/>
+      <div className="profile-room-character"><Slop interactive look={profile.slop_look} paused={!!selected} controls={false} alt={`${personName(profile)}'s Slop`}/></div>
+      <div className="profile-room-identity"><h2>{personName(profile)}</h2><p>{handle(profile)}</p>{profile.bio&&<p className="profile-room-bio">{profile.bio}</p>}</div>
+    </section>
+    <div className="profile-room-bar"><dl>{['Games','Followers','Following'].map((label,index)=><div key={label}><dd>{stats.data?.[index]==null?'—':new Intl.NumberFormat().format(stats.data[index])}</dd><dt>{label}</dt></div>)}</dl>{own?<a className="button secondary small" href="#/you" onClick={onClose}>Your profile <Icon name="arrow" size={17}/></a>:<div className="profile-room-actions"><Button variant="secondary small" icon="social" onClick={onMessage}>Message</Button><Button variant="small" icon={following?'check':'plus'} disabled={!!busy} onClick={onFollow}>{busy===person.id?'Saving…':following?'Following':'Follow'}</Button></div>}</div>
     <section className="circle-profile-games"><h3>Games</h3><Notice error={details.error} onRetry={details.refresh}/><Notice error={games.error} onRetry={games.refresh}/>
       {games.loading ? <Loading label="Loading games…"/> : games.data?.length ? <div className="game-grid">{games.data.map(game => <GameCard key={game.id} game={game} onOpen={setSelected}/>)}</div> : !games.error && <div className="circle-profile-no-games"><Icon name="play" size={24}/><p>No published games yet.</p></div>}
     </section>
@@ -211,7 +152,7 @@ function ChatModal({startPerson,currentUser,onClose}){
  useEffect(()=>{bottom.current?.scrollIntoView({block:'nearest'});},[messages.length,room?.id]);
  async function send(event){event.preventDefault();const body=draft.trim();if(!body||sending||!room?.id)return;setSending(true);setError(null);try{await sendChatMessage(room.id,body);setDraft('');await refreshMessages(room.id);setThreads(await chatInbox());}catch(e){setError(e);}finally{setSending(false);}}
  return <Modal title="Messages" onClose={onClose} className="circle-chat-modal"><div className="circle-chat-shell">
-  <aside className={`circle-chat-inbox ${room?'has-room':''}`}><div className="circle-chat-title"><h2>Messages</h2><span>{threads.reduce((total,item)=>total+Number(item.unread||0),0)||''}</span></div>{loading?<Loading label="Opening messages…"/>:threads.length?<div className="circle-chat-list">{threads.map(thread=><button key={thread.id} className={thread.id===room?.id?'active':''} onClick={()=>setRoom(thread)}><NativeEyePortrait look={thread.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><span><strong>{conversationName(thread)}</strong><small>{thread.last_message||conversationHandle(thread)}</small></span>{Number(thread.unread)>0&&<b>{thread.unread}</b>}</button>)}</div>:<div className="circle-chat-empty"><Icon name="social" size={25}/><p>Your conversations will appear here.</p></div>}</aside>
-  <section className={`circle-chat-room ${room?'is-open':''}`}>{room?<><header><button className="circle-chat-back" type="button" aria-label="Back to messages" onClick={()=>setRoom(null)}><Icon name="chevron" size={18}/></button><NativeEyePortrait look={room.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><div><strong>{conversationName(room)}</strong><small>{conversationHandle(room)}</small></div></header><div className="circle-chat-messages">{roomLoading&&!messages.length?<Loading label="Loading conversation…"/>:messages.length?messages.map(message=><article key={message.id} className={message.sender?.id===currentUser?.id?'mine':''}><NativeEyePortrait look={message.sender?.slop_look} className="circle-chat-message-avatar" alt=""/><div><small>{message.sender?.id===currentUser?.id?'You':personName(message.sender)}</small><p>{message.body}</p></div></article>):<div className="circle-chat-empty"><p>Say hello.</p></div>}<div ref={bottom}/></div><form className="circle-chat-compose" onSubmit={send}><input aria-label={`Message ${conversationName(room)}`} maxLength="2000" value={draft} onChange={event=>setDraft(event.target.value)} placeholder="Write a message…"/><button type="submit" disabled={sending||!draft.trim()} aria-label="Send message"><Icon name="arrow" size={18}/></button></form></>:<div className="circle-chat-empty room"><Icon name="social" size={30}/><h3>Your messages</h3><p>Pick a conversation.</p></div>}</section>
+  <aside className={`circle-chat-inbox ${room?'has-room':''}`}><div className="circle-chat-title"><h2>Messages</h2><span>{threads.reduce((total,item)=>total+Number(item.unread||0),0)||''}</span></div>{loading?<Loading label="Opening messages…"/>:threads.length?<div className="circle-chat-list">{threads.map(thread=><button key={thread.id} className={thread.id===room?.id?'active':''} onClick={()=>setRoom(thread)}><RobotPortrait look={thread.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><span><strong>{conversationName(thread)}</strong><small>{thread.last_message||conversationHandle(thread)}</small></span>{Number(thread.unread)>0&&<b>{thread.unread}</b>}</button>)}</div>:<div className="circle-chat-empty"><Icon name="social" size={25}/><p>Your conversations will appear here.</p></div>}</aside>
+  <section className={`circle-chat-room ${room?'is-open':''}`}>{room?<><header><button className="circle-chat-back" type="button" aria-label="Back to messages" onClick={()=>setRoom(null)}><Icon name="chevron" size={18}/></button><RobotPortrait look={room.people?.[0]?.slop_look} className="circle-chat-avatar" alt=""/><div><strong>{conversationName(room)}</strong><small>{conversationHandle(room)}</small></div></header><div className="circle-chat-messages">{roomLoading&&!messages.length?<Loading label="Loading conversation…"/>:messages.length?messages.map(message=><article key={message.id} className={message.sender?.id===currentUser?.id?'mine':''}><RobotPortrait look={message.sender?.slop_look} className="circle-chat-message-avatar" alt=""/><div><small>{message.sender?.id===currentUser?.id?'You':personName(message.sender)}</small><p>{message.body}</p></div></article>):<div className="circle-chat-empty"><p>Say hello.</p></div>}<div ref={bottom}/></div><form className="circle-chat-compose" onSubmit={send}><input aria-label={`Message ${conversationName(room)}`} maxLength="2000" value={draft} onChange={event=>setDraft(event.target.value)} placeholder="Write a message…"/><button type="submit" disabled={sending||!draft.trim()} aria-label="Send message"><Icon name="arrow" size={18}/></button></form></>:<div className="circle-chat-empty room"><Icon name="social" size={30}/><h3>Your messages</h3><p>Pick a conversation.</p></div>}</section>
  </div><Notice error={error}/></Modal>;
 }

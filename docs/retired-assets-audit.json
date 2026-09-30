@@ -1,0 +1,1445 @@
+{
+  "source_audit": [
+    {
+      "path": "src/components/HeroComposer.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 3796
+    },
+    {
+      "path": "src/components/slop-toon.css",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/NativeSlop.jsx",
+        "src/components/SlopToon.jsx"
+      ],
+      "bytes": 2021
+    },
+    {
+      "path": "src/components/AppDownloadBar.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 1750
+    },
+    {
+      "path": "src/components/GameplayReel.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 5988
+    },
+    {
+      "path": "src/components/NativeSlop.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 3608
+    },
+    {
+      "path": "src/components/FeedVideoPreview.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 1746
+    },
+    {
+      "path": "src/components/CreatorLivePreview.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 1549
+    },
+    {
+      "path": "src/components/SlopMotion.jsx",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/NativeSlop.jsx"
+      ],
+      "bytes": 2704
+    },
+    {
+      "path": "src/components/CreatorProgress.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 978
+    },
+    {
+      "path": "src/components/SlopToon.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 5617
+    },
+    {
+      "path": "src/components/NativeEyePortrait.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 2001
+    },
+    {
+      "path": "src/components/GameShelf.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 1596
+    },
+    {
+      "path": "src/lib/build-operations.js",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 1350
+    },
+    {
+      "path": "src/lib/feed-focus.js",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 807
+    },
+    {
+      "path": "src/lib/slop-native-atlas.js",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/SlopToon.jsx",
+        "src/components/NativeEyePortrait.jsx",
+        "src/lib/slop-avatar.js"
+      ],
+      "bytes": 1701
+    },
+    {
+      "path": "src/lib/slop-avatar.js",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/NativeSlop.jsx"
+      ],
+      "bytes": 1300
+    },
+    {
+      "path": "src/lib/dictation.js",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/HeroComposer.jsx"
+      ],
+      "bytes": 2105
+    },
+    {
+      "path": "src/lib/hero-media-versions.json",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/GameplayReel.jsx"
+      ],
+      "bytes": 1217
+    },
+    {
+      "path": "src/lib/native-character-contracts.js",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/NativeSlop.jsx"
+      ],
+      "bytes": 2671
+    },
+    {
+      "path": "src/lib/mobile-reel.js",
+      "production_reachable": false,
+      "imported_by": [
+        "src/components/GameplayReel.jsx"
+      ],
+      "bytes": 499
+    },
+    {
+      "path": "src/lib/feed-promo.js",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 172
+    },
+    {
+      "path": "src/pages/build.css",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 14060
+    },
+    {
+      "path": "src/pages/Build.jsx",
+      "production_reachable": false,
+      "imported_by": [],
+      "bytes": 375
+    }
+  ],
+  "retired_asset_bytes": 45076502,
+  "campaign_image_bytes_saved": 4905812,
+  "retired_assets": [
+    {
+      "path": "public/native-character/flutter_bootstrap.js",
+      "bytes": 13531,
+      "sha256": "0a9cedd8211ca152c4ea8c52ec7f640e6689722dff57c25e753e683003287143"
+    },
+    {
+      "path": "public/native-character/version.json",
+      "bytes": 97,
+      "sha256": "6339829e32b7e2f1fdc398042bb11b0621cbd7a902b09b7408d4cf189458f706"
+    },
+    {
+      "path": "public/native-character/index.html",
+      "bytes": 788,
+      "sha256": "ce883f6b46b2cfae11142dc7a239d5253751e277ed8a6c060026eca76f274f7b"
+    },
+    {
+      "path": "public/native-character/main.dart.js",
+      "bytes": 1906543,
+      "sha256": "9f12f36b7d5fb8cc7f69ea629fac62e9859db216fdf5edf526a12753cc927c5d"
+    },
+    {
+      "path": "public/native-character/flutter.js",
+      "bytes": 12136,
+      "sha256": "2beb1ce6b159c71540aa66030af1d7964b6a92377cc78473745e02f97b74effe"
+    },
+    {
+      "path": "public/native-character/assets/NOTICES",
+      "bytes": 1298300,
+      "sha256": "0b07b2e9b91f092f1aaca49dbb5f5fe3dbc9bbe6e84ce0bfdac331cde4681668"
+    },
+    {
+      "path": "public/native-character/assets/FontManifest.json",
+      "bytes": 71,
+      "sha256": "b9643ca513529ee0dd980c2c9a36b5c0fd90396bf3a07e46a1104d03529dcb5b"
+    },
+    {
+      "path": "public/native-character/assets/AssetManifest.bin.json",
+      "bytes": 98,
+      "sha256": "4cb35ea403e110468492352b27c94f9c67b8189d85ecd008aeb7f59d1cdee430"
+    },
+    {
+      "path": "public/native-character/assets/AssetManifest.bin",
+      "bytes": 71,
+      "sha256": "6a79dca6bf8f91709245d2f5e3b39bb8919ae833cb0e4b0ca16983cfca585ecd"
+    },
+    {
+      "path": "public/native-character/canvaskit/canvaskit.js",
+      "bytes": 86987,
+      "sha256": "bb559f6080c7d312ac2a912b4abec9f68ff3d3022d4a603c7796b9b31460642b"
+    },
+    {
+      "path": "public/native-character/canvaskit/canvaskit.wasm",
+      "bytes": 7284602,
+      "sha256": "fbed517a43e82452404446683f00f2e876d835aed84410695759e67b6bb01cd3"
+    },
+    {
+      "path": "public/native-character/assets/shaders/ink_sparkle.frag",
+      "bytes": 8890,
+      "sha256": "2dca5ab93d4ec29e963f996f3916320ba60825e9537dfb149a68008c7a16b026"
+    },
+    {
+      "path": "public/native-character/assets/shaders/stretch_effect.frag",
+      "bytes": 6737,
+      "sha256": "ab412f07a5b9b50b67a885b24dbe16929738ae28630407d6490c924caf0a3220"
+    },
+    {
+      "path": "public/native-character/assets/fonts/Gabarito-OFL.txt",
+      "bytes": 4391,
+      "sha256": "21506cc7106bbfd4aa1c40371f33f9f4296182a8e4bb46658e99af24feb4bfca"
+    },
+    {
+      "path": "public/native-character/assets/fonts/Gabarito-Variable.ttf",
+      "bytes": 158144,
+      "sha256": "8650e2bd7747f7d74619fd7aecbcb0309e6f37b7964024f3fb15ae4833b67ca5"
+    },
+    {
+      "path": "public/assets/mobile/slop.png",
+      "bytes": 152957,
+      "sha256": "3b2a062c17b781fecb9efdefa25ee4f3ef447cf0ae2d20ab277c4f8fa00958b1"
+    },
+    {
+      "path": "public/assets/mobile/slop-coin-current.source.json",
+      "bytes": 405,
+      "sha256": "c593fb215d1b1d221e349635048751ee6610a52f7877b373c4b819b545d9eb58"
+    },
+    {
+      "path": "public/assets/mobile/app-icon.png",
+      "bytes": 6382,
+      "sha256": "44b96ea828f7544bca73cdf06442ffbbaecf95ea235c4a24bb45cd7168e349e8"
+    },
+    {
+      "path": "public/assets/mobile/slop-coin.png",
+      "bytes": 324111,
+      "sha256": "31dda2aadf8ca5080681914c41c88dc6fdf2b91b028cdc243602b71868fde782"
+    },
+    {
+      "path": "public/assets/mobile/worlds/onboarding-park.webp",
+      "bytes": 61122,
+      "sha256": "91dcb4dc12545d7037afd513e8dd504f5def931a210f8ee0ea5837ff2c24247e"
+    },
+    {
+      "path": "public/assets/mobile/worlds/neon-arcade.webp",
+      "bytes": 1289306,
+      "sha256": "029d7f8b1e3a6e82e524f8a37ee241bc0b9165561c341757549f8676f89f751c"
+    },
+    {
+      "path": "public/assets/mobile/worlds/shop-cloud-atelier.webp",
+      "bytes": 67882,
+      "sha256": "b0d02ad09642cb461c03a8ba7b2248367709ef560a29c68e6cbd5411f18599ef"
+    },
+    {
+      "path": "public/assets/mobile/worlds/desktop-daydream.webp",
+      "bytes": 41188,
+      "sha256": "f0aacd4d6dd210ec4a99b478c3253e7fd9f67b35a03c9a54b1f7f834ccd2138d"
+    },
+    {
+      "path": "public/assets/mobile/worlds/lava-habitat.webp",
+      "bytes": 1376338,
+      "sha256": "08389fc723a01a8a88883b340a5309edfd00dff9cba64d9c90006be14563007a"
+    },
+    {
+      "path": "public/assets/mobile/worlds/canal-city.webp",
+      "bytes": 1219072,
+      "sha256": "e3f47665cfc5e687cada8a2d8f4c9afd563899cf29d412cd44c7cc4de37794d1"
+    },
+    {
+      "path": "public/assets/mobile/worlds/forest-habitat.webp",
+      "bytes": 1395650,
+      "sha256": "4b11d7058e8681090ed50c3d00f78ff61e2429d2dd1a4d4a5c23a1478961f506"
+    },
+    {
+      "path": "public/assets/mobile/worlds/cloud-city.webp",
+      "bytes": 1227886,
+      "sha256": "a16bd65e2e1656a6602e4b880c07d54d3be1323dd4279b51257912b89ea31314"
+    },
+    {
+      "path": "public/assets/mobile/worlds/creator-orchard.webp",
+      "bytes": 62992,
+      "sha256": "5e868faa973ba4367789243310663f40dda6c0e37a179532581e5753b99fb6e9"
+    },
+    {
+      "path": "public/assets/mobile/worlds/cosmic-bloom.webp",
+      "bytes": 1206898,
+      "sha256": "8cebf8ded11462861fdb69176d413698b6468808ee3e2cdc08c09676842ff613"
+    },
+    {
+      "path": "public/assets/mobile/turntables/star-mint-glass.webp",
+      "bytes": 793048,
+      "sha256": "decef64b74a1f1a8768bd2190184039367dc1842b5954cfc50674af8fa490460"
+    },
+    {
+      "path": "public/assets/mobile/turntables/ghost-tangerine-bubbles.webp",
+      "bytes": 1318634,
+      "sha256": "9c36c3a1bf6c6d50342ef5dcd584c37ab5795540dfc148414a26fdeac7e1f05a"
+    },
+    {
+      "path": "public/assets/mobile/turntables/ghost-tangerine.webp",
+      "bytes": 1293236,
+      "sha256": "7369c199fc8cb5a16c71fe277fe7adcabb2a7da31bd195578e68db59d7b88fbe"
+    },
+    {
+      "path": "public/assets/mobile/turntables/heart-bubblegum-bubbles.webp",
+      "bytes": 1331482,
+      "sha256": "707750ff001cde72af6b59286d16ec13870633cd7487474d93fe6cf4d1daab57"
+    },
+    {
+      "path": "public/assets/mobile/turntables/heart-bubblegum.webp",
+      "bytes": 1307598,
+      "sha256": "6dc6c0a2e880764286d5990a5dd2ce52044ed27b6f9a409cc3b1a024c830442b"
+    },
+    {
+      "path": "public/assets/mobile/turntables/catalog.json",
+      "bytes": 2503,
+      "sha256": "182e743cb87da98c5c2e002413c491084f7dcf1a4c49914680d15ad8672bbdce"
+    },
+    {
+      "path": "public/assets/mobile/turntables/pebble-lavender.webp",
+      "bytes": 1412886,
+      "sha256": "f74dffed1f38cb5e5a5d87ce65fcabf09d96a3534ab1f027b7d82d4df37c449b"
+    },
+    {
+      "path": "public/assets/mobile/turntables/ghost-tangerine-cocoa.webp",
+      "bytes": 1320028,
+      "sha256": "04a39e9fe87260840b7851eaf0000ac46588a1ff92990c2565357643d644effe"
+    },
+    {
+      "path": "public/assets/mobile/motion/slop-morph-poster.webp",
+      "bytes": 86794,
+      "sha256": "46b7af8dbd77730eb175cf0cef2941e051215032b6c46b7295061f6bf9a113f0"
+    },
+    {
+      "path": "public/assets/mobile/motion/slop-morph-showcase.webm",
+      "bytes": 1408787,
+      "sha256": "d686bb2a2980613a0f0a6640ded80b545faccbed95b8c81bb382f36d3250ed07"
+    },
+    {
+      "path": "public/assets/mobile/motion/README.md",
+      "bytes": 1295,
+      "sha256": "a08eed990aab9ea601e48fb66e286c69bee715442d2e33c9a969afb93656a83b"
+    },
+    {
+      "path": "public/assets/mobile/motion/ghost-tangerine-poster.webp",
+      "bytes": 72484,
+      "sha256": "40fc84288a6d847adfbf77ac5cdf7fbbfab87bf5eb5e3668b18a834886e717e4"
+    },
+    {
+      "path": "public/assets/mobile/motion/ghost-tangerine-idle.webm",
+      "bytes": 730011,
+      "sha256": "898943ba7e2378941c99a1bd4baf4a4005475b0be5ab2fac8384f02f476d7812"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/mouth-goober-bite.webp",
+      "bytes": 13148,
+      "sha256": "a8b4295a0e3b7d9de564b681c4f2521ed2e091c551a6d113785e059927906b20"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-galaxy.webp",
+      "bytes": 11872,
+      "sha256": "588b893b1738cf365f0d442b86dc21f92b54526533c48477263f6e4468c7ee97"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-tidepool-glass.webp",
+      "bytes": 12608,
+      "sha256": "97ffc7254c5e620f1986093ddbebf99882a827c1d1eed0f1425b1087985d1d1d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-halo.webp",
+      "bytes": 15898,
+      "sha256": "bb562f61adb167ae47a61031d479709274efbe7879b1656164ffe3a73534a996"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-prismatic.webp",
+      "bytes": 20296,
+      "sha256": "e8811f7da36d64148496af6e65ddaae7f6092a54afe4b2a4288289e51f951be5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-minted-beret.webp",
+      "bytes": 14040,
+      "sha256": "71e0c2d3ff1f599258db9e3e63e726ea09ea07eebcc5bdc0dbd91d87baba089e"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-claim-grid.webp",
+      "bytes": 13078,
+      "sha256": "3ef632449c974cb4d18eb19062eee6732178579350aeaeebcf77888abaf0fda9"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-fruit-slices.webp",
+      "bytes": 13322,
+      "sha256": "7d62add0c7ae394e91f3b5b1906a24b4ee32311915fd307ffa74c0146f19486d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-pearl-tiara.webp",
+      "bytes": 15052,
+      "sha256": "6a7f8d1c6fc641d92a05d3df09cccd055298429f94113069dd15240c6a319628"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-chrome.webp",
+      "bytes": 12224,
+      "sha256": "eccc3c066c02a1adf3d31e3d9e376472c456f4625713f282308e01a9732e8b73"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-swirl.webp",
+      "bytes": 13772,
+      "sha256": "c0a15f594b0aebdd3f11eaf20c2a3ee764ea72dc8292ee5fc1e89579100f314b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-stardust.webp",
+      "bytes": 14514,
+      "sha256": "8fc33b3fb92c1d3f20d0341175d0f6fd3999ba3646914c72f4a54abaa683309f"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-blossom-crown.webp",
+      "bytes": 14508,
+      "sha256": "9efb0f8d5831ddfbab8bab818aa83eaf7bd9aeb3f35b595fe85b4aadf1ba0ede"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-camo.webp",
+      "bytes": 13230,
+      "sha256": "5a0af7d4e8a318ddf52dbad6fbdab839a39650d5946192d2a1f56122c1527832"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-drips.webp",
+      "bytes": 13232,
+      "sha256": "41746ccfeb93507051a6a904072ba322d70b97a0c7a4ad8628c80cd2e7cecdd0"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-clear-glass.webp",
+      "bytes": 27364,
+      "sha256": "14ff60b0d0dfcee43aa87188f5985225419d0e771b2fcd267add1958ef9b0358"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-crown.webp",
+      "bytes": 13820,
+      "sha256": "ec2d77db44eb62f9ec4f8f0c1c19cc24187b323c83098590358fad7f8dab1da5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-gingham-bloom.webp",
+      "bytes": 13550,
+      "sha256": "f37198ba8f0ea8e994b211b2d2709ab1d8a47319e6251e11cfa665e4922b56be"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-antenna.webp",
+      "bytes": 13774,
+      "sha256": "879d094d93ef1fb3264eb4257529082e69e7111562db2fce32ebcaab9db16642"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-sloplings.webp",
+      "bytes": 26696,
+      "sha256": "6cb990f88539e856a86f1cef48004e0818bbb165dcae726436a12624b066b031"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-obsidian.webp",
+      "bytes": 10250,
+      "sha256": "c6d93863a23665aa38873ff914615bdd01a7f6f299bddf06172adda25d2c8ab5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-orbit.webp",
+      "bytes": 19910,
+      "sha256": "0e12ce7ec829c756b31c9e0d1e4ab5ddcaee6b793b144673b8bc19ea6b0dac76"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-star.webp",
+      "bytes": 14018,
+      "sha256": "953ccb93a5fa6e109c66e1f694f1ef9a143bfb218945f3bd93b981604b4349c5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-arcade-bits.webp",
+      "bytes": 13424,
+      "sha256": "4d7574f321abcba5ac0f4c797c77085a062e62379444404603454ff6bdc4af72"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-crystal.webp",
+      "bytes": 12692,
+      "sha256": "2e5b82e7644a1cb6cddce1b72377f88a3f00e93feb37f03d82c61d95ea272ec0"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/eyes-premium-slop-cyclops.webp",
+      "bytes": 13824,
+      "sha256": "c67f9589872f029c4716b0b14b18528669e5806b606efea6060596f2c416c2d8"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-ribbon-trail.webp",
+      "bytes": 20162,
+      "sha256": "de21e7b266dbb679de765a5bc0f0fab4a47ecb18329deee9cadd7cf5314685f5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-confetti.webp",
+      "bytes": 13280,
+      "sha256": "c70f36ecd50f63de368e13c44f001f6a505835ef6d5c61bf3d6ee6c686c11411"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-chef-puff.webp",
+      "bytes": 16492,
+      "sha256": "047547a67bbbd39d3dccc7cb532ad404becb23b0fb2563dd533e067a076fbec8"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-cel-pop.webp",
+      "bytes": 12794,
+      "sha256": "39f0e3c6ab6cf0376565d3fc2fddf3b209ba68642a57b3c1e41ee8096c02111b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-topographic.webp",
+      "bytes": 13622,
+      "sha256": "28e82f65c9d8391d1fd357154b3553a8ea0a7d0ae6c2d542199dbdd233deb80b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-echo-trail.webp",
+      "bytes": 22224,
+      "sha256": "09275771ca2fcd088256e42a121a7053ae8eae03cee43b600ce82d62b643041e"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/eyes-tiny-planets.webp",
+      "bytes": 15190,
+      "sha256": "96c9946c2d8894c3cb960e56fa15430c05720278a667564341e2b57209a2680b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-hearts.webp",
+      "bytes": 13172,
+      "sha256": "4a1f2b114c4562d78eea73f0d8be33dfa240b523491f6f44b1376166eee82448"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-clean.webp",
+      "bytes": 13054,
+      "sha256": "f541d352791495f16dd2716d3f0bf4fe336534d0b4c63f6ae1f5a77eacec46b5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-checker.webp",
+      "bytes": 13382,
+      "sha256": "093108b8a8ccb946582744681b4ee0e4c65aecdc257baef45360044c81989688"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-bare.webp",
+      "bytes": 13054,
+      "sha256": "f541d352791495f16dd2716d3f0bf4fe336534d0b4c63f6ae1f5a77eacec46b5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-bow.webp",
+      "bytes": 13230,
+      "sha256": "c587d183c0459a54f4c8624ee6d49a607ecbd62b5291fd215996350242359734"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-petals.webp",
+      "bytes": 15306,
+      "sha256": "4ae97b487593fb0029d0c037c8740d279053495bc73e1669ef23831f84516428"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-stars.webp",
+      "bytes": 13134,
+      "sha256": "840c9cd0d1bae79440ccc4b034428eba0c6da8912f041872b56ca1486328b227"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-stripes.webp",
+      "bytes": 13608,
+      "sha256": "4539d4e3b70c0cdf75afc919887ce0a21591ec3a7358db104903aa2f8fefcf12"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-horns.webp",
+      "bytes": 13580,
+      "sha256": "6ec6e7c0a235f7ac4ecbd83c4b09cd20100c683b9022933f7dcc2a4d436375f7"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-kintsugi.webp",
+      "bytes": 13488,
+      "sha256": "b6a11f1edf5e193a25b7dab55809d83d14d4d924012666badc489028e16502f9"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-idea-wizard.webp",
+      "bytes": 13478,
+      "sha256": "2477b8f26d896bca6c230a074748de80a9d5d3ac5289830fbe6daa6e9e132d45"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-butterfly-clips.webp",
+      "bytes": 13536,
+      "sha256": "29241d46215e2521e32e94c8a4c1f4551883d6483eaa87f512dbd41a0b062c7c"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-lightning.webp",
+      "bytes": 18972,
+      "sha256": "5e060a69c0830912701195108748265e4797f1151ac917983ef754b7af45f4e0"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-pixel-petal.webp",
+      "bytes": 13354,
+      "sha256": "ca6f35eaea39015d43d1327d01340fce1d8d21aa6501c6565214eaea1f7208fb"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-bubbles.webp",
+      "bytes": 13526,
+      "sha256": "e34c4dbeabc0cb0789ed2aff14fc4e6da63c5bfa729b632e86bfb4705e899a0c"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-sprout.webp",
+      "bytes": 13814,
+      "sha256": "cf1081973a74f7efc5a4b41b8f990d6234f582f61b1886ea5f849d0c46efd022"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-glitch.webp",
+      "bytes": 13842,
+      "sha256": "944998d1628d251bacefcffaf9a661461bb2a003d7e9be34e27f2d78da554fbc"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-embers.webp",
+      "bytes": 14108,
+      "sha256": "9b418c6861f3bed11505d353526d293859fbcdd83779d6542f0f0f8bce90002d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-sound-rings.webp",
+      "bytes": 18046,
+      "sha256": "2b6f55261999e5a0ff25d014da1a0bb4caf865bd04643607754b7f552a5427ce"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-living-jelly.webp",
+      "bytes": 13054,
+      "sha256": "f541d352791495f16dd2716d3f0bf4fe336534d0b4c63f6ae1f5a77eacec46b5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-moon-motes.webp",
+      "bytes": 15678,
+      "sha256": "53dc1952895d64ef1f3938f4a2be8e25da713d54397c513c55cff6b5410cabe6"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-portal.webp",
+      "bytes": 21842,
+      "sha256": "e94363ee390defef291297d6eb7be45bc7a6d18234ac4627ffdc08ca3ca14e28"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-idea-comets.webp",
+      "bytes": 19762,
+      "sha256": "6a8a34e932c206d670e4ca9cfee134f1a23ccbd24ecccd67e70ff8ad33a23bb1"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-first-batch.webp",
+      "bytes": 12642,
+      "sha256": "d4e47c4ea9e4e2f7a0205169926ea2a8dab10ee333a962220f89d16777a3ff8b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-bubbles.webp",
+      "bytes": 13676,
+      "sha256": "3ee191744fa1858919735a44f0466dbf5f7a58615eecdd743e58611ce9e8c9c6"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-afro.webp",
+      "bytes": 13854,
+      "sha256": "ab4c60b1f441bcdcd5061067bbec2f8cf46984004e310e117f2fe0076d994daa"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-gummy-worms.webp",
+      "bytes": 13838,
+      "sha256": "3c466e338ab14ed69dbc80372377c9f1f57e4fb5db75c8f9bc8ca7e6b99bf142"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-spots.webp",
+      "bytes": 13128,
+      "sha256": "ce1442a952237f3d32c633251f63955e1479cf89b01ed7e920481a92cbfec1a4"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-sparkles.webp",
+      "bytes": 13186,
+      "sha256": "2f021728cbd53a8545dbe5f10796a9c6ac4f221ef8c459411b13a4398b0601b1"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-soft-gummy.webp",
+      "bytes": 13068,
+      "sha256": "f91e48f317d4f57de7e26ac8c4bc4064a0d33510246d3b28870a3b770b5d5963"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-fireflies.webp",
+      "bytes": 18556,
+      "sha256": "cb7d631b4802c47365e48033e3b19d0562fc6ede5635d7a6e071777b30e19c97"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-coin-chorus.webp",
+      "bytes": 15342,
+      "sha256": "97d900175b1f9bafc2e6ee412187aa3efa5b620b74ae15e971fa34f97ee3e91d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-aurora.webp",
+      "bytes": 12286,
+      "sha256": "0d00565f3a4fcce16cdb5fb748cfaca27c3a59e7aea2e9c31a345fa854b98227"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-slop-code.webp",
+      "bytes": 14054,
+      "sha256": "707ce38d8794cc9c623d7d71dd2b63ceb6b0dc9b86cc55062041c4685a5dd0e0"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-hologram.webp",
+      "bytes": 12118,
+      "sha256": "133eb3c611a41acacd6dda33b9da683dcd9a71e474fc4eed139cdb1c340df8fd"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-beanie.webp",
+      "bytes": 13416,
+      "sha256": "cd9b45fd4827eb52b7a99087a7e5f31b58b562e4401d3a99eef48efedb84861d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-dewdrops.webp",
+      "bytes": 15766,
+      "sha256": "771c32ef0d8402ea14b38f76f58ff9de719f48eab78272fe759ffe5d35392465"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-pearl.webp",
+      "bytes": 11844,
+      "sha256": "240b16822ffb0171be1dd24c0d85ee33515981fcaa8758c977f03944c30026c1"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-mushroom.webp",
+      "bytes": 15030,
+      "sha256": "9f8d1b5811fee0fa8c25381889812d4b6855c2482bba505ce65660cbdaaf04b2"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-molten.webp",
+      "bytes": 12490,
+      "sha256": "7a4067b706bfcb4d5bca121802cb4129d527759430678f4e1e069676ed53533d"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-nebula.webp",
+      "bytes": 13204,
+      "sha256": "8f8004984084e208ab1eb25f3f51e431c6355b86f07e376847ab67dbe2b21f38"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-sunforge-gold.webp",
+      "bytes": 12866,
+      "sha256": "30ba5a61e454d32501fdba94ffc6d6d1b8c850cd63cc634fbd4f14011e28e70b"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/catalog.json",
+      "bytes": 45088,
+      "sha256": "f5c8d07a72bf15c1d3adcff65396741d0effbb5c97f489e94a309d3ad7aee00f"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/body-star.webp",
+      "bytes": 13412,
+      "sha256": "547e8788ce3c1231fd836865833832257dc4d99ebcd68c618b83a45dab9329e2"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-satin-bow.webp",
+      "bytes": 13578,
+      "sha256": "4f930b184c9e6cc7d8b544653cd24938ec0ee02e2a4f95f28012ccf36c4e4033"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-cloud-quilt.webp",
+      "bytes": 14166,
+      "sha256": "be2ecdc297289d05131b2477381509b3db0cf4f0ceab0e7c07d301dd004a4714"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-global-champion.webp",
+      "bytes": 13054,
+      "sha256": "f541d352791495f16dd2716d3f0bf4fe336534d0b4c63f6ae1f5a77eacec46b5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-none.webp",
+      "bytes": 13054,
+      "sha256": "f541d352791495f16dd2716d3f0bf4fe336534d0b4c63f6ae1f5a77eacec46b5"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-headphones.webp",
+      "bytes": 15612,
+      "sha256": "004b9a40950af4d82b6e8849b74c6538eaca6339a2d5e5de2b1d56887a120217"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/finish-wildfire-gel.webp",
+      "bytes": 12954,
+      "sha256": "9059db25df529b12a87b404f763fe9c078fa7b052ff916d33437b25b77bab73a"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/hat-propeller.webp",
+      "bytes": 14180,
+      "sha256": "3cd52428fe82662e5609c4b86923f02fc819f5514a8d40ff6071b81a110f8eae"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/pattern-lava-lamp.webp",
+      "bytes": 13400,
+      "sha256": "1d1485b6ee592394ead2d628891a5b5c5ef04be0fca16cc3465594ec3af46f2a"
+    },
+    {
+      "path": "public/assets/mobile/cosmetics/aura-hearts.webp",
+      "bytes": 13586,
+      "sha256": "4226e4188155ee343627beb9482bbd8bcf13be58066fabc83cad9e88124fc281"
+    },
+    {
+      "path": "public/assets/mobile/screens/creator-controls.webp",
+      "bytes": 14644,
+      "sha256": "1a140a769d45286dae12dbcf92c69e2927adaf4adc768e47d4c03507bf74f014"
+    },
+    {
+      "path": "public/assets/mobile/screens/creator-ready.webp",
+      "bytes": 17438,
+      "sha256": "afa9b56497ac2b51e9c1863afbc5507eeb6471383d571d9629190ca3618b0316"
+    },
+    {
+      "path": "public/assets/mobile/screens/creator-idea.webp",
+      "bytes": 23396,
+      "sha256": "ea2616f566284ba096411a55d4bda1991acde3872d0759a612c672aa3d292782"
+    },
+    {
+      "path": "public/assets/mobile/portraits/2a06b0bcbdd29dce.webp",
+      "bytes": 95744,
+      "sha256": "84a2f0f76b01eed0efdda15237006999db316d4a8a567fdd52732987610fa81a"
+    },
+    {
+      "path": "public/assets/mobile/portraits/7efcc988e6bdcb65.webp",
+      "bytes": 106324,
+      "sha256": "d3b7a44941d0ac9b2294b12e5d71a6df4993aca32eb18f08640c8f96e13b7ca3"
+    },
+    {
+      "path": "public/assets/mobile/portraits/fd4136a303dabd8c.webp",
+      "bytes": 75480,
+      "sha256": "bbb9194990858c0cc7ed27b56ef870413c1db0e7eaa031a4a009cc2a72dd2812"
+    },
+    {
+      "path": "public/assets/mobile/portraits/08fe0d05246c808e.webp",
+      "bytes": 73582,
+      "sha256": "432291f2659c8a2f2a30f0bf308c069aa809f1dcc8af55dba942d9b2d21164b2"
+    },
+    {
+      "path": "public/assets/mobile/portraits/07c9b0f6a2c28d2d.webp",
+      "bytes": 78416,
+      "sha256": "ad0986ac3437ab0f36b8ce49d3ffa681887625b4b7dd60f6fdf1c131880a268b"
+    },
+    {
+      "path": "public/assets/mobile/portraits/65507e9a6c55e271.webp",
+      "bytes": 65888,
+      "sha256": "10d4f182f6b17a597d6837afe7c5cf296b74b1c8142cd32da9996d46fabd6848"
+    },
+    {
+      "path": "public/assets/mobile/portraits/51d852f95fcd9a3b.webp",
+      "bytes": 52148,
+      "sha256": "0748e188807569adea6c11945c6f0cb9f5d90ea6abe9a51abef2c390e12231fb"
+    },
+    {
+      "path": "public/assets/mobile/portraits/6274344893e1f2b3.webp",
+      "bytes": 64486,
+      "sha256": "074f9e5877a1ab790060f08ae9ae9587562b28cf097338c23ae147b7efe069af"
+    },
+    {
+      "path": "public/assets/mobile/portraits/bcc14b7337e78dfa.webp",
+      "bytes": 86830,
+      "sha256": "4090498d372524fff1e1335fdc6c2e5825f1b2555bcd5778da6453f1b0667728"
+    },
+    {
+      "path": "public/assets/mobile/portraits/26f1a6f2fe3b9732.webp",
+      "bytes": 88964,
+      "sha256": "3482f35d68f069d69eeba012df59008b87a6f7d0238a132389862e7a1014c2bb"
+    },
+    {
+      "path": "public/assets/mobile/portraits/0d38565337d30c54.webp",
+      "bytes": 65768,
+      "sha256": "d9aa76f87d6ce6af6fd20a3477b467a5a1ce91cacd5a671fecd14d0bca33b846"
+    },
+    {
+      "path": "public/assets/mobile/portraits/f8a09d25e4738f8e.webp",
+      "bytes": 78240,
+      "sha256": "51b92be581c031095b64170f15a4bb57422e6b127987b5959f99f3acdebd967e"
+    },
+    {
+      "path": "public/assets/mobile/portraits/2241c52de22310d1.webp",
+      "bytes": 81036,
+      "sha256": "1be5375bd382ec96d862e2ea06fe6d77100e5fa816b53e1b824dea1fdedeab45"
+    },
+    {
+      "path": "public/assets/mobile/portraits/README.md",
+      "bytes": 1039,
+      "sha256": "0b31e0f33420bbfca4188ea42a57e6bacfd8bd930be0267892a6b6f23aa875a1"
+    },
+    {
+      "path": "public/assets/mobile/portraits/eb8254f48896d126.webp",
+      "bytes": 86344,
+      "sha256": "ad45ca0e9b2bfbd9320f6f89b3d337e1e0f3ea6a44fe5b94032969e3ad6d518f"
+    },
+    {
+      "path": "public/assets/mobile/portraits/59da6ee45bd55c96.webp",
+      "bytes": 85224,
+      "sha256": "6cf540112a34af78859d28c680065d3d1420277f336bfa693a513211a295d9c3"
+    },
+    {
+      "path": "public/assets/mobile/portraits/50c9dafd9377e566.webp",
+      "bytes": 77020,
+      "sha256": "f41160a42e30cd320b44534ed35e47c48f85234d13435500fe4a40d400b76863"
+    },
+    {
+      "path": "public/assets/mobile/portraits/83dc4a96bbb6e970.webp",
+      "bytes": 78458,
+      "sha256": "cedd377fcaa9ac641a0d34448c7e10e8def6f21b52d9c426e15a332bc7318964"
+    },
+    {
+      "path": "public/assets/mobile/portraits/f3df562b7e192701.webp",
+      "bytes": 84094,
+      "sha256": "c509d132f56043fd17311aa2eb726422dd188675fe5ee3d70a11260e112b313f"
+    },
+    {
+      "path": "public/assets/mobile/portraits/d8d4a2b154984343.webp",
+      "bytes": 78994,
+      "sha256": "c85d47960b904328d92eaa73f2ba5f568aa789644b8c90926498ef208b59f7b5"
+    },
+    {
+      "path": "public/assets/mobile/portraits/0b961aff879bb71e.webp",
+      "bytes": 83820,
+      "sha256": "97b82b1ac3931a335957cc020ac60c06c54f8798a32bc6a23168c0736ee9ae38"
+    },
+    {
+      "path": "public/assets/mobile/portraits/aef4f1bdad0829d2.webp",
+      "bytes": 64998,
+      "sha256": "2fc694830d578df2fbd80dac4135660ad6bfe095e16ed1d91ea36c7d7226563e"
+    },
+    {
+      "path": "public/assets/mobile/portraits/1a0cf451e8f499b5.webp",
+      "bytes": 79666,
+      "sha256": "778b78408ca03c538ef0bb1afc2e56ddd8afc147e9b8b11f8fd9085cd2a612bb"
+    },
+    {
+      "path": "public/assets/mobile/portraits/catalog.json",
+      "bytes": 15997,
+      "sha256": "358b5abc4e258704dff268482493188e45cb5d8bc357723a37cf27eb0b82058d"
+    },
+    {
+      "path": "public/assets/mobile/portraits/929233abc75c4dbf.webp",
+      "bytes": 81938,
+      "sha256": "c0bea9f7155976d1ad12c200ee454bd1e2a43c1689f1ef01a63d3a1c0987d5cc"
+    },
+    {
+      "path": "public/assets/mobile/portraits/125af9aa2ed55025.webp",
+      "bytes": 55334,
+      "sha256": "ca4704bb44df9a4997eb6f374dff0197c72f941cebf789f69408b0c3db4b4ef2"
+    },
+    {
+      "path": "public/assets/mobile/portraits/7cbb8ce29124768a.webp",
+      "bytes": 80320,
+      "sha256": "323a37bb3600b136aa550994cea2873d871db6b341bfba551e3230fb8aef1b0c"
+    },
+    {
+      "path": "public/assets/mobile/portraits/1b1e1e17abe0b790.webp",
+      "bytes": 75154,
+      "sha256": "d1963f5a3a644c571369f2cc0862f3eb792d589c80b9c6128889ffa469453760"
+    },
+    {
+      "path": "public/assets/mobile/portraits/8a0c8a60c2526f3b.webp",
+      "bytes": 84084,
+      "sha256": "48777c09e11bc9b0737af0ceb2f77953bad973eb8a17967ab9a14b70f86ec997"
+    },
+    {
+      "path": "public/assets/mobile/portraits/fe801f766cbeb7ba.webp",
+      "bytes": 86994,
+      "sha256": "100b3fdeae19f502ca06c9f3879e95e3b2a4ae3da34b2748bffa345bf31cc8fc"
+    },
+    {
+      "path": "public/assets/mobile/portraits/8607e0b32962f5cd.webp",
+      "bytes": 86936,
+      "sha256": "5be63c34fdffd3cd95b5eac85f301d2fbc6c5eee2e904d6c3ffa26d97686a1ff"
+    },
+    {
+      "path": "public/assets/mobile/portraits/abefa4e9bb3ddab6.webp",
+      "bytes": 81772,
+      "sha256": "36f431122e14c4434b02560fc78f8e49fe702a0a8a20f1bb31dad74a7cb50daf"
+    },
+    {
+      "path": "public/assets/mobile/portraits/806c7da60e12dfdf.webp",
+      "bytes": 44874,
+      "sha256": "043458c7d4926b66d87577f00041e00b0387e802091b87b302179957868a4712"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/59da6ee45bd55c96-poster.webp",
+      "bytes": 56836,
+      "sha256": "ebb91c0db63a93a28879554acdc56ceec9889acf58a8b914ee1c63421ed42adb"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/806c7da60e12dfdf-poster.webp",
+      "bytes": 30572,
+      "sha256": "c0642434d9a23faf953955df83649d4e5f6c064c1c66361333f083f9c5ea2397"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/bcc14b7337e78dfa-poster.webp",
+      "bytes": 61642,
+      "sha256": "a8b81dd7bb41666e8aa0a65e1d26364736555b1323eecd9b02c8ae8aa1a4700a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/8607e0b32962f5cd-poster.webp",
+      "bytes": 51424,
+      "sha256": "3e9323ec037d03042f780beda50b3e3948c29d899cb64b10e5d1940f14c33976"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-ghost-poster.webp",
+      "bytes": 46674,
+      "sha256": "5db0435e65ea129e0699d13b2999b484c1ca4b5a4c842995683ad7a61a285de1"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/2a06b0bcbdd29dce.webp",
+      "bytes": 206994,
+      "sha256": "ec1685b67bf532b3fa1fb29c850aaf9275c3aeb55e4de03fd7bff6a6e85f312d"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/eb8254f48896d126-poster.webp",
+      "bytes": 53228,
+      "sha256": "b06a8cf011b202874c4f8dd61e565e6ab3cba757c74649bad6d1d8f241d39048"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-star.webp",
+      "bytes": 123746,
+      "sha256": "b0bd0babf6adb54e3a58573c25ea5a50a4b50ea8cb483ae9aa994db6adbb46f9"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/f8a09d25e4738f8e-poster.webp",
+      "bytes": 47072,
+      "sha256": "75d0f58d4f41fbb9afad00c5ec5440847da8d2dfa5167baaa985a8e60d5739c1"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/6274344893e1f2b3-poster.webp",
+      "bytes": 40774,
+      "sha256": "df01ffa0a5e552587151be8f75a631a7ef006502b1aab18c10e758beb97db06d"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/26f1a6f2fe3b9732-poster.webp",
+      "bytes": 53996,
+      "sha256": "989ea7fb1f7a9b35664f55af8bcb9746476ffad738b70299d9a56fa8ee582167"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/fd4136a303dabd8c.webp",
+      "bytes": 49580,
+      "sha256": "949c01dd0dd29b76819f77575d7598f7fc3419af629fc1146e4a27ca7ae73608"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/08fe0d05246c808e.webp",
+      "bytes": 130604,
+      "sha256": "27a48ac1a5cf33cc61fa13bc05a530c1e4fe0a20a06b7551e4084e09cf2a8272"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-heart-poster.webp",
+      "bytes": 45996,
+      "sha256": "363b93747b01de72a7fd319ba2924e12eceee87a647e450d5785c8dfb26fa9cf"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/07c9b0f6a2c28d2d.webp",
+      "bytes": 137884,
+      "sha256": "d6b53c94ad1e7032151921297c89bf96c8725dac4ceccf8eb2286441029d0ae4"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-star-poster.webp",
+      "bytes": 50520,
+      "sha256": "1c6547a2b67b2f6aca08b3c576407443c306a9d8838289a057c13df52cfbd777"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/fd4136a303dabd8c-poster.webp",
+      "bytes": 46906,
+      "sha256": "0419bb6dcd96d4e774168847935a73a43c29fa7bac3ef5d23842421ffe58fe78"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/65507e9a6c55e271.webp",
+      "bytes": 77568,
+      "sha256": "40926a460b4c655c43a90978e713b76cf8f24082d250c18bb2a831332aa5e23e"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/07c9b0f6a2c28d2d-poster.webp",
+      "bytes": 48656,
+      "sha256": "d9be295203319bdf89e3ee1f868a9dad95ef9486e84434c0f14d12be6d1dd3f7"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/f3df562b7e192701-poster.webp",
+      "bytes": 49596,
+      "sha256": "2dc21ad5c5369a9a765fe1a41142d8d8f98791756f33ce73056c15387184a83e"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/51d852f95fcd9a3b.webp",
+      "bytes": 165700,
+      "sha256": "ffebd1383715f9ed6a4efbc28447933f16544fcd837628e25d22ed3ec9491e3b"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/2241c52de22310d1-poster.webp",
+      "bytes": 49304,
+      "sha256": "edcced7ec186a231048e4b8533c4fec786aa0473e0d11551e2368f02573a2369"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/6274344893e1f2b3.webp",
+      "bytes": 104318,
+      "sha256": "3236cc4fc9ae513301101d7da35c84289dcbe1c3f9bcfe177915351c75fff4f8"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/bcc14b7337e78dfa.webp",
+      "bytes": 139170,
+      "sha256": "62f046e994f24315ed3a23ed87ef5bdf2506b450d8b1df13b30cf9b1c35e6817"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/0d38565337d30c54-poster.webp",
+      "bytes": 40770,
+      "sha256": "724e262e855114acd115a635807a98432085667635906bcc17096efe7eb2f0d0"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/26f1a6f2fe3b9732.webp",
+      "bytes": 121932,
+      "sha256": "e5969d5cb7e53aeef13ee6775ff522179b10c29d14c9c43c42e6558809aea416"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/0d38565337d30c54.webp",
+      "bytes": 105738,
+      "sha256": "cc2c275eaf538c4f6a65869076e9a2602e6dc650cf9f66199332c74f0fbfcf0a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/f8a09d25e4738f8e.webp",
+      "bytes": 129470,
+      "sha256": "c6c5492452cb63a63d766b81cccc1ed0e62ec16f1c061fafef06942dc1aeae0d"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/2a06b0bcbdd29dce-poster.webp",
+      "bytes": 54026,
+      "sha256": "be880556bfac154307b9976a0888ee141685eec0e0afbf4b11d0300d8a7ce881"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/125af9aa2ed55025-poster.webp",
+      "bytes": 34156,
+      "sha256": "3ddf3713cc9554520554dc921b4b5c26a135f89c1bed28af9da7bdee961eb66a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/1b1e1e17abe0b790-poster.webp",
+      "bytes": 45102,
+      "sha256": "608da033af1ca5784034635a185015cf6d95d718e6fbf1f0902645a40fb7e445"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/929233abc75c4dbf-poster.webp",
+      "bytes": 49692,
+      "sha256": "99f74ca260380f07fff49121207a5a8e762d3d2b90a9c3e5a7c1a6519e7e1c51"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/2241c52de22310d1.webp",
+      "bytes": 126350,
+      "sha256": "dd494513e28feb401c992157f05cdfe16ddc35eb3c1efa4071b7a63866bc9fff"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/08fe0d05246c808e-poster.webp",
+      "bytes": 45866,
+      "sha256": "a4c57a71c88f4e2ab6eb94a0aa3318e18557231f59a00acea559743d96909f9b"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/51d852f95fcd9a3b-poster.webp",
+      "bytes": 37128,
+      "sha256": "bffa815fcb0b80d41004688d8e641d8c70e61507b209537a3de023b7e3e1c0d8"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/0b961aff879bb71e-poster.webp",
+      "bytes": 52052,
+      "sha256": "002b2b7cfea94f1dab27d85b7896372d63bae6ac93de0e92aea846049e339d9a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/83dc4a96bbb6e970-poster.webp",
+      "bytes": 48092,
+      "sha256": "22631dd6ccbdaaad1fb3982647302156447c979c2915163990432fa06378181b"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/8a0c8a60c2526f3b-poster.webp",
+      "bytes": 50992,
+      "sha256": "b8b2dcbc65e957e209e7d05fd555c27e9c3ec648e72cde8cd278283053fb6d0c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/eb8254f48896d126.webp",
+      "bytes": 121734,
+      "sha256": "74ae594209236004583460edf456c9506ced2d1efad9e4e66c7ff917237d8e43"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/abefa4e9bb3ddab6-poster.webp",
+      "bytes": 52502,
+      "sha256": "0e17c7a0bae42db988cd188bf5af2eb0540abe7f00f4d34cc43252b3f6cf042c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/59da6ee45bd55c96.webp",
+      "bytes": 167102,
+      "sha256": "284ffdedb6858a01b8a6a0f55d570b355335ebd2f243344ff2ff104d8adf182c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/7cbb8ce29124768a-poster.webp",
+      "bytes": 49960,
+      "sha256": "2b459e0f4509df95fb15d0bd2ac41a1459a62f911d66b579968f97c21aa99b19"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-heart.webp",
+      "bytes": 119744,
+      "sha256": "36a816e85dd7e94bc04c886f563db49e0e230f61aa65560c37a8f9ca894de79b"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/50c9dafd9377e566.webp",
+      "bytes": 126882,
+      "sha256": "7c131b032c6a051d3b5eb27d0bc12ba685c2e153e5fe12ffc830bfe882661fd5"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/aef4f1bdad0829d2-poster.webp",
+      "bytes": 39416,
+      "sha256": "f8bd54fddad5f5cd1b3c2a87ac3301469322f0d1ff97a9d9104a7eef8e7c2181"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/65507e9a6c55e271-poster.webp",
+      "bytes": 41094,
+      "sha256": "bd39e8b84350a5c6242a07d6987b7bb3bfc82d6a22893e43bb936d0e667821f9"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/83dc4a96bbb6e970.webp",
+      "bytes": 126824,
+      "sha256": "9b995f35a2d3b88616751ca883a41bba90104cde70393a05a8d2327a06bc182c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/fe801f766cbeb7ba-poster.webp",
+      "bytes": 63402,
+      "sha256": "4485520aa9549dc4a77eeff8e25a80dfd9f54dbdb62d2ac8d4c3f59a14c02612"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/f3df562b7e192701.webp",
+      "bytes": 215970,
+      "sha256": "5cdf579720322479e4289f4ab44817a17f5c1883fc24d850ff625e1b02b61314"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/intro-ghost.webp",
+      "bytes": 120174,
+      "sha256": "68f7a4548e4a89879b33cf8ed979e7a5f622734137b0405ae908c8a8be72baf3"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/d8d4a2b154984343.webp",
+      "bytes": 110542,
+      "sha256": "c0b9a324d53ee9356dd2632fd57197435f7a22940a7d41e487af42358be7af26"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/0b961aff879bb71e.webp",
+      "bytes": 203194,
+      "sha256": "590cc5535e62da0675d28a3bba48187ce55f9acb6654c5656d3ae55e90df5295"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/aef4f1bdad0829d2.webp",
+      "bytes": 508942,
+      "sha256": "f572215dfabbf1594e711e2d622c4dc6c9715b5250cd58895279d15b76e7623b"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/catalog.json",
+      "bytes": 11561,
+      "sha256": "0439a837a5c180015f53f004865d3291610cf04ffa8efca69e4343f059b3c84c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/d8d4a2b154984343-poster.webp",
+      "bytes": 47286,
+      "sha256": "5592bcdd16012b401930c9ed78c22f03899437ce9506d42f53baf74ad7b3110a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/929233abc75c4dbf.webp",
+      "bytes": 133730,
+      "sha256": "cf24a664be060a669056ca0574b1958fd08ccd2abdd183371c195dc4dc4e9b3c"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/125af9aa2ed55025.webp",
+      "bytes": 133800,
+      "sha256": "3268a10a449ac23dbed809be53f52d79d3dcba049797703ade644ed5bb79e681"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/7cbb8ce29124768a.webp",
+      "bytes": 136626,
+      "sha256": "a415c196ccd657fcec587ae815348cbed3632d53d19aae2b72245065c175a473"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/1b1e1e17abe0b790.webp",
+      "bytes": 112522,
+      "sha256": "765194f11190e1608219bf4dfc6d7fff70bc94e2a7db413e6c053ad62722a35f"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/8a0c8a60c2526f3b.webp",
+      "bytes": 181536,
+      "sha256": "a7915d542c0737fc7c1865ae3cca779795ed34d0e253e83e0250b3b81d1c91ac"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/fe801f766cbeb7ba.webp",
+      "bytes": 247762,
+      "sha256": "ef86e9d4f3dcb4ab57c2abcc523e14520e923e61fe1137f42e8d99c2e7aabb2a"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/8607e0b32962f5cd.webp",
+      "bytes": 199286,
+      "sha256": "414c9c2e89761c56efcfe58c27ef6a53e888ad18f64d7c6cd1d5fb2bf996f6f7"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/abefa4e9bb3ddab6.webp",
+      "bytes": 163220,
+      "sha256": "032267bb4b99748b63d0c7b613ba349c942f07f24317b342b712f7593d436981"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/806c7da60e12dfdf.webp",
+      "bytes": 44578,
+      "sha256": "33451c3aaaaad18aea102da1c437c75596458984aaaed066594d7a755e110e25"
+    },
+    {
+      "path": "public/assets/mobile/eye-motion/50c9dafd9377e566-poster.webp",
+      "bytes": 46558,
+      "sha256": "05640d3786b4f49948afc1569ea962d4b5fdf4555f7a45c838c4b4f7429a494e"
+    },
+    {
+      "path": "public/assets/mobile/characters/pebble-bubblegum.webp",
+      "bytes": 18810,
+      "sha256": "a9928d0a8c4decc70ef3356440f42364a35616ee059bdfca9b92261dbd38d0c1"
+    },
+    {
+      "path": "public/assets/mobile/characters/star-mint-glass.webp",
+      "bytes": 55370,
+      "sha256": "1ddba3d1044241ae0b51fb7153f955a9b2830a5a3460b17a04672b6b39dfdc32"
+    },
+    {
+      "path": "public/assets/mobile/characters/triangle-tangerine.webp",
+      "bytes": 18554,
+      "sha256": "6f698f6eee392f1cbd09fa43a2d1aa35a8d1c0a5b0dd9c96fcaaa0d248b7d32a"
+    },
+    {
+      "path": "public/assets/mobile/characters/star-tangerine.webp",
+      "bytes": 22400,
+      "sha256": "540a082d23b3d06b316403cf881a6d343cd3f8a283e90081253a7b0292175aab"
+    },
+    {
+      "path": "public/assets/mobile/characters/ghost-tangerine.webp",
+      "bytes": 21458,
+      "sha256": "d9bcd3d323964575334192de40dab0f2b9fbd1ec9c49298ce58fb7f8357c67dd"
+    },
+    {
+      "path": "public/assets/mobile/characters/pebble-mint.webp",
+      "bytes": 19358,
+      "sha256": "43edd0e7b2de5848b539d7c745b03fe5d3f01d42b4604ed7cae3378a5a7c9812"
+    },
+    {
+      "path": "public/assets/mobile/characters/heart-tangerine.webp",
+      "bytes": 21560,
+      "sha256": "49dcfa9a750e7ee45415e0c7d48f003aace720072d7800bea9f2cd612ee56b11"
+    },
+    {
+      "path": "public/assets/mobile/characters/triangle-lavender.webp",
+      "bytes": 17208,
+      "sha256": "39398d7504c319310f30f55da23ed7c22f859f65a0fc7bcc2e503fbc67a93476"
+    },
+    {
+      "path": "public/assets/mobile/characters/heart-mint.webp",
+      "bytes": 20792,
+      "sha256": "aff57de8b0a709872475aa1bcb9b4c9e35c40623fc7acfe591eb739fef57aa1c"
+    },
+    {
+      "path": "public/assets/mobile/characters/star-bubblegum.webp",
+      "bytes": 20796,
+      "sha256": "d952ee0a1e54bec5789c944de9f0fcdd3d4c1ffaad1bf8baf06caa361eedd68d"
+    },
+    {
+      "path": "public/assets/mobile/characters/triangle-bubblegum.webp",
+      "bytes": 17104,
+      "sha256": "a5b4258a14254ed1419c0e2ae2ea3d4cc59f8238f89287377ee5a1f0f6cee9e2"
+    },
+    {
+      "path": "public/assets/mobile/characters/pebble-tangerine.webp",
+      "bytes": 20288,
+      "sha256": "57b1bb292e8262ef8a9df04389567c881349c8cdf0c9f1685dc3a00cffed0951"
+    },
+    {
+      "path": "public/assets/mobile/characters/star-lavender.webp",
+      "bytes": 20754,
+      "sha256": "3c414acaaa20d873328ca86f39459e44318c8ecf6283953553fc74cac31903b4"
+    },
+    {
+      "path": "public/assets/mobile/characters/triangle-mint.webp",
+      "bytes": 17958,
+      "sha256": "f4a10d9b34010bccaa213d746bed532d05c033eb756413566f10a38ea7826ead"
+    },
+    {
+      "path": "public/assets/mobile/characters/heart-bubblegum.webp",
+      "bytes": 20142,
+      "sha256": "8b4f95bbcc600248221119e8e5674192ba0d6f115ce73cfd7167da792b3e6be3"
+    },
+    {
+      "path": "public/assets/mobile/characters/ghost-bubblegum.webp",
+      "bytes": 19936,
+      "sha256": "1b8cb0093eb46199b0b59eedf08cd39d3f122a21229e5c7f799a7b80f7fc70cc"
+    },
+    {
+      "path": "public/assets/mobile/characters/ghost-lavender.webp",
+      "bytes": 19976,
+      "sha256": "7c1eff03a06483c7cce0627dcfc85a841eb224432a05de1be7f902dbfe3619e4"
+    },
+    {
+      "path": "public/assets/mobile/characters/star-mint.webp",
+      "bytes": 21574,
+      "sha256": "ca9a5d538f00144858a1c8e4f99118b72f197eb83256fb792d3325fc25233a2f"
+    },
+    {
+      "path": "public/assets/mobile/characters/pebble-lavender.webp",
+      "bytes": 18660,
+      "sha256": "bffee511e27292794050aac55e222530362cbf6af1886331f9126ae43348d69d"
+    },
+    {
+      "path": "public/assets/mobile/characters/ghost-mint.webp",
+      "bytes": 20688,
+      "sha256": "59575f8548dc29dd06e3630b5174975fdc7e7ab524914fa831b2b80c17fd3ec3"
+    },
+    {
+      "path": "public/assets/mobile/characters/heart-lavender.webp",
+      "bytes": 20252,
+      "sha256": "a4d139737b610d8641bb437ec4690fd3b9ccd0392f8a3155db25fffc90818d86"
+    },
+    {
+      "path": "src/data/mobile/turntables-catalog.json",
+      "bytes": 2503,
+      "sha256": "182e743cb87da98c5c2e002413c491084f7dcf1a4c49914680d15ad8672bbdce"
+    },
+    {
+      "path": "src/data/mobile/portraits-catalog.json",
+      "bytes": 15997,
+      "sha256": "358b5abc4e258704dff268482493188e45cb5d8bc357723a37cf27eb0b82058d"
+    },
+    {
+      "path": "src/data/mobile/cosmetics-catalog.json",
+      "bytes": 45088,
+      "sha256": "f5c8d07a72bf15c1d3adcff65396741d0effbb5c97f489e94a309d3ad7aee00f"
+    },
+    {
+      "path": "src/data/mobile/eye-motion-catalog.json",
+      "bytes": 11561,
+      "sha256": "0439a837a5c180015f53f004865d3291610cf04ffa8efca69e4343f059b3c84c"
+    },
+    {
+      "path": "src/data/native-character-version.json",
+      "bytes": 97,
+      "sha256": "6339829e32b7e2f1fdc398042bb11b0621cbd7a902b09b7408d4cf189458f706"
+    },
+    {
+      "path": "public/assets/fonts/GoogleSansFlex-Variable.ttf",
+      "bytes": 4153392,
+      "sha256": "c31a482fbecbf2e07e6890134d20078723aadf732c9b9c6c9a44f86f8265b6fe"
+    }
+  ]
+}

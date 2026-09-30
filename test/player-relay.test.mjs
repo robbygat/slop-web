@@ -1,10 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {acceptPlayerEvent} from '../src/lib/player-contracts.js';
 import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
 
 const relaySource=await readFile(new URL('../public/game-frame/relay.js',import.meta.url),'utf8');
 const bootstrapSource=await readFile(new URL('../src/lib/player-bootstrap.js',import.meta.url),'utf8');
+
+test('mouse capture requires the trusted host opt-in and a real playfield gesture',()=>{
+ const listeners=new Map(),docListeners=new Map(),messages=[];let captures=0;
+ const listen=(type,fn)=>{if(!listeners.has(type))listeners.set(type,[]);listeners.get(type).push(fn);};
+ const emit=(type,event)=>{for(const fn of listeners.get(type)||[])fn(event);};
+ const parent={postMessage:value=>messages.push(JSON.parse(value))};
+ const canvas={requestPointerLock(){captures++;},closest:selector=>selector==='canvas'?canvas:null};
+ const document={pointerLockElement:null,addEventListener:(type,fn)=>docListeners.set(type,fn),querySelector:()=>canvas,exitPointerLock(){this.pointerLockElement=null;docListeners.get('pointerlockchange')();}};
+ runInNewContext(bootstrapSource,{window:{},parent,document,addEventListener:listen,requestAnimationFrame:()=>1});
+ const gesture={isTrusted:true,target:canvas};emit('pointerdown',gesture);assert.equal(captures,0);
+ emit('message',{source:{},data:JSON.stringify({type:'hostPointerMode',enabled:true})});emit('pointerdown',gesture);assert.equal(captures,0);
+ emit('message',{source:parent,data:JSON.stringify({type:'hostPointerMode',enabled:true})});
+ emit('pointerdown',{...gesture,isTrusted:false});assert.equal(captures,0);
+ emit('pointerdown',{isTrusted:true,target:{closest:()=>({tagName:'BUTTON'})}});assert.equal(captures,0);
+ emit('pointerdown',gesture);assert.equal(captures,1);
+ document.pointerLockElement=canvas;docListeners.get('pointerlockchange')();assert.equal(messages.at(-1).locked,true);
+ emit('message',{source:parent,data:JSON.stringify({type:'hostPointerMode',enabled:false})});assert.equal(document.pointerLockElement,null);assert.equal(messages.at(-1).locked,false);
+ emit('pointerdown',gesture);assert.equal(captures,1);
+ assert.equal(acceptPlayerEvent(parent,parent,JSON.stringify({type:'webPointerLock',locked:'true'})),null);
+ assert.equal(acceptPlayerEvent({},parent,JSON.stringify({type:'webPointerLock',locked:true})),null);
+});
 const runtimeSource=await readFile(new URL('../mcp/runtime/creator-v1.js',import.meta.url),'utf8');
 
 function relayFixture({focused=false,onGameMessage=()=>{}}={}){

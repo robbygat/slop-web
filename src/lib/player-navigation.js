@@ -1,10 +1,9 @@
 export const PLAYER_TABS = [
-  ['home', 'Home', 'home'],
-  ['feed', 'For you', 'play'],
-  ['quests', 'Quests', 'quest'],
+  ['home', 'Explore', 'home'],
   ['social', 'Social', 'social'],
-  ['shop', 'Shop', 'shop'],
-  ['you', 'You', 'user'],
+  ['feed', 'Play', 'play'],
+  ['quests', 'Quests', 'quest'],
+  ['connect', 'Create', 'code'],
 ];
 
 export function isLegacyCreationRoute(path) {

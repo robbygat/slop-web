@@ -14,7 +14,7 @@ export const loadLikedShelf=(offset=0)=>asOwner(async(owner,client)=>{
  const likes=await result(client.from('game_likes').select('game_id,created_at').eq('user_id',owner).order('created_at',{ascending:false}).order('game_id',{ascending:false}).range(offset,offset+23));
  const keys=[...new Set(likes.map(l=>l.game_id))],slugs=keys.filter(id=>SLUG.test(id)),ids=keys.filter(id=>UUID.test(id));
  if(!keys.length)return {games:[],next:null};
- const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
+ const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look),preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)';
  const query=()=>client.from('games').select(columns).eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
  const rows=(await Promise.all([slugs.length?result(query().in('slug',slugs)):[],ids.length?result(query().in('id',ids)):[]])).flat();
  const byId=new Map(rows.map(game=>[game.id,game]));const games=[...byId.values()].sort((a,b)=>Math.min(...[a.id,a.slug].map(key=>keys.indexOf(key)).filter(i=>i>=0))-Math.min(...[b.id,b.slug].map(key=>keys.indexOf(key)).filter(i=>i>=0)));

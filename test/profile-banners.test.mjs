@@ -4,7 +4,7 @@ import {access} from 'node:fs/promises';
 import {PROFILE_BANNERS,profileBanner,bannerImage,parseBannerInventory,parseBannerEquip,PUBLIC_PROFILE_COLUMNS,profileBackdrop} from '../src/lib/profile-banners.js';
 test('the six native backgrounds use real art and leave future equipped IDs unchanged',async()=>{
  assert.equal(PROFILE_BANNERS.length,6);assert.equal(PROFILE_BANNERS.filter(b=>b.included).length,3);
- assert.equal(profileBanner('banner-living-gel').art,'forest-habitat');assert.equal(profileBanner('unknown-background'),null);
+ assert.equal(profileBanner('banner-living-gel').art,'garden-habitat');assert.equal(profileBanner('unknown-background'),null);
  for(const b of PROFILE_BANNERS)await access(new URL(`../public${bannerImage(b)}`,import.meta.url));
  const inventory=parseBannerInventory({authenticated:true,owned_ids:['future-background'],equipped_id:'future-background'});
  assert.equal(inventory.equippedId,'future-background');assert.equal(inventory.owned.has('future-background'),true);
@@ -19,9 +19,9 @@ test('discovery carries equipped backdrop before detail refresh and native defau
  const fields=PUBLIC_PROFILE_COLUMNS.split(',');
  const profile={id:'person',username:'rob',profile_banner_id:'banner-neon-arcade'};
  const discovery=Object.fromEntries(fields.map(key=>[key,profile[key]]));
- assert.equal(profileBackdrop(discovery.profile_banner_id),'/assets/mobile/worlds/neon-arcade.webp');
+ assert.equal(profileBackdrop(discovery.profile_banner_id),'/assets/robots/worlds/arcade-toon-v2.webp');
  assert.equal(profileBackdrop(discovery.profile_banner_id),profileBackdrop(profile.profile_banner_id));
  assert.equal(profileBackdrop(null),bannerImage(profileBanner('banner-living-gel')));
- assert.equal(profileBackdrop('https://untrusted.example/image'),'/assets/illustrations/desert-dusk.webp');
+ assert.equal(profileBackdrop('https://untrusted.example/image'),'/assets/robots/worlds/garden-habitat.webp');
  for(const banner of PROFILE_BANNERS)assert.equal(profileBackdrop(banner.id),bannerImage(banner));
 });

@@ -9,6 +9,10 @@
  let frames=0;
  const errors=[];
  let interacted=false;
+ let pointerMode=false;
+ addEventListener('pointerdown',event=>{if(!pointerMode||!event.isTrusted||document.pointerLockElement||event.target.closest?.('button,input,textarea,a,select'))return;const canvas=event.target.closest?.('canvas')||document.querySelector('[data-slop-playfield] canvas')||document.querySelector('canvas');try{canvas?.requestPointerLock()?.catch?.(()=>send({type:'webPointerError'}));}catch{send({type:'webPointerError'});}});
+ document.addEventListener('pointerlockchange',()=>send({type:'webPointerLock',locked:!!document.pointerLockElement}));
+ document.addEventListener('pointerlockerror',()=>send({type:'webPointerError'}));
  const input=event=>{if(!interacted&&event.isTrusted){interacted=true;send({type:'webInteraction'});}};
  addEventListener('pointerdown',input,{passive:true});addEventListener('keydown',input,{passive:true});
  addEventListener('keydown',event=>{if(event.isTrusted&&event.key==='Escape')send({type:'webEscape'});});
@@ -25,6 +29,7 @@
  addEventListener('message',event=>{
   if(event.source!==parent || typeof event.data!=='string' || event.data.length>4096)return;
   let value;try{value=JSON.parse(event.data);}catch{return;}
+  if(value.type==='hostPointerMode'&&typeof value.enabled==='boolean'){pointerMode=value.enabled;if(!pointerMode&&document.pointerLockElement)document.exitPointerLock();return;}
   if(value.type==='hostKey'&&typeof value.down==='boolean'&&['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(value.key)){
    const keyEvent=new KeyboardEvent(value.down?'keydown':'keyup',{key:value.key==='Space'?' ':value.key,code:value.key,bubbles:true,cancelable:true});
    Object.defineProperty(keyEvent,'__slopHost',{value:true});dispatchEvent(keyEvent);return;

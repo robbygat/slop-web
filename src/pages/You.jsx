@@ -5,9 +5,10 @@ import {result,asOwner} from '../lib/supabase.js';
 import {updatePassword} from '../lib/password.js';
 import {loadGames} from '../lib/catalog.js';
 import {loadProfileBanners,equipProfileBanner,loadProfileStats,loadLikedShelf} from '../lib/profile.js';
-import {PROFILE_BANNERS,profileBanner,bannerImage} from '../lib/profile-banners.js';
+import {PROFILE_BANNERS,profileBanner,bannerImage,profileBackdrop} from '../lib/profile-banners.js';
 import {Button,Empty,Loading,Modal,Notice,SectionHeading,Slop,useAsync} from '../components/ui.jsx';
-import NativeEyePortrait from '../components/NativeEyePortrait.jsx';
+import RobotBody from '../components/RobotBody.jsx';
+
 import SlopCustomizer from '../components/SlopCustomizer.jsx';
 import {Icon} from '../components/Icon.jsx';
 import {GameCard,GameDetail} from './Play.jsx';
@@ -36,20 +37,19 @@ function ProfileShelf({owner,onOpen}){
 }
 export default function You(){
  const {user,profile,signIn,refreshProfile}=useAuth();const [selected,setSelected]=useState(null),[picker,setPicker]=useState(false),[customizing,setCustomizing]=useState(false),[savedLook,setSavedLook]=useState(null),[message,setMessage]=useState('');
+ const [bodyView,setBodyView]=useState(false);
+ useEffect(()=>{try{setBodyView(localStorage.getItem('slop-body-view:'+user?.id)==='full');}catch{setBodyView(false);}},[user?.id]);
+ function toggleBody(){const next=!bodyView;setBodyView(next);try{localStorage.setItem('slop-body-view:'+user.id,next?'full':'head');}catch{}}
  useEffect(()=>setSavedLook(null),[profile?.slop_look]);
  const inventory=useAsync(()=>user?loadProfileBanners():Promise.resolve(null),[user?.id]);
  const stats=useAsync(()=>user?loadProfileStats():Promise.resolve(null),[user?.id]);
  const equippedId=inventory.data?.equippedId||profile?.profile_banner_id||'banner-living-gel';const background=profileBanner(equippedId);
  function equipped(receipt){inventory.setData(receipt);refreshProfile();setMessage('Background updated.');setPicker(false);}
- if(!user)return <section className="you-profile-page you-guest-profile"><div className="you-profile-scene"><img src="/assets/illustrations/desert-horizon.webp" alt=""/><NativeEyePortrait look={{body:'ghost',palette:'tangerine'}} className="you-guest-character" alt="Your Slop"/></div><div className="you-profile-information"><h1>Your Slop.</h1><p>Keep your character, games, and friends together.</p><Button onClick={signIn}>Sign in</Button></div></section>;
- return <div className="you-profile-page">
-  <section className="you-profile-card"><div className="you-profile-scene">{background&&<img src={bannerImage(background)} alt=""/>}<button className="you-background-button" onClick={()=>setPicker(true)}><Icon name="spark" size={17}/><span>Backgrounds</span></button>{!customizing&&<Slop interactive nativeDynamic controls={false} paused={picker||!!selected} look={savedLook||profile?.slop_look} onActivate={()=>setCustomizing(true)} className="you-profile-character" alt="Customize your Slop"/>}</div>
-   <div className="you-profile-information"><div className="you-identity"><h1>{profile?.display_name||profile?.username||'Your Slop'}</h1>{profile?.username&&<p className="you-handle">@{profile.username}</p>}{profile?.bio&&<p className="you-bio">{profile.bio}</p>}</div>
-    <dl className="you-profile-stats">{[['games','Games'],['followers','Followers'],['following','Following']].map(([key,label])=><div key={key}><dt>{label}</dt><dd>{stats.loading||stats.error?'—':stats.data?.[key]?.toLocaleString()??'—'}</dd></div>)}</dl><Notice error={stats.error} onRetry={stats.refresh}/>
-    <div className="you-profile-buttons"><Button icon="spark" onClick={()=>setCustomizing(true)}>Customize Slop</Button><a href="#/settings" className="button secondary"><Icon name="settings" size={18}/>Edit profile</a></div>{message&&<p className="you-profile-status" role="status">{message}</p>}
-   </div>
-  </section>
-  <nav className="you-profile-tools" aria-label="Your tools"><a href="#/quests"><Icon name="quest"/><span>Your quests</span><Icon name="chevron" size={18}/></a><a href="#/connect"><Icon name="connect"/><span>Connected agents</span><Icon name="chevron" size={18}/></a><button onClick={()=>setPicker(true)}><Icon name="spark"/><span>Your backgrounds</span><Icon name="chevron" size={18}/></button></nav>
+ if(!user)return <div className="own-room-page"><section className="profile-room guest-room"><img className="profile-room-world" src={profileBackdrop('banner-soft-orbit')} alt=""/><div className="profile-room-character"><RobotBody/></div><div className="profile-room-identity"><h1>A place<br/>for your Slop.</h1><p>Your character, your games, your people.</p><Button onClick={signIn}>Make yourself at home <Icon name="arrow" size={18}/></Button></div></section><nav className="room-shortcuts" aria-label="Explore your Slop"><a href="#/shop"><Icon name="shop"/><span>Find your look</span><Icon name="arrow" size={18}/></a><a href="#/quests"><Icon name="quest"/><span>Find a challenge</span><Icon name="arrow" size={18}/></a><a href="#/social"><Icon name="social"/><span>Meet the players</span><Icon name="arrow" size={18}/></a></nav></div>;
+ return <div className="own-room-page">
+  <section className="profile-room own-room"><img src={profileBackdrop(equippedId)} alt="" className="profile-room-world"/><button className="room-change-world" onClick={()=>setPicker(true)}><Icon name="spark" size={17}/>Change world</button><div className="profile-room-character">{!customizing&&(bodyView?<RobotBody paused={picker||!!selected} look={savedLook||profile?.slop_look}/>:<Slop interactive controls={false} paused={picker||!!selected} look={savedLook||profile?.slop_look} alt="Your Slop"/>)}</div><div className="profile-room-identity"><h1>{profile?.display_name||profile?.username||'Your Slop'}</h1>{profile?.username&&<p>@{profile.username}</p>}{profile?.bio&&<p className="profile-room-bio">{profile.bio}</p>}</div></section>
+  <div className="profile-room-bar"><dl>{[['games','Games'],['followers','Followers'],['following','Following']].map(([key,label])=><div key={key}><dd>{stats.loading||stats.error?'—':stats.data?.[key]?.toLocaleString()??'—'}</dd><dt>{label}</dt></div>)}</dl><div className="profile-room-actions"><button className="button secondary small" aria-pressed={bodyView} title="Character display on this browser" onClick={toggleBody}>{bodyView?'Head only':'Full body'}</button><Button variant="small" icon="spark" onClick={()=>setCustomizing(true)}>Customize</Button><a href="#/settings" className="button secondary small"><Icon name="settings" size={17}/>Edit profile</a></div></div><Notice error={stats.error} onRetry={stats.refresh}/>{message&&<p role="status" className="success">{message}</p>}
+  <nav className="room-shortcuts" aria-label="Your tools"><a href="#/shop"><Icon name="shop"/><span>Your wardrobe</span><Icon name="arrow" size={18}/></a><a href="#/quests"><Icon name="quest"/><span>Your quests</span><Icon name="arrow" size={18}/></a><a href="#/connect"><Icon name="code"/><span>Your creations</span><Icon name="arrow" size={18}/></a></nav>
   <ProfileShelf owner={user.id} onOpen={setSelected}/>
   {customizing&&<SlopCustomizer key={user.id} owner={user.id} onClose={()=>setCustomizing(false)} onSaved={look=>{setSavedLook(look);refreshProfile();setCustomizing(false);setMessage("Slop saved. Your look updates in the app, too.");}}/>}
   {picker&&<BackgroundPicker inventory={inventory} onEquipped={equipped} onClose={()=>setPicker(false)}/>}{selected&&<GameDetail game={selected} onClose={()=>setSelected(null)}/>}

@@ -15,13 +15,14 @@ import {useAuth} from '../auth.jsx';
 import {Loading,Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
-export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,onEvent,ref,title='Slop game',stageAspect=null}){
+export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
  const {profile}=useAuth();
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),heldKeys=useRef(new Set());callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
  const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:700px), (max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
+ const[pointerMode,setPointerMode]=useState(false),[pointerLocked,setPointerLocked]=useState(false),[pointerError,setPointerError]=useState('');
  const desktopRequired=smallScreen&&gamePlatform(game)==='desktop';
  const state=useRef({});state.current={muted,finished,board,paused,expanded,waitingStart};const format=gameFormat(game),controls=legacyControlSpec(url);
  const send=message=>frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');
@@ -45,7 +46,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   restartGate.current.cancel();
   if(desktopRequired){run.current=null;setDoc(null);setReady(false);setError(null);return;}
   const controller=new AbortController();const current=newRun(!requireInteraction||replayIntent.current);run.current=current;replayIntent.current=false;
-  setDoc(null);setError(null);setReady(false);setFinished(null);setSave(null);setBoard(false);setWaitingStart(false);initialized.current=false;
+  setDoc(null);setError(null);setReady(false);setPointerLocked(false);setPointerError('');setFinished(null);setSave(null);setBoard(false);setWaitingStart(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
@@ -60,6 +61,8 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    const current=run.current;if(!current)return;
    if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board||state.current.waitingStart?'pause':'resume'});}
    if(event.type==='webInteraction'&&!current.ended)current.interacted=true;
+   if(event.type==='webPointerLock'){setPointerLocked(event.locked);if(event.locked)setPointerError('');}
+   if(event.type==='webPointerError'){setPointerError('Click the game again to capture your mouse.');}
    if(event.type==='webEscape'&&state.current.expanded)exitExpanded();
    if(event.type==='score'&&!current.ended)current.score=event.value??event.score;
    if(['finished','gameOver','over'].includes(event.type)&&!current.ended){
@@ -87,6 +90,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   window.addEventListener('message',onMessage);document.addEventListener('visibilitychange',onVisibility);
   return()=>{window.removeEventListener('message',onMessage);document.removeEventListener('visibilitychange',onVisibility);};
  },[preview]);
+ useEffect(()=>{if(ready)send({type:'hostPointerMode',enabled:pointerMode});},[ready,pointerMode,restart]);
  useEffect(()=>{if(ready)send({type:paused||document.hidden||finished!==null||board||waitingStart?'pause':'resume'});},[paused,ready,finished,board,waitingStart]);
  useEffect(()=>{if(!doc||ready)return;const timer=setTimeout(()=>setError(new Error('This game is taking too long to start. Try reloading it.')),25000);return()=>clearTimeout(timer);},[doc,ready]);
  useEffect(()=>{const changed=()=>{if(!document.fullscreenElement)setExpanded(false);};document.addEventListener('fullscreenchange',changed);return()=>document.removeEventListener('fullscreenchange',changed);},[]);
@@ -95,10 +99,10 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  async function expand(){
   if(expanded)return exitExpanded();
   setExpanded(true);const el=container.current;
-  // Top-layer expansion avoids native fullscreen scaling bugs in embedded
-  // browsers and keeps the same live iframe on desktop and phones.
-  if(el?.showPopover){try{el.setAttribute('popover','manual');el.showPopover();frame.current?.focus();return;}catch{el.removeAttribute('popover');}}
-  try{await el?.requestFullscreen?.();}catch{}
+  // Request real fullscreen directly from the user gesture. The top layer is
+  // the fallback for browsers that cannot grant it, preserving the live frame.
+  if(el?.requestFullscreen){try{await el.requestFullscreen();frame.current?.focus();return;}catch{}}
+  if(el?.showPopover){try{el.setAttribute('popover','manual');el.showPopover();}catch{el.removeAttribute('popover');}}
   frame.current?.focus();
  }
  function showBoard(){setBoard(true);send({type:'pause'});}function closeBoard(){setBoard(false);if(finished===null&&!paused)send({type:'resume'});}
@@ -126,9 +130,9 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   {!preview&&game?.slug&&<><input aria-label="Game link" readOnly value={canonicalGameUrl(game)} onFocus={event=>event.target.select()}/>
   <Button variant="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(canonicalGameUrl(game));setCopied(true);}catch{setCopied(false);container.current?.querySelector('input')?.focus();}}}>{copied?'Link copied':'Copy game link'}</Button></>}
  </div>;
- return <div ref={container} className={`game-player ${expanded?'is-expanded':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
+ return <div ref={container} className={`game-player ${theater?'theater-player':''} ${expanded?'is-expanded':''} ${pointerLocked?'has-pointer-lock':''} ${stageAspect?(stageAspect>=1?'landscape':'portrait'):format.orientation}`} style={{'--game-aspect':stageAspect||format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerEnter={()=>frame.current?.contentWindow?.focus()} onPointerDownCapture={()=>frame.current?.contentWindow?.focus()}>
-   {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad" referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
+   {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad; fullscreen" allowFullScreen referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
    {previewVideo&&!error&&<PreviewVideo key={previewVideo.src} video={previewVideo} done={ready}/>}
    <div className={`player-loading ${ready&&!error?'hidden':''}`}>{error?<Notice error={error} onRetry={()=>{verifiedDocument.current=null;setRestart(v=>v+1);}}/>:<Loading label="Loading game…"/>}</div>
    {waitingStart&&!error&&<button className="player-start-overlay" onClick={startFromRest}><span>Play</span></button>}
@@ -136,7 +140,8 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
-  <div className="player-controls"><span className="fine">{preview?'Private playtest':title}</span><div>
+  <div className="player-controls"><span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':title}</span><div>
+   {!smallScreen&&<IconButton name="cursor" label={pointerMode?'Turn off mouse capture':'Capture mouse for this game'} aria-pressed={pointerMode} onClick={()=>{const enabled=!pointerMode;setPointerMode(enabled);setPointerError('');send({type:'hostPointerMode',enabled});frame.current?.focus();}}/>}
    {game&&!preview&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}
    <IconButton name={muted?'mute':'volume'} label={muted?'Unmute game':'Mute game'} onClick={()=>{send({type:'mute',on:!muted});setMuted(!muted);}}/>
    <IconButton name="refresh" label="Restart game" onClick={replay}/>

@@ -8,8 +8,9 @@ export function acceptPlayerEvent(source,frame,data){
  if(!frame || source!==frame || typeof data!=='string' || data.length>750000)return null;
  if(data==='slop-player-loaded-v1')return {type:'loaded'};
  try {const event=JSON.parse(data);if(!event||Array.isArray(event)||typeof event!=='object')return null;
- const types=['restart-ack','ready','score','finished','gameOver','over','loadError','webGameError','webCaptureResult','webCaptureError','webInteraction','webScroll','webEscape'];
+ const types=['restart-ack','ready','score','finished','gameOver','over','loadError','webGameError','webCaptureResult','webCaptureError','webInteraction','webScroll','webEscape','webPointerLock','webPointerError'];
  if(!types.includes(event.type))return null;
+ if(event.type==='webPointerLock'&&typeof event.locked!=='boolean')return null;
  if(event.type==='restart-ack'&&!validRestartAck(event))return null;
  if(event.type==='webScroll'&&(!Number.isFinite(event.deltaY)||Math.abs(event.deltaY)>240||![0,1,2].includes(event.deltaMode)))return null;
  if(event.type==='score'&&(!Number.isSafeInteger(event.value??event.score)||(event.value??event.score)<0))return null;

@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useAuth} from '../auth.jsx';
 import {Button, Loading, Notice} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
+import RobotPortrait from '../components/RobotPortrait.jsx';
 import {loadQuests, claimQuest} from '../lib/quests.js';
 import {playerQuests, questAction, questExpired} from '../lib/quest-contracts.js';
 import './quests.css';
@@ -16,7 +17,7 @@ function friendlyError(error) {
 export default function Quests() {
   const {user, ready, signIn} = useAuth();
   return <div className="quests-page">
-    <header className="quests-heading"><div><span className="eyebrow">A little challenge. A new favorite.</span><h1>Quests</h1><p>Play, make progress, and collect your rewards.</p></div><a className="button secondary" href="#/feed"><Icon name="play" size={18}/>Find a game</a></header>
+    <header className="quests-heading"><div><h1>Earn your crown.</h1><p>A little play. A little progress. A lot to make yours.</p></div><a className="button secondary" href="#/feed"><Icon name="play" size={18}/>Find a game</a></header>
     {!ready ? <Loading label="Opening your quests…"/> : user ? <AccountQuests key={user.id}/> : <GuestQuests onSignIn={signIn}/>}
   </div>;
 }
@@ -24,15 +25,15 @@ export default function Quests() {
 function GuestQuests({onSignIn}) {
   return <>
     <section className="quest-welcome">
-      <div className="quest-welcome-mark" aria-hidden="true"><Icon name="quest" size={58}/></div>
+      <img className="quest-welcome-art" src="/assets/quests/weekly-crown.webp" alt=""/>
       <div><h2>Your next challenge is waiting.</h2><p>Sign in with your Slop account to see your quests, progress, and earned rewards.</p><div className="quest-actions"><Button onClick={onSignIn}>Sign in for quests</Button><a className="button secondary" href="#/feed">Keep playing</a></div></div>
     </section>
     <div className="quest-introductions">
       {[
-        ['Daily', 'A fresh reason to come back.', 'New play goals each day.'],
-        ['Weekly', 'Keep a good run going.', 'Work toward bigger goals throughout the week.'],
-        ['Starting', 'Find your feet.', 'First milestones that stay until you finish them.'],
-      ].map(([title, heading, copy]) => <section key={title}><span>{title}</span><h3>{heading}</h3><p>{copy}</p></section>)}
+        ['Daily', 'A new day. A new goal.', 'Fresh play goals each day.', 'daily-robots'],
+        ['Weekly', 'Go a little further.', 'Bigger goals to work toward all week.', 'weekly-crown'],
+        ['Starting', 'Start something good.', 'Your first milestones, at your own pace.', 'starter-crew'],
+      ].map(([title, heading, copy, art]) => <section key={title} className="quest-journey"><img src={`/assets/quests/${art}.webp`} alt="" loading="lazy"/><div><h3>{title}</h3><p>{heading} {copy}</p></div></section>)}
     </div>
     <AppProgressNote/>
   </>;
@@ -102,14 +103,14 @@ function AccountQuests() {
   const resetsAt = category === 'starting' ? null : new Date(snapshot[`${category}_resets_at`]);
   const resetLabel = resetsAt?.toLocaleString(undefined, {weekday: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short'});
   return <>
-    <section className="quest-player-progress" aria-label="Your verified player progress">
-      <div className="quest-level-mark"><span>Level</span><strong>{number(progress.level)}</strong></div>
-      <div className="quest-level-copy"><div><h2>Your progress</h2><span>{number(progress.total_xp)} XP</span></div><progress aria-label={`Level ${progress.level}: ${progress.xp_into_level} of ${progress.xp_for_level} XP`} value={progress.xp_into_level} max={progress.xp_for_level}/><p>{number(progress.xp_for_level - progress.xp_into_level)} XP to the next level</p></div>
-      <a href="#/shop" className="quest-balance"><strong>{number(snapshot.coin_balance)}</strong><span>Slop Coins<Icon name="arrow" size={15}/></span></a>
+    <section className="quest-player-progress quest-command" aria-label="Your verified player progress">
+      <div className="quest-level-orbit" style={{'--level-progress':`${Math.min(100,progress.xp_into_level/progress.xp_for_level*100)}%`}}><div><RobotPortrait shell="core" face="slop" glow="lime" alt=""/><span>Level <strong>{number(progress.level)}</strong></span></div></div>
+      <div className="quest-level-copy"><div><h2>Keep going.<br/>You’re getting somewhere.</h2></div><progress aria-label={`Level ${progress.level}: ${progress.xp_into_level} of ${progress.xp_for_level} XP`} value={progress.xp_into_level} max={progress.xp_for_level}/><p><strong>{number(progress.xp_into_level)} / {number(progress.xp_for_level)} XP</strong><span>{number(progress.xp_for_level-progress.xp_into_level)} to level {number(progress.level+1)}</span></p></div>
+      <a href="#/shop" className="quest-balance"><Icon name="coins" size={29}/><strong>{number(snapshot.coin_balance)}</strong><span>Slop Coins <Icon name="arrow" size={15}/></span><small>Find your next look</small></a>
     </section>
     <AppProgressNote/>
     <div className="quest-toolbar"><div className="quest-categories" role="group" aria-label="Quest period">{categories.map(([id, label]) => <button key={id} aria-pressed={category === id} className={category === id ? 'selected' : ''} onClick={() => setCategory(id)}>{label}</button>)}</div><Button variant="small secondary" icon="refresh" disabled={loading || !!claiming} onClick={refresh}>{loading ? 'Refreshing…' : 'Refresh'}</Button></div>
-    <div className="quest-period-summary"><p>{completed} of {quests.length} complete</p><span>{resetLabel ? `Resets ${resetLabel}` : 'No time limit'}</span></div>
+    <div className="quest-period-art"><img src={`/assets/quests/${category==='daily'?'daily-robots':category==='weekly'?'weekly-crown':'starter-crew'}.webp`} alt=""/><h2>{category==='daily'?'A new day. A new goal.':category==='weekly'?'Go a little further.':'Start something good.'}</h2></div><div className="quest-period-summary"><p>{completed} of {quests.length} complete</p><span>{resetLabel ? `Resets ${resetLabel}` : 'No time limit'}</span></div>
     <Notice error={error} onRetry={refresh}/>{error && <p className="fine">Showing your last verified progress.</p>}
     {message && <p className="success" role="status">{message}</p>}
     <div className="quest-cards">{quests.map(quest => <QuestCard key={quest.id} quest={quest} expired={questExpired(snapshot, quest, serverNow)} disabled={loading || !!claiming} claiming={claiming === quest.id} onClaim={() => claim(quest)}/>)}</div>

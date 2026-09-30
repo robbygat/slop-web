@@ -1,4 +1,4 @@
-.circle-page{max-width:1260px;margin:0 auto;font-family:Gabarito,system-ui,sans-serif}
+.circle-page{max-width:1260px;margin:0 auto;font-family:'Slop Sans',system-ui,sans-serif}
 .circle-intro{min-height:290px;position:relative;isolation:isolate;overflow:hidden;border-radius:38px;background:#6266b1;display:flex;align-items:center;padding:44px 48px}
 .circle-sky{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 57%;z-index:-2}
 .circle-intro::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#30285375 0%,#30285318 58%,transparent)}
@@ -7,7 +7,7 @@
 .circle-intro-copy>p{color:#fff3e8;font-size:16px;margin:0 0 25px;line-height:1.4}
 .circle-search{display:flex;align-items:center;gap:12px;min-height:52px;max-width:400px;padding:0 16px;border-radius:999px;border:1px solid #fff8f061;background:#fffaf2f5;box-shadow:0 5px 14px #37245110;color:#4d425d;cursor:text}
 .circle-search:focus-within{outline:3px solid #ffedcaae;outline-offset:3px}
-.circle-search input{min-width:0;width:100%;padding:13px 0;border:0;outline:0;box-shadow:none;background:transparent!important;color:#302c3f;font:500 15px Gabarito,system-ui,sans-serif}
+.circle-search input{min-width:0;width:100%;padding:13px 0;border:0;outline:0;box-shadow:none;background:transparent!important;color:#302c3f;font:500 15px 'Slop Sans',system-ui,sans-serif}
 .circle-search input::placeholder{color:#776d85;opacity:1}
 .circle-search button{display:grid;place-items:center;flex-shrink:0;width:32px;height:36px;border:0;border-radius:50%;background:transparent;color:#4d425d;cursor:pointer}
 .circle-residents{position:absolute;right:20px;bottom:15px;width:42%;height:245px;pointer-events:none}
@@ -38,7 +38,7 @@
 .person-ribbon-enter{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:650;margin-top:auto;margin-bottom:8px;opacity:.8;transition:opacity .2s,gap .2s}
 .slop-person-ribbon:hover .person-ribbon-enter{gap:14px;opacity:1}
 .person-ribbon-actions{position:absolute;left:24px;right:24px;bottom:18px;height:42px;display:flex;justify-content:center}
-.person-ribbon-follow{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:1px solid #fff9f570;border-radius:999px;background:#fffaf2eb;color:#342c3e;min-height:42px;font:650 13px Gabarito,system-ui,sans-serif;cursor:pointer;transition:background .2s,transform .2s}
+.person-ribbon-follow{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:1px solid #fff9f570;border-radius:999px;background:#fffaf2eb;color:#342c3e;min-height:42px;font:650 13px 'Slop Sans',system-ui,sans-serif;cursor:pointer;transition:background .2s,transform .2s}
 .person-ribbon-follow:hover:not(:disabled){background:#fffaf2;transform:translateY(-1px)}
 .person-ribbon-follow.is-following{background:#fffaf21c;color:#fffaf2;border-color:#fffaf252}
 .person-ribbon-follow:disabled{opacity:.65;cursor:wait}
