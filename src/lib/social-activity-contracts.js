@@ -12,7 +12,7 @@ export function parseSocialActivity(rows, ownerId) {
     && typeof row.kind === 'string' && !ids.has(row.id) && !!ids.add(row.id)).map(row => ({
     id:row.id, kind:text(row.kind,80), actorId:UUID.test(row.actor_id)?row.actor_id:null,
     actorName:text(row.actor_name,80).replace(/^@/, '') || 'Someone',
-    gameId:SLUG.test(row.game_id)?row.game_id:null, gameName:text(row.game_name,200),
+    gameId:typeof row.game_id==='string'&&SLUG.test(row.game_id)?row.game_id:null, gameName:text(row.game_name,200),
     conversationId:UUID.test(row.conversation_id)?row.conversation_id:null,
     detail:text(row.detail), metadata:row.metadata&&typeof row.metadata==='object'&&!Array.isArray(row.metadata)?row.metadata:{},
     readAt:typeof row.read_at==='string'&&Number.isFinite(Date.parse(row.read_at))?row.read_at:null,

@@ -9,6 +9,7 @@ test('activity excludes other recipients, malformed dates and ids and duplicate 
   assert.throws(()=>parseSocialActivity([row],'unknown'),{code:'invalid_response'});
   assert.equal(parseSocialActivity([{...row,actor_id:'invented',game_id:'javascript:bad'}],owner)[0].actorId,null);
   assert.equal(parseSocialActivity([{...row,actor_id:'invented',game_id:'javascript:bad'}],owner)[0].gameId,null);
+  assert.equal(parseSocialActivity([{...row,game_id:123}],owner)[0].gameId,null);
 });
 test('lost crowns retain the actor and the actual winning and previous scores',()=>{
   assert.equal(activitySentence(event()),'@rival took your crown.');
