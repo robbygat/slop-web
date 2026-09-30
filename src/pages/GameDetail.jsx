@@ -19,6 +19,7 @@ export default function GameDetail({game,onClose,discussionOnly=false}){
  const[liked,setLiked]=useState(false),[likeBusy,setLikeBusy]=useState(false),[text,setText]=useState(''),[posting,setPosting]=useState(false),[error,setError]=useState(null),[shared,setShared]=useState(false),[phone,setPhone]=useState(false);
  const[gifOpen,setGifOpen]=useState(false),[gifQuery,setGifQuery]=useState(''),[gifs,setGifs]=useState([]),[gifLoading,setGifLoading]=useState(false),[selectedGif,setSelectedGif]=useState(null);
  const [recordPreview,setRecordPreview]=useState(false);
+ const [details,setDetails]=useState(discussionOnly);
  const mayRecord=!!user&&!user.is_anonymous&&game.owner_id===user.id&&game.status==='published';
  const socialId=game.slug;
  const thread=useAsync(()=>comments(socialId),[game.id,user?.id]);const counts=useAsync(()=>socialCounts([socialId]),[game.id,liked]);
@@ -28,9 +29,10 @@ export default function GameDetail({game,onClose,discussionOnly=false}){
  async function comment(e){e.preventDefault();if(!requireAuth()||(!text.trim()&&!selectedGif))return;setPosting(true);setError(null);try{await postComment(socialId,text,selectedGif?.url||null);setText('');setSelectedGif(null);setGifOpen(false);thread.refresh();}catch(e){setError(e);}finally{setPosting(false);}}
  async function share(){const url=canonicalGameUrl(game);try{if(navigator.share)await navigator.share({title:game.name,url});else await navigator.clipboard.writeText(url);setShared(true);}catch(e){if(e.name!=='AbortError')setError(new Error('Could not share this game. Copy its page address instead.'));}}
  if(recordPreview&&mayRecord)return <ManualPreviewRecorder key={`${game.id}:${user.id}`} game={game} onClose={()=>setRecordPreview(false)}/>;
- return <Modal title={game.name} onClose={onClose} className={`game-detail ${discussionOnly?'discussion-only':''} ${!discussionOnly&&gameFormat(game).orientation!=='portrait'?'game-detail-wide':''}`}>
-  <div className="game-detail-grid">
-   {!discussionOnly&&<GamePlayer game={game} url={gameEntry(game)} title={game.name} requireInteraction/>}
+ return <Modal title={game.name} onClose={onClose} className={`game-detail theater-modal ${discussionOnly?'discussion-only':''} ${details?'show-details':''} ${!discussionOnly&&gameFormat(game).orientation!=='portrait'?'game-detail-wide':'theater-phone'}`}>
+  {!discussionOnly&&<div className="theater-toolbar"><span><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/>by @{game.profiles?.username||'slop'}</span><div><button onClick={share}><Icon name="share" size={16}/>{shared?'Link copied':'Share'}</button><button aria-expanded={details} onClick={()=>setDetails(v=>!v)}><Icon name="social" size={17}/>{details?'Hide details':'Details & comments'}</button></div></div>}
+  <div className="theater-layout">
+   {!discussionOnly&&<GamePlayer game={game} url={gameEntry(game)} title={game.name} requireInteraction theater/>}
    <div className="game-discussion">
     <div className="game-author"><Slop look={game.profiles?.slop_look} avatar={game.profiles?.avatar_url} alt=""/><div><h3>{game.name}</h3><p>Made by @{game.profiles?.username||'slop'}</p></div></div>
     {game.description&&<p className="game-description">{game.description}</p>}

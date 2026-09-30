@@ -78,6 +78,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
  }
  const status=busy?stage:receipt?.status==='published'?'Your game is live. Retry saving its video preview.':!ready?'Starting your game…':clipReady?'Clip ready. Publish whenever you like.':clip.frames>=CLIP_FRAMES?'Keep playing. Slop needs a moment where something moves.':'Play for a few seconds. Slop is capturing your clip.';
  return <Modal title={update?`Update ${update.name}`:preview.name||'Your game'} onClose={()=>{if(!busy){if(receiptRef.current)onPublished({...receiptRef.current,videoPending:receiptRef.current.status==='published'});else onClose();}}} className="mcp-playtest-modal">
+  <ol className="publish-progress" aria-label="Publication progress"><li className={ready?'complete':'current'}><b>01</b> Play your game</li><li className={clipReady?'complete':ready?'current':''}><b>02</b> Capture a preview</li><li className={receipt?'complete':clipReady?'current':''}><b>03</b> {receipt?.status==='pending_review'?'In review':receipt?'Game saved':'Publish'}</li></ol>
   <div className={`mcp-playtest-layout ${preview.target_platform==='desktop'?'is-desktop':''}`}>
    <GamePlayer ref={player} url={preview.preview_url} game={previewGameForTarget(preview.target_platform||'mobile')} stageAspect={captureStageAspect(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
    <div className="mcp-publication">
@@ -91,7 +92,7 @@ export function McpDraftReview({preview,onClose,onPublished}){
     <div className="mcp-publish-bar"><Button icon="share" disabled={busy||(!receipt&&(!clipReady||!video.supported||!title.trim()||(!update&&(nameLoading||!validGameName(gameName)))))} onClick={publish}>{busy?(receipt?'Saving video…':'Publishing…'):receipt?'Retry video attachment':update?'Publish update':'Publish'}</Button></div>
     {update?<p className="fine">This replaces {update.name} for everyone. Its link, plays and likes stay.</p>:<button type="button" className="text-button mcp-details-toggle" aria-expanded={details} onClick={()=>setDetails(v=>!v)}>{details?'Hide link':'Game link'}: slop.game/{gameName||'…'}</button>}
     {!update&&details&&<label>Your permanent game link<div className="mcp-game-name"><span>slop.game/</span><input aria-label="Unique game name" value={gameName} onChange={e=>{setNameEdited(true);setGameName(e.target.value.toLowerCase());}} minLength={3} maxLength={50} disabled={claimed||nameLoading||busy} placeholder="your-game-name"/></div></label>}
-    <p className="fine">Your clip and cover come from the last few seconds you played, in the same shape as games made in the app. Publishing sends it to review like any Slop game.</p>
+    <p className="fine">Your real gameplay becomes the cover and video preview. We’ll confirm whether your game is live or waiting for review.</p>
     <Notice error={error||video.error}/>
    </div>
   </div>

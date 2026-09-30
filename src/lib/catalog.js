@@ -5,9 +5,12 @@ import {publicGameNames} from './game-name-claims.js';
 import {filterPlatform} from './game-platforms.js';
 import {PUBLIC_PROFILE_COLUMNS} from './profile-banners.js';
 import {prioritizePeople} from './people-order.js';
+import {createPublicPageCache} from './public-page-cache.js';
+const discoveryPages=createPublicPageCache();
+const previewColumns=',preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)';
 const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
 export async function loadGames({category='all',platform='all',search='',offset=0,owner}={}){
-  let query=supabase.from('games').select(columns).eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
+  let query=supabase.from('games').select(columns+previewColumns).eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
   if(category!=='all')query=query.eq('category',category);
   if(search.trim())query=query.ilike('name',`%${search.trim().replace(/[%_\\]/g,'').slice(0,80)}%`);
   if(owner)query=query.eq('owner_id',owner);
@@ -17,7 +20,7 @@ export async function loadGames({category='all',platform='all',search='',offset=
 export async function loadGame(name){
  const resolved=await publicRead(supabase.rpc('resolve_public_game_name',{p_name:name}));
  if(!resolved?.slug)throw new Error('This game is not available.');
- const game=await publicRead(supabase.from('games').select(columns).eq('slug',resolved.slug).eq('status','published').eq('media_delete_authorized',false).single());
+ const game=await publicRead(supabase.from('games').select(columns+previewColumns).eq('slug',resolved.slug).eq('status','published').eq('media_delete_authorized',false).single());
  return {...game,public_name:resolved.name||null};
 }
 export const socialCounts=(ids)=>result(supabase.rpc('game_social_counts',{p_ids:ids}));
@@ -38,14 +41,20 @@ export const followPerson=(id,follow)=>asOwner((owner,client)=>result(follow?cli
 
 // Stable continuation through the real, public mobile catalog. Never turn a
 // failed ranked cursor into an unrelated chronological cursor.
-export async function loadDiscoveryPage({cursor=null,order='popular',platform='all',limit=12}={}){
+export async function loadDiscoveryPage({cursor=null,order='popular',platform='all',search='',limit=12}={}){
+ const key=JSON.stringify({cursor,order,platform,search,limit});
+ return discoveryPages.read(key,()=>readDiscoveryPage({cursor,order,platform,search,limit}));
+}
+async function readDiscoveryPage({cursor,order,platform,search,limit}){
  const metric=order==='popular'?'qualified_play_count':'created_at';
  let query=supabase.from('games').select(columns+',qualified_play_count,preview_url,preview_status,preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)')
   .eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
  query=filterPlatform(query,platform);
  if(cursor){
+  // A stable continuation is scoped to the active search and platform.
   query=query.or(discoveryBoundary(cursor,order));
  }
+ if(search.trim())query=query.ilike('name',`%${search.trim().replace(/[%_\\]/g,'').slice(0,80)}%`);
  if(order==='popular')query=query.order(metric,{ascending:false});
  const rows=await publicRead(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).limit(limit+1));
  const games=rows.slice(0,limit),last=games.at(-1);

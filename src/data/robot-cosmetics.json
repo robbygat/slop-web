@@ -1,0 +1,866 @@
+[
+  {
+    "id": "robot-shell-core",
+    "slot": "shell",
+    "value": "core",
+    "name": "Core",
+    "blurb": "The original round toy shell. Glossy, friendly, iconic.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-shell-neko",
+    "slot": "shell",
+    "value": "neko",
+    "name": "Neko",
+    "blurb": "Two perky ears on a soft rounded head.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-shell-clicky",
+    "slot": "shell",
+    "value": "clicky",
+    "name": "Clicky",
+    "blurb": "A desk-toy Slop with a twitchy little antenna.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-shell-homebody",
+    "slot": "shell",
+    "value": "homebody",
+    "name": "Homebody",
+    "blurb": "A cozy house-shaped shell with the lights always on.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-shell-stamp",
+    "slot": "shell",
+    "value": "stamp",
+    "name": "Stamp",
+    "blurb": "A chunky rubber-stamp shell that approves every idea.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-gatekeeper",
+    "slot": "shell",
+    "value": "gatekeeper",
+    "name": "Gatekeeper",
+    "blurb": "A capped guardian shell with a no-nonsense brim.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-blocky",
+    "slot": "shell",
+    "value": "blocky",
+    "name": "Blocky",
+    "blurb": "A voxel Slop mined straight out of its own biome.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-noir",
+    "slot": "shell",
+    "value": "noir",
+    "name": "Noir",
+    "blurb": "A trench-coat silhouette for Slops who work the night shift.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-stage-door",
+    "slot": "shell",
+    "value": "stage-door",
+    "name": "Stage Door",
+    "blurb": "A marquee star shell that walks on already applauded.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-chip",
+    "slot": "shell",
+    "value": "chip",
+    "name": "High Roller",
+    "blurb": "A casino-chip shell stacked high and spinning lucky.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-marshal",
+    "slot": "shell",
+    "value": "marshal",
+    "name": "Field Marshal",
+    "blurb": "A decorated command shell with a sculpted glass mask.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-drizzle",
+    "slot": "shell",
+    "value": "drizzle",
+    "name": "Drizzle",
+    "blurb": "A puffy rain-cloud Slop with a tiny drizzle all its own.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-toasty",
+    "slot": "shell",
+    "value": "toasty",
+    "name": "Toasty",
+    "blurb": "A retro toaster Slop with fresh toast popping up behind it.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-gumdrop",
+    "slot": "shell",
+    "value": "gumdrop",
+    "name": "Gumdrop",
+    "blurb": "A gumball-machine Slop with a globe of sweets on top.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-bassline",
+    "slot": "shell",
+    "value": "bassline",
+    "name": "Bassline",
+    "blurb": "A boombox Slop whose speakers thump along to every win.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-rawr",
+    "slot": "shell",
+    "value": "rawr",
+    "name": "Rawr",
+    "blurb": "A Slop in a dino hood: soft teeth, back spikes, waggly tail.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-liftoff",
+    "slot": "shell",
+    "value": "liftoff",
+    "name": "Liftoff",
+    "blurb": "A toy-rocket Slop with a porthole screen and fins for speed.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-glowcap",
+    "slot": "shell",
+    "value": "glowcap",
+    "name": "Glowcap",
+    "blurb": "A mushroom Slop whose spots glow softly in the dark.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-saucer",
+    "slot": "shell",
+    "value": "saucer",
+    "name": "Saucer",
+    "blurb": "A little flying-saucer Slop with lights chasing round its rim.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-coin-op",
+    "slot": "shell",
+    "value": "coin-op",
+    "name": "Coin-Op",
+    "blurb": "A stand-up arcade Slop with a lit marquee and a restless joystick.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-quackers",
+    "slot": "shell",
+    "value": "quackers",
+    "name": "Quackers",
+    "blurb": "A rubber-duck Slop, squeaky clean and ready to splash.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-prickles",
+    "slot": "shell",
+    "value": "prickles",
+    "name": "Prickles",
+    "blurb": "A potted cactus Slop with a flower and a prickly wave.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-brewster",
+    "slot": "shell",
+    "value": "brewster",
+    "name": "Brewster",
+    "blurb": "A porcelain teapot Slop that steams while it thinks.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-wobble",
+    "slot": "shell",
+    "value": "wobble",
+    "name": "Wobble",
+    "blurb": "A jellyfish Slop with a glossy bell and glowing tentacle tips.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-updraft",
+    "slot": "shell",
+    "value": "updraft",
+    "name": "Updraft",
+    "blurb": "A hot-air-balloon Slop drifting over the feed, basket and all.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-shell-hivemind",
+    "slot": "shell",
+    "value": "hivemind",
+    "name": "Hivemind",
+    "blurb": "A beehive Slop with two bees on patrol. Very busy.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-signature",
+    "slot": "finish",
+    "value": "signature",
+    "name": "Signature",
+    "blurb": "Each shell exactly as Slop painted it.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-sky",
+    "slot": "finish",
+    "value": "sky",
+    "name": "Sky",
+    "blurb": "Clear-day blue gloss.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-mint",
+    "slot": "finish",
+    "value": "mint",
+    "name": "Mint",
+    "blurb": "Cool candy-mint lacquer.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-bubblegum",
+    "slot": "finish",
+    "value": "bubblegum",
+    "name": "Bubblegum",
+    "blurb": "Pop-pink toy plastic.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-sunny",
+    "slot": "finish",
+    "value": "sunny",
+    "name": "Sunny",
+    "blurb": "Warm school-bus yellow.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-tangerine",
+    "slot": "finish",
+    "value": "tangerine",
+    "name": "Tangerine",
+    "blurb": "The original Slop orange, now in hard gloss.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-finish-matte",
+    "slot": "finish",
+    "value": "matte",
+    "name": "Matte Clay",
+    "blurb": "Soft designer-toy clay with no shine at all.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-grape",
+    "slot": "finish",
+    "value": "grape",
+    "name": "Grape",
+    "blurb": "Deep violet soda gloss.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-cherry",
+    "slot": "finish",
+    "value": "cherry",
+    "name": "Cherry",
+    "blurb": "Candy-apple red with a showroom shine.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-pearl",
+    "slot": "finish",
+    "value": "pearl",
+    "name": "Pearl",
+    "blurb": "Iridescent white that shifts pink and blue as it turns.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-midnight",
+    "slot": "finish",
+    "value": "midnight",
+    "name": "Midnight",
+    "blurb": "Blue-black enamel that makes the screen glow pop.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-candy",
+    "slot": "finish",
+    "value": "candy",
+    "name": "Candy Shell",
+    "blurb": "Translucent hard-candy pink you can almost taste.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-carbon",
+    "slot": "finish",
+    "value": "carbon",
+    "name": "Carbon",
+    "blurb": "Woven carbon fibre for Slops built for speed.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-chrome",
+    "slot": "finish",
+    "value": "chrome",
+    "name": "Liquid Chrome",
+    "blurb": "A mirror-bright shell that reflects the whole sky.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-gold",
+    "slot": "finish",
+    "value": "gold",
+    "name": "Solid Gold",
+    "blurb": "Polished 24-karat toy gold. Pure status.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-finish-holo",
+    "slot": "finish",
+    "value": "holo",
+    "name": "First Boot Holo",
+    "blurb": "A holographic shell for the makers who booted the beta.",
+    "rarity": "legendary",
+    "tier": "beta"
+  },
+  {
+    "id": "robot-face-slop",
+    "slot": "face",
+    "value": "slop",
+    "name": "Slop",
+    "blurb": "The Slop S-wave, softly glowing in your chosen color.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-wave",
+    "slot": "face",
+    "value": "wave",
+    "name": "Signal",
+    "blurb": "Slop\u2019s living squiggle. The mind, thinking out loud.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-pixel",
+    "slot": "face",
+    "value": "pixel",
+    "name": "Pixel Eyes",
+    "blurb": "Two chunky pixels that blink on cue.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-happy",
+    "slot": "face",
+    "value": "happy",
+    "name": "Happy",
+    "blurb": "Crescent eyes and an easy grin.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-cyclops",
+    "slot": "face",
+    "value": "cyclops",
+    "name": "Cyclops",
+    "blurb": "One big curious eye. A Slop classic.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-sleepy",
+    "slot": "face",
+    "value": "sleepy",
+    "name": "Sleepy",
+    "blurb": "Low-battery lids and slow blinks.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-wink",
+    "slot": "face",
+    "value": "wink",
+    "name": "Wink",
+    "blurb": "One eye open, one eye in on the joke.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-face-pulse",
+    "slot": "face",
+    "value": "pulse",
+    "name": "Pulse",
+    "blurb": "A steady heartbeat line across the glass.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-angry",
+    "slot": "face",
+    "value": "angry",
+    "name": "Grumpy",
+    "blurb": "Slanted brows for a Slop that means business.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-spiral",
+    "slot": "face",
+    "value": "spiral",
+    "name": "Spiral",
+    "blurb": "Hypno-eyes that never stop turning.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-dizzy",
+    "slot": "face",
+    "value": "dizzy",
+    "name": "KO",
+    "blurb": "X-eyes for the round you definitely meant to lose.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-visor",
+    "slot": "face",
+    "value": "visor",
+    "name": "Visor",
+    "blurb": "A single scanning bar, sweeping side to side.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-loading",
+    "slot": "face",
+    "value": "loading",
+    "name": "Loading",
+    "blurb": "A spinner that is always almost done.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-hearts",
+    "slot": "face",
+    "value": "hearts",
+    "name": "Heart Eyes",
+    "blurb": "Two glowing hearts for everything you play.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-stars",
+    "slot": "face",
+    "value": "stars",
+    "name": "Star Eyes",
+    "blurb": "Starstruck, permanently.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-uwu",
+    "slot": "face",
+    "value": "uwu",
+    "name": "UwU",
+    "blurb": "Soft squint, tiny mouth, maximum charm.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-cat",
+    "slot": "face",
+    "value": "cat",
+    "name": "Kitty",
+    "blurb": "Cat eyes and a little w-mouth.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-chart",
+    "slot": "face",
+    "value": "chart",
+    "name": "Ticker",
+    "blurb": "A live market line. Number go up.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-shades",
+    "slot": "face",
+    "value": "shades",
+    "name": "Shades",
+    "blurb": "Pixel sunglasses that deal with it.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-equalizer",
+    "slot": "face",
+    "value": "equalizer",
+    "name": "Equalizer",
+    "blurb": "Bouncing EQ bars that dance to every sound.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-kawaii",
+    "slot": "face",
+    "value": "kawaii",
+    "name": "Sparkle Eyes",
+    "blurb": "Huge anime eyes with twinkling highlights.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-grille",
+    "slot": "face",
+    "value": "grille",
+    "name": "Retro Screen",
+    "blurb": "Round eyes over a speaker grille, straight out of 1962.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-face-money",
+    "slot": "face",
+    "value": "money",
+    "name": "Money Eyes",
+    "blurb": "Dollar signs that ka-ching on every win.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-neon",
+    "slot": "line",
+    "value": "neon",
+    "name": "Neon",
+    "blurb": "The soft glowing line Slop draws with.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-line-solid",
+    "slot": "line",
+    "value": "solid",
+    "name": "Solid",
+    "blurb": "A crisp, flat stroke with no bloom.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-line-dashed",
+    "slot": "line",
+    "value": "dashed",
+    "name": "Dashed",
+    "blurb": "A stitched line that ticks along.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-led",
+    "slot": "line",
+    "value": "led",
+    "name": "LED Matrix",
+    "blurb": "Every stroke rebuilt from glowing dots.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-crt",
+    "slot": "line",
+    "value": "crt",
+    "name": "CRT",
+    "blurb": "Warm phosphor with a faint chromatic fringe.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-tube",
+    "slot": "line",
+    "value": "tube",
+    "name": "Neon Tube",
+    "blurb": "Bent glass tubing that hums in the dark.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-scope",
+    "slot": "line",
+    "value": "scope",
+    "name": "Oscilloscope",
+    "blurb": "A lab-grade trace with a persistent afterglow.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-holo",
+    "slot": "line",
+    "value": "holo",
+    "name": "Hologram",
+    "blurb": "A shimmering projected line that flickers in 3D.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-line-glitch",
+    "slot": "line",
+    "value": "glitch",
+    "name": "Glitch",
+    "blurb": "A line that tears, skips and reassembles itself.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-signal",
+    "slot": "glow",
+    "value": "signal",
+    "name": "Signal Blue",
+    "blurb": "Slop\u2019s own electric blue.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-cyan",
+    "slot": "glow",
+    "value": "cyan",
+    "name": "Cyan",
+    "blurb": "Bright arcade cyan.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-mint",
+    "slot": "glow",
+    "value": "mint",
+    "name": "Mint",
+    "blurb": "Fresh terminal green.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-pink",
+    "slot": "glow",
+    "value": "pink",
+    "name": "Pink",
+    "blurb": "Hot bubblegum neon.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-gold",
+    "slot": "glow",
+    "value": "gold",
+    "name": "Gold",
+    "blurb": "Warm marquee gold.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-white",
+    "slot": "glow",
+    "value": "white",
+    "name": "Moonlight",
+    "blurb": "A soft white-blue glow.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-glow-lime",
+    "slot": "glow",
+    "value": "lime",
+    "name": "Lime",
+    "blurb": "Toxic-bright lime.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-amber",
+    "slot": "glow",
+    "value": "amber",
+    "name": "Amber",
+    "blurb": "Old-terminal amber.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-red",
+    "slot": "glow",
+    "value": "red",
+    "name": "Alert Red",
+    "blurb": "Boss-fight red.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-violet",
+    "slot": "glow",
+    "value": "violet",
+    "name": "Violet",
+    "blurb": "Deep ultraviolet.",
+    "rarity": "common",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-sunset",
+    "slot": "glow",
+    "value": "sunset",
+    "name": "Sunset",
+    "blurb": "Coral fading into gold.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-candy",
+    "slot": "glow",
+    "value": "candy",
+    "name": "Cotton Candy",
+    "blurb": "Pink melting into sky blue.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-ocean",
+    "slot": "glow",
+    "value": "ocean",
+    "name": "Deep Ocean",
+    "blurb": "Cyan sinking into indigo.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-aurora",
+    "slot": "glow",
+    "value": "aurora",
+    "name": "Aurora",
+    "blurb": "Mint ribbons drifting into violet.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-glow-rainbow",
+    "slot": "glow",
+    "value": "rainbow",
+    "name": "Full Spectrum",
+    "blurb": "Every colour at once, cycling forever.",
+    "rarity": "legendary",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-fx-none",
+    "slot": "fx",
+    "value": "none",
+    "name": "Clean Glass",
+    "blurb": "Nothing but the face.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-fx-scanlines",
+    "slot": "fx",
+    "value": "scanlines",
+    "name": "Scanlines",
+    "blurb": "Classic CRT lines rolling behind the face.",
+    "rarity": "common",
+    "tier": "starter"
+  },
+  {
+    "id": "robot-fx-sparkle",
+    "slot": "fx",
+    "value": "sparkle",
+    "name": "Sparkle",
+    "blurb": "Tiny glints twinkling across the glass.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-fx-stars",
+    "slot": "fx",
+    "value": "stars",
+    "name": "Starfield",
+    "blurb": "A warp-speed starfield inside the screen.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-fx-hearts",
+    "slot": "fx",
+    "value": "hearts",
+    "name": "Floaty Hearts",
+    "blurb": "Little hearts rising like bubbles.",
+    "rarity": "rare",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-fx-grid",
+    "slot": "fx",
+    "value": "grid",
+    "name": "Synth Grid",
+    "blurb": "An outrun horizon scrolling under the face.",
+    "rarity": "epic",
+    "tier": "coin"
+  },
+  {
+    "id": "robot-fx-rain",
+    "slot": "fx",
+    "value": "rain",
+    "name": "Code Rain",
+    "blurb": "Falling green glyphs. You are in the machine now.",
+    "rarity": "legendary",
+    "tier": "coin"
+  }
+]
