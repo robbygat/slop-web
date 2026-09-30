@@ -30,7 +30,7 @@ export default function HeroScene({heroRef,copyRef,paused}) {
       }
       sync();
     },{threshold:0});
-    const ro=new ResizeObserver(resize);ro.observe(node);observer.observe(node);
+    const ro=new ResizeObserver(resize);ro.observe(node);if(copyRef.current)ro.observe(copyRef.current);observer.observe(node);
     document.addEventListener('visibilitychange',sync);motion.addEventListener('change',sync);
     const lost=e=>{e.preventDefault();scene.current?.setActive(false,true);setReady(false);};
     const restored=()=>{resize();setReady(true);sync();};

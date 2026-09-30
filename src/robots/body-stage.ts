@@ -21,7 +21,8 @@ export async function createBodyStage(canvas:HTMLCanvasElement){
  const mixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations)mixer.clipAction(clip).play();
  const mount=model.getObjectByName('HeadMount')!,core=model.getObjectByName('CoreHead')!,neck=model.getObjectByName('Neck')!,arm=model.getObjectByName('LeftShoulder')!,elbow=model.getObjectByName('LeftElbow')!;
  let head:any=null,face:HTMLCanvasElement|null=null,texture:THREE.CanvasTexture|null=null,spec:any=null;
- let active=false,visible=false,reduced=false,disposed=false,frame=0,last=0,time=0,turn=-.15,target=-.15,reactAt=-100,dragging=false,moved=0,dragX=0,gazeX=0,gazeY=0;
+ const rest=[neck,arm,elbow].map(joint=>({joint,rotation:joint.rotation.clone()}));
+ let active=false,visible=false,reduced=false,disposed=false,frame=0,last=0,time=0,turn=-.15,target=-.15,reactAt=.25,nextWave=12,dragging=false,moved=0,dragX=0,gazeX=0,gazeY=0;
  function releaseHead(){if(head){mount.remove(head.root);disposeStageTree(head.pivot);head=null;}texture?.dispose();texture=null;face=null;}
  function select(next:any){
   spec=next;releaseHead();core.visible=next.shell==='core'&&next.finish==='signature'&&next.face==='slop';
@@ -36,9 +37,15 @@ export async function createBodyStage(canvas:HTMLCanvasElement){
   model.traverse((o:any)=>{if(o.isMesh&&o.material.name.startsWith('Accent'))o.material.color.set(finishes[next.finish]||colors[next.shell]||'#48b5fa');});
   draw(0);
  }
- function react(){if(reduced)return;target+=Math.PI*2;reactAt=time;sync();}
+ function wave(){if(reduced)return;reactAt=time;nextWave=time+12;sync();}
+ function react(){if(reduced)return;target+=Math.PI*2;wave();}
  function draw(dt:number){
-  time+=dt;mixer.update(dt);turn=THREE.MathUtils.damp(turn,target,4,dt||1/30);
+  time+=dt;
+  // Procedural motion is always relative to the authored pose. Repeated still
+  // frames/resizes must not accumulate rotations and twist the joints.
+  for(const {joint,rotation} of rest)joint.rotation.copy(rotation);
+  mixer.update(reduced?0:dt);turn=THREE.MathUtils.damp(turn,target,4,dt||1/30);
+  if(!reduced&&!dragging&&time>=nextWave){reactAt=time;nextWave=time+12;}
   const elapsed=time-reactAt,envelope=elapsed>=0&&elapsed<2.4?Math.sin(Math.PI*elapsed/2.4):0;
   orbit.rotation.set(reduced?0:Math.sin(time*.7)*.025,turn+gazeX*.10,reduced?0:Math.sin(time*.9)*.025);
   orbit.position.y=reduced?0:Math.sin(time*1.4)*.045+envelope*.17;
@@ -55,5 +62,5 @@ export async function createBodyStage(canvas:HTMLCanvasElement){
  const lost=(e:Event)=>{e.preventDefault();active=false;cancelAnimationFrame(frame);};const restored=()=>{resize();sync();};
  canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);canvas.addEventListener('pointerleave',leave);canvas.addEventListener('webglcontextlost',lost);canvas.addEventListener('webglcontextrestored',restored);
  const ro=new ResizeObserver(resize);ro.observe(canvas);document.addEventListener('visibilitychange',sync);resize();
- return {select,react,setActive(v:boolean,r=false){visible=v;reduced=r;sync();},dispose(){disposed=true;active=false;cancelAnimationFrame(frame);ro.disconnect();document.removeEventListener('visibilitychange',sync);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('pointerleave',leave);canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);releaseHead();mixer.stopAllAction();mixer.uncacheRoot(model);model.traverse((o:any)=>{o.geometry?.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});environment.dispose();renderer.dispose();renderer.forceContextLoss();}};
+ return {select,react,wave,setActive(v:boolean,r=false){visible=v;reduced=r;sync();},dispose(){disposed=true;active=false;cancelAnimationFrame(frame);ro.disconnect();document.removeEventListener('visibilitychange',sync);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancel);canvas.removeEventListener('lostpointercapture',cancel);canvas.removeEventListener('pointerleave',leave);canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);releaseHead();mixer.stopAllAction();mixer.uncacheRoot(model);model.traverse((o:any)=>{o.geometry?.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});environment.dispose();renderer.dispose();renderer.forceContextLoss();}};
 }

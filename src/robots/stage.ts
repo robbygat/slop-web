@@ -8,7 +8,7 @@ import {robotSpec} from '../lib/robot-catalog.js';
 import {expressiveFace} from '../lib/robot-expression.js';
 
 /** One context for the whole hero. Mobile geometry, materials, face and crown. */
-export function createRobotStage(canvas:HTMLCanvasElement,{crowd=false,onReady=()=>{}}={}) {
+export function createRobotStage(canvas:HTMLCanvasElement,{crowd=false,crown='none',onReady=()=>{}}={}) {
   const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'low-power'});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.setClearColor(0,0);renderer.toneMapping=THREE.NoToneMapping;
@@ -23,7 +23,7 @@ export function createRobotStage(canvas:HTMLCanvasElement,{crowd=false,onReady=(
     const texture=new THREE.CanvasTexture(surface);texture.colorSpace=THREE.SRGBColorSpace;
     u.uAppFace.value=texture;u.uAppFaceEnabled.value=1;
     // Match mobile: stored cosmetic headgear stays parked; the hero wears the competitive crown.
-    if(index===0&&crowd)shell.pivot.add(buildAccessory('crown',shell,'diamond').group);
+    if(index===0&&(crowd||crown==='gold'||crown==='diamond'))shell.pivot.add(buildAccessory('crown',shell,crowd||crown==='diamond'?'diamond':'gold').group);
     shell.root.position.set(x,y,index===0?.4:-.4);shell.root.scale.setScalar(scale);scene.add(shell.root);
     return {shell,spec:{...spec,seed:.19+index*.41},surface,texture,s,x,y,scale,index};
   };

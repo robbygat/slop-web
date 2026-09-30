@@ -33,3 +33,11 @@ test('newest keeps chronological order and features Kickflip once without distur
  assert.deepEqual(wall.filter(g=>g.id!=='coast'),games.filter(g=>g.id!=='coast'));
  assert.equal(games[4].id,'coast');
 });
+
+test('current phone videos win over old landscape thumbnail metadata',async()=>{
+ const {gameFormat}=await import('../src/lib/game-format.js');
+ const game={...phone('coast'),name:'Kickflip Coast',preview_width:1280,preview_height:720,preview_video:{video_path:'11111111-2222-4333-8444-555555555555/v1-0123456789abcdef0123456789abcdef/preview.mp4',poster_path:'11111111-2222-4333-8444-555555555555/v1-0123456789abcdef0123456789abcdef/poster.jpg',width:720,height:1280}};
+ assert.equal(landscapeGame(game),false);assert.equal(gameFormat(game).orientation,'portrait');assert.equal(gameFormat(game).playerAspect,9/19.5);
+ const wide={...game,supported_platforms:['desktop'],preview_video:{...game.preview_video,width:1280,height:720}};
+ assert.equal(landscapeGame(wide),true);assert.equal(gameFormat(wide).orientation,'landscape');
+});

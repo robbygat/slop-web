@@ -1,5 +1,5 @@
 export const PLAYER_TABS = [
-  ['home', 'Explore', 'home'],
+  ['home', 'Home', 'home'],
   ['social', 'Social', 'social'],
   ['feed', 'Play', 'play'],
   ['quests', 'Quests', 'quest'],

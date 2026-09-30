@@ -1,6 +1,6 @@
-import React,{lazy,useEffect,useMemo,useRef,useState} from 'react';
+import React,{Suspense,lazy,useEffect,useMemo,useRef,useState} from 'react';
 import {loadDiscoveryPage,loadGame} from '../lib/catalog.js';
-import {Button,Empty,Notice} from '../components/ui.jsx';
+import {Button,Empty,Notice,Modal} from '../components/ui.jsx';
 import {Icon} from '../components/Icon.jsx';
 import Hero from '../components/Hero.jsx';
 import FeaturedGames from '../components/FeaturedGames.jsx';
@@ -9,8 +9,12 @@ import {CampaignSections} from '../components/BrandSections.jsx';
 import {gameMosaic,landscapeGame} from '../lib/game-mosaic.js';
 import {GAME_PLATFORMS} from '../lib/game-platforms.js';
 import {useGridRipple} from '../components/useGridRipple.js';
-export const GameDetail=lazy(()=>import('./GameDetail.jsx'));
-export function GameCard({game,onOpen,paused=false,index=0}){return <button className={`game-card mosaic-tile ${landscapeGame(game)?'is-landscape':'is-portrait'}`} onClick={()=>onOpen(game)} aria-label={`Play ${game.name}`} style={{'--tile-accent':['#c5f564','#bcb0ef','#a7caff','#ffb790'][index%4]}}><div className="game-cover"><GamePreview game={game} paused={paused}/></div><div className="game-card-info"><div><h3>{game.name}</h3><p>@{game.profiles?.username||'slop'}</p></div><span className="mosaic-play"><Icon name="play" fill="currentColor" size={16}/></span></div></button>;}
+let detailImport;
+const loadDetail=()=>detailImport??=import('./GameDetail.jsx').catch(error=>{detailImport=null;throw error;});
+const LazyGameDetail=lazy(loadDetail);
+// Loading a game must never replace the entire Home or feed beneath it.
+export function GameDetail(props){return <Suspense fallback={<Modal title={props.game.name} onClose={props.onClose} className="launch-loading"><div className={`launch-loading-preview ${landscapeGame(props.game)?'is-wide':''}`}><GamePreview game={props.game}/></div><p role="status">Opening your game…</p></Modal>}><LazyGameDetail {...props}/></Suspense>;}
+export function GameCard({game,onOpen,paused=false,index=0}){return <button className={`game-card mosaic-tile ${landscapeGame(game)?'is-landscape':'is-portrait'}`} onPointerEnter={()=>{void loadDetail().catch(()=>{});}} onFocus={()=>{void loadDetail().catch(()=>{});}} onClick={()=>onOpen(game)} aria-label={`Play ${game.name}`} style={{'--tile-accent':['#c5f564','#bcb0ef','#a7caff','#ffb790'][index%4]}}><div className="game-cover"><GamePreview game={game} paused={paused}/></div><div className="game-card-info"><div><h3>{game.name}</h3><p>@{game.profiles?.username||'slop'}</p></div><span className="mosaic-play"><Icon name="play" fill="currentColor" size={16}/></span></div></button>;}
 export default function Play({params,search,term,setSearch}){
   const[platform,setPlatform]=useState('all'),[order,setOrder]=useState('newest'),[layout,setLayout]=useState('cards'),[paused,setPaused]=useState(false);
   const[selected,setSelected]=useState(null),[games,setGames]=useState([]),[next,setNext]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[retry,setRetry]=useState(0);
