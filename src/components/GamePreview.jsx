@@ -15,18 +15,19 @@ export default function GamePreview({game,paused=false}) {
     resumeTime.current=0;setActive(false);setFailed(false);setResident(false);setFrameSource('');
   },[game.id,src]);
   useEffect(()=>{setPosterFailed(false);},[poster]);
+  useEffect(()=>{if(failed)setFrameSource('');},[failed]);
 
   useEffect(()=>{
-    if(!src||failed)return;
-    let alive=true,visible=false,near=false,hovered=false,hoverTimer=0,releaseTimer=0;
+    if(!src)return;
+    let alive=true,visible=false,near=false,hovered=false,releaseTimer=0;
     const preference=matchMedia('(prefers-reduced-motion: reduce)'),connection=navigator.connection;
     const handle=previewPool.register(Symbol(),value=>{if(alive)setActive(value);});
-    const update=()=>handle.set(visible&&!document.hidden&&!pause.current&&!preference.matches&&!connection?.saveData,hovered?10:0);
+    const update=()=>handle.set(visible&&!failed&&!document.hidden&&!pause.current&&!preference.matches&&!connection?.saveData,hovered?10:0);
     sync.current=update;
     const observer=new IntersectionObserver(([entry])=>{
       // Hysteresis prevents a scrolling tile from rapidly giving up and retaking a decoder.
-      visible=entry.isIntersecting&&entry.intersectionRatio>(visible ? .15 : .55);update();
-    },{threshold:[0,.15,.55]});
+      visible=entry.isIntersecting&&entry.intersectionRatio>=(visible ? .15 : .55);update();
+    },{threshold:[0,.15,.55,1]});
     const proximity=new IntersectionObserver(([entry])=>{
       near=entry.isIntersecting;clearTimeout(releaseTimer);
       if(!near)releaseTimer=setTimeout(()=>{
@@ -35,19 +36,20 @@ export default function GamePreview({game,paused=false}) {
         video.current?.pause();setResident(false);setFrameSource('');
       },1200);
     },{rootMargin:'400px'});
-    const enter=()=>{clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>{hovered=true;update();},180);};
-    const leave=()=>{clearTimeout(hoverTimer);hovered=false;update();};
-    const node=root.current;
+    const enter=()=>{hovered=true;if(failed)setFailed(false);else update();};
+    const leave=()=>{hovered=false;update();};
+    const node=root.current,interaction=node.closest('button,a')||node;
+    hovered=interaction.matches(':hover')||interaction.contains(document.activeElement);
     observer.observe(node);proximity.observe(node);
-    node.addEventListener('pointerenter',enter);node.addEventListener('pointerleave',leave);
-    node.addEventListener('focusin',enter);node.addEventListener('focusout',leave);
-    document.addEventListener('visibilitychange',update);preference.addEventListener('change',update);
+    interaction.addEventListener('pointerenter',enter);interaction.addEventListener('pointerleave',leave);
+    interaction.addEventListener('focusin',enter);interaction.addEventListener('focusout',leave);
+    document.addEventListener('visibilitychange',update);preference.addEventListener('change',update);connection?.addEventListener('change',update);
     return()=>{
-      alive=false;sync.current=()=>{};clearTimeout(hoverTimer);clearTimeout(releaseTimer);
+      alive=false;sync.current=()=>{};clearTimeout(releaseTimer);
       observer.disconnect();proximity.disconnect();handle.release();video.current?.pause();
-      node.removeEventListener('pointerenter',enter);node.removeEventListener('pointerleave',leave);
-      node.removeEventListener('focusin',enter);node.removeEventListener('focusout',leave);
-      document.removeEventListener('visibilitychange',update);preference.removeEventListener('change',update);
+      interaction.removeEventListener('pointerenter',enter);interaction.removeEventListener('pointerleave',leave);
+      interaction.removeEventListener('focusin',enter);interaction.removeEventListener('focusout',leave);
+      document.removeEventListener('visibilitychange',update);preference.removeEventListener('change',update);connection?.removeEventListener('change',update);
     };
   },[game.id,src,failed]);
 
