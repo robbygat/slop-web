@@ -82,3 +82,32 @@ Generated artwork and the exact final prompt are recorded in
 This is a tested local build and draft review branch. Physical-phone performance,
 authenticated account/inbox/reward flows, merge, and live deployment are separate
 acceptance gates.
+
+
+## Lime header and mobile opening follow-up
+
+- The top header now uses the approved logo lime (`#C5F564`) in both themes,
+  with dark icons/navigation and a dark sign-in action. The theme picker uses
+  the selected theme's readable surface and stays within narrow phone screens.
+- The phone hero becomes a compact arcade poster: lime-backed oversized type,
+  coral accent, a curved illustrated world, all seven real 3D characters, and
+  a prominent Play action. Desktop retains its full scene composition.
+- At 320px, the header is 64px and the hero is approximately 479px, about 100px
+  shorter than the previous revision. At 390px the hero is approximately 549px.
+  Both light and dark browser checks show no horizontal overflow, ready 3D
+  characters, working character swaps, and readable actions.
+- The narrow theme picker has three 44px options and stays inside the viewport
+  (x107–292 within a 305px content width in the 320px Chrome check).
+- Full release check: 289 web and 60 MCP tests pass with eight existing
+  environment skips; the production build generates 388 game routes. Log:
+  `/private/tmp/slop-web-lime-release-check.log`.
+- Visual evidence: `/private/tmp/slop-mobile-lime-320-light.png`,
+  `/private/tmp/slop-mobile-lime-320-dark.png`,
+  `/private/tmp/slop-mobile-lime-390-light.png`,
+  `/private/tmp/slop-mobile-lime-390-dark.png`, and
+  `/private/tmp/slop-lime-theme-menu-phone-fixed.png`.
+
+The user explicitly authorized publishing this follow-up live. Deployment and
+public-site verification are recorded in the canonical outstanding-work ledger
+once the merged commit's Pages deployment succeeds. Physical-phone performance
+and authenticated account/inbox/reward acceptance remain separate.

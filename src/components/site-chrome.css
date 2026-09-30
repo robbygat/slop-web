@@ -48,3 +48,4 @@ html:has(.is-playing),body:has(.is-playing){overflow:hidden;scrollbar-gutter:aut
 .site-masthead .theme-menu{color:var(--ink)}
 .site-masthead .theme-menu>button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 @media(min-width:761px){.masthead-navigation .nav-item{color:var(--masthead-soft)}.masthead-navigation .nav-item.active,.masthead-navigation .nav-item:hover{color:var(--masthead-ink)}.masthead-navigation .nav-item.active:after{background:var(--masthead-ink)}.masthead-navigation .nav-item:focus-visible{outline-color:var(--masthead-ink)}}
+@media(max-width:760px){.site-masthead .theme-menu{position:fixed;top:calc(var(--site-chrome-height) + 8px);right:max(12px,4vw,env(safe-area-inset-right,0px));left:auto}}
