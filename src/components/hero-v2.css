@@ -2,7 +2,7 @@
 .game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
 .game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
 .game-wall{transform-style:preserve-3d}
-.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:1440/742;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:2948/1536;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
 .slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
@@ -24,19 +24,24 @@
 @media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
-/* Lift: one game rises a little off the tilted wall at the wall's own angle,
-   rides upward with its column, plays, then settles back in. */
-.game-lift{position:absolute;width:4.34%;aspect-ratio:128/250;transform-style:preserve-3d;animation:game-lift-ride var(--lift-ms) linear both}
-.game-lift:before{content:'';position:absolute;inset:-12%;border-radius:20%;background:radial-gradient(closest-side,#c5f56459,transparent);filter:blur(6px);opacity:0;animation:game-lift-glow var(--lift-ms) ease both}
-.game-lift-tile{position:relative;width:100%;height:100%;border-radius:9%;overflow:hidden;background:#0b110e;transform-origin:50% 50%;animation:game-lift-rise var(--lift-ms) cubic-bezier(.25,.8,.25,1) both;will-change:transform}
+/* Lift: a game rises out of its real slot at the wall's own angle, rides up
+   with its column, and drops back into the same glowing opening. */
+.game-lift{position:absolute;aspect-ratio:128/250;transform-style:preserve-3d;animation:game-lift-ride var(--lift-ms) linear both}
+.game-lift-slot{position:absolute;inset:-1px;border-radius:9%;background:radial-gradient(ellipse at 50% 50%,#1b2a12,#050806 70%);box-shadow:inset 0 0 0 2px #c5f564,inset 0 0 24px #c5f564aa,0 0 26px #c5f56499;opacity:0;animation:game-lift-open var(--lift-ms) ease both}
+.game-lift-tile{position:relative;width:100%;height:100%;border-radius:9%;overflow:hidden;background:#0b110e;animation:game-lift-rise var(--lift-ms) cubic-bezier(.3,.75,.25,1) both;will-change:transform}
 .game-lift-tile>video{display:block;width:100%;height:100%;object-fit:cover}
-.game-lift.is-held,.game-lift.is-held:before,.game-lift.is-held .game-lift-tile{animation-play-state:paused}
-@keyframes game-lift-ride{from{transform:translate(-50%,-50%)}to{transform:translate(-50%,-50%) translateY(-209%)}}
+@keyframes game-lift-ride{from{transform:none}to{transform:translateY(var(--rise))}}
+@keyframes game-lift-open{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}
+.game-lift-slot:after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 2px #c5f564;opacity:0;animation:game-lift-ripple var(--lift-ms) ease-out both}
+@keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}86%{opacity:0;transform:scale(1)}88%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
+.game-lift-tile:after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,#ffffff40 50%,transparent 65%);background-size:250% 100%;background-position:120% 0;animation:game-lift-sheen var(--lift-ms) ease both;pointer-events:none}
+@keyframes game-lift-sheen{0%,22%{background-position:120% 0}40%,100%{background-position:-60% 0}}
 @keyframes game-lift-rise{
- 0%{opacity:0;transform:translateZ(0) scale(1);box-shadow:0 0 0 0 #c5f56400}
- 10%{opacity:1;transform:translateZ(0) scale(1)}
- 28%{transform:translateZ(110px) scale(1.18);box-shadow:0 0 0 2px #c5f564,0 30px 50px -10px #000c,0 0 40px #c5f56480}
- 74%{opacity:1;transform:translateZ(110px) scale(1.18);box-shadow:0 0 0 2px #c5f564,0 30px 50px -10px #000c,0 0 40px #c5f56480}
- 92%{opacity:1;transform:translateZ(0) scale(1);box-shadow:0 0 0 0 #c5f56400}
- 100%{opacity:0;transform:translateZ(0) scale(1)}}
-@keyframes game-lift-glow{0%,12%{opacity:0}30%,72%{opacity:1}92%,100%{opacity:0}}
+ 0%{transform:translateZ(0);box-shadow:0 0 0 0 #c5f56400;opacity:0}
+ 6%{opacity:1;transform:translateZ(0)}
+ 26%{transform:translateZ(130px) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
+ 72%{transform:translateZ(130px) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
+ 88%{transform:translateZ(0) scale(1);box-shadow:0 0 0 2px #c5f564cc,0 0 30px #c5f56466}
+ 92%{transform:translateZ(6px) scale(1.01)}
+ 94%{opacity:1}
+ 100%{transform:translateZ(0) scale(1);box-shadow:0 0 0 0 #c5f56400;opacity:0}}

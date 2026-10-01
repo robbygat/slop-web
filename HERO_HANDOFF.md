@@ -53,3 +53,12 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
   (column index + start row %, separate sets for wide/narrow) — measured so they stay on-screen beside the copy.
   Off for reduced motion; pauses offscreen/hidden tab.
 - Follow-ups: consider moving the big MP4s to a CDN/Supabase storage instead of git; add AV1/WebM variants; make lifted phones clickable to open that game (need slugs).
+
+## Round 5 — lift comes out of a real slot
+- `slotAt()` in Hero.jsx reads the wall video's `currentTime` and the baked column math (22 cols, 134×256 cells,
+  1536px wall, 14s loop, column offset `(c*137)%H`, even columns move up) to find the exact tile on screen.
+  The lift is placed on that tile and rides upward at the column's speed (`--rise`), so it never drifts off its slot.
+- While lifted, the slot shows a dark opening with a lime glowing rim; a ripple pulses on lift-off and on landing,
+  a light sheen crosses the game as it rises, and it drops back into the same opening and cross-fades into the wall.
+- **If game-wall*.mp4 is ever re-rendered with different geometry, update `WALL` and the offset formula in Hero.jsx.**
+- Wall source and lift spots update when the viewport crosses 900px / 1000px.
