@@ -7,9 +7,6 @@
 @keyframes game-wall-scroll{to{transform:translateY(-50%)}}
 .slop-hero-veil{position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
-.slop-hero-eyebrow{display:inline-flex;align-items:center;gap:10px;margin:0 0 28px;padding:8px 15px 8px 12px;border:1px solid #ffffff1f;border-radius:99px;background:#0b110e99;backdrop-filter:blur(8px);font-size:12px;font-weight:600;letter-spacing:.03em;color:#f4f7eacc}
-.slop-hero-live{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 #c5f56499;animation:slop-live 1.8s ease-out infinite}
-@keyframes slop-live{to{box-shadow:0 0 0 9px #c5f56400}}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
 .slop-hero h1>span{display:block;white-space:nowrap;animation:slop-hero-in .8s cubic-bezier(.2,.8,.2,1) both}
 .slop-hero h1>span+span{animation-delay:.08s}
@@ -22,11 +19,9 @@
 .slop-hero-play:hover{transform:translateY(-2px);box-shadow:0 12px 44px -8px #c5f564a6}
 .slop-hero-explore{color:var(--ink);border:1px solid #ffffff2e;background:#0b110e80;backdrop-filter:blur(8px)}
 .slop-hero-explore:hover{background:#ffffff14}
-.slop-hero-crown{display:flex;align-items:center;gap:8px;margin:26px 0 0;font-size:12px;color:#f4f7ea80}
-.slop-hero-crown>svg{color:var(--lime)}
 /* The crowned Slop sits on the hero's bottom edge, legs over the next section. */
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-30%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
-@media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-eyebrow{margin-bottom:20px}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero-crown{display:none}.slop-hero>.hero-perch{right:14px}}
+@media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}

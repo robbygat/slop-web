@@ -24,11 +24,9 @@ export default function Hero({suspended=false}){
   <GameWall paused={suspended}/>
   <span className="slop-hero-veil" aria-hidden="true"/>
   <div className="slop-hero-copy">
-   <p className="slop-hero-eyebrow"><span className="slop-hero-live"/>Hundreds of games · play instantly</p>
    <h1 id="hero-title"><span>Just one</span><span>more <em>game.</em></span></h1>
    <p className="slop-hero-lede">Find your next obsession. Put your name on the leaderboard.</p>
    <div className="slop-hero-entry"><a className="slop-hero-play" href="#/feed">Let’s play <SlopMark/></a><a className="slop-hero-explore" href="#discover" onClick={explore}>Explore games <Icon name="arrow" size={17}/></a></div>
-   <p className="slop-hero-crown"><Icon name="crown" size={15}/>There’s always a score to beat.</p>
   </div>
   <HeroPerch paused={suspended}/>
  </section>;

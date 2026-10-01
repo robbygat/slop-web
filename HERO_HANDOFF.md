@@ -33,3 +33,9 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
 3. Old `.social-club-cover` rules in `social-club.css` and old `.home-hero`/`.hero-intro` rules in `home-hero.css` are now dead — clean up.
 4. `.brand-home .featured-heading{padding-right}` still reserves room for the perch — keep (perch is still there).
 5. Check light theme, 700–1100px widths, and the 3D scene's GPU cost on low-end Android in Social; then open the PR to `main`.
+
+## Round 3 (user feedback)
+- No small "eyebrow" text above headlines anywhere (removed from Home hero, Social cover, crown board). User wants minimal, non-redundant copy — keep it that way.
+- Home hero no longer says "Hundreds of games · play instantly" or "There's always a score to beat".
+- Social headline is now "Stay connected with friends."
+- Create (`Connect.jsx`) header: replaced the coin-op robot + overlapping Slop badge with the single `core` robot.
