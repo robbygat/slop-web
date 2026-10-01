@@ -14,8 +14,15 @@ export default function HeroPerch({paused=false}){
  },[]);
  const active=visible&&foreground&&!paused&&!reduced,video=useRef(null);
  // Pick a transparent clip the browser can decode: HEVC alpha (Safari/iOS) or VP9 alpha (Chrome/Android/Firefox).
- const [clip,setClip]=useState(()=>{const v=document.createElement('video');return v.canPlayType('video/mp4; codecs="hvc1"')?'/assets/robots/ledge-slop-wave.mov':v.canPlayType('video/webm; codecs="vp9"')?'/assets/robots/ledge-slop-wave.webm':null;});
- useEffect(()=>{const v=video.current;if(!v)return;if(active)v.play().catch(()=>{});else v.pause();},[active]);
+ const [clip,setClip]=useState(()=>{
+  const v=document.createElement('video'),ua=navigator.userAgent;
+  // Apple WebKit decodes HEVC alpha; other browsers use VP9 transparency even
+  // when their platform happens to support ordinary (opaque) HEVC playback.
+  const appleWebKit=/AppleWebKit/.test(ua)&&(/iP(?:hone|ad|od)/.test(ua)||navigator.vendor==='Apple Computer, Inc.'||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
+  if(appleWebKit&&v.canPlayType('video/mp4; codecs="hvc1"'))return '/assets/robots/ledge-slop-wave.mov';
+  return v.canPlayType('video/webm; codecs="vp9"')?'/assets/robots/ledge-slop-wave.webm':null;
+ });
+ useEffect(()=>{const v=video.current;if(!v)return;if(active)v.play().catch(()=>{});else v.pause();},[active,clip]);
  // A transparent waving loop (HEVC alpha for Safari, VP9 alpha elsewhere). The
  // authored still remains the poster and the reduced-motion / failure fallback.
  if(!reduced&&clip)return <div ref={root} className="hero-perch is-video" aria-hidden="true">

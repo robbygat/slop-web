@@ -84,3 +84,12 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
   `ledge-slop-wave.mov` (HEVC alpha, 750 KB — Safari/iOS). `HeroPerch.jsx` picks one via `canPlayType`
   (don't use <source> fallbacks: React reports the skipped source as an error). Still image stays as poster,
   reduced-motion and no-alpha fallback. Plays only while visible.
+
+
+## Codex release fixes — October 1
+- Lifts now copy the actual decoded wall frame into a small canvas, with crop and position driven by the same media time. The game stays identical before lift, during motion, and after landing; the independent lift clips are no longer decoded by Hero.
+- The six selected previews are normalized to full bleed and baked into lift columns 2 and 4: Kickflip Coast, Run Infinite, Aqua Slide, Cube Surfer, Stumble Run, and Draw Climber. Hole Rush is excluded from the hero. Crop and placement reproduce the native 24fps/even-pixel wall geometry, including the first decoded frame and loop seam. Canvas rendering accounts for screen density up to 2×; fast phones receive the full-resolution wall.
+- Wall and Social cast follow live reduced-motion changes. Offscreen/covered playback remains paused, and resizing/source changes restart lift scheduling safely.
+- The perch chooses HEVC alpha for Apple WebKit and VP9 alpha elsewhere; Social crown-card controls use 44px touch targets.
+- The hero uses its own `hero-game-wall` CSS class, keeping the Home catalogue grid in normal flow. Copy says “your Slop.” Shared Quests icons match the mobile app’s crossed-swords painter.
+- Play titles rotate through four short entrances on each actual game change, settling at a stable readable pose. Reduced-motion preferences disable the entrances; game identity and input handlers are unchanged.

@@ -33,8 +33,8 @@
 .social-rival-body .social-rival-no-holder{display:flex;align-items:center;gap:7px;padding:0;color:#fff;font-size:12px}
 .social-rival-body .social-rival-no-holder>svg{color:#c5f564}
 .social-rival-body .social-rival-actions{display:flex;gap:6px;margin:0}
-.social-rival-body .social-rival-actions>.button{flex:1;min-height:40px;padding:8px 12px;font-size:12px;background:#c5f564;color:#11200f;border:0;justify-content:space-between}
-.social-rival-body .social-rival-copy{width:40px;min-height:40px;padding:0;display:grid;place-items:center;border-radius:99px;border:1px solid #ffffff38;background:#ffffff14;color:#fff}
+.social-rival-body .social-rival-actions>.button{flex:1;min-height:44px;padding:8px 12px;font-size:12px;background:#c5f564;color:#11200f;border:0;justify-content:space-between}
+.social-rival-body .social-rival-copy{width:44px;min-height:44px;padding:0;display:grid;place-items:center;border-radius:99px;border:1px solid #ffffff38;background:#ffffff14;color:#fff}
 .social-rival-body .social-rival-copy>span{display:none}
 .social-rival-copy-status{font-size:10px;color:#c5f564}
 @media(max-width:900px){.social-stage{grid-template-columns:1fr;padding:28px 22px 10px}.social-stage .hero-stage.social-cast{height:320px;margin:0 -10px}}

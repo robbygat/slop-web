@@ -141,7 +141,8 @@ function SocialSpace({params}) {
 // lightweight orbit on constrained connections or reduced motion.
 function SocialCast({paused}){
  const policy=()=>lightHero({reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,saveData:navigator.connection?.saveData,effectiveType:navigator.connection?.effectiveType});
- const [light]=useState(policy);
+ const [light,setLight]=useState(policy);
+ useEffect(()=>{const motion=matchMedia('(prefers-reduced-motion: reduce)'),connection=navigator.connection;const sync=()=>setLight(policy());motion.addEventListener('change',sync);connection?.addEventListener?.('change',sync);return()=>{motion.removeEventListener('change',sync);connection?.removeEventListener?.('change',sync);};},[]);
  return <div className="hero-stage social-cast">{light?<LiteHeroScene paused={paused}/>:<HeroScene paused={paused}/>}</div>;
 }
 
