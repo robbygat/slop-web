@@ -31,11 +31,12 @@ async function pickSource(stem,width,height,bitrate){
 const network=()=>({...(navigator.connection||{}),narrow:matchMedia(NARROW).matches});
 
 function GameWall({paused}){
- const root=useRef(null),canvas=useRef(null),film=useRef(null),lift=useRef(null),clipRef=useRef(null);
+ const root=useRef(null),canvas=useRef(null),film=useRef(null),lift=useRef(null),clipRef=useRef(null),pauseMotionRef=useRef(null);
  const [visible,setVisible]=useState(true),[shown,setShown]=useState(()=>!document.hidden);
  const [reduced,setReduced]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
  const [stem,setStem]=useState(()=>wallVideoStem(network())),[band,setBand]=useState(()=>matchMedia(NARROW).matches?BAND.narrow:BAND.wide);
  const [src,setSrc]=useState(null),[liftCodec,setLiftCodec]=useState('.mp4'),[gl,setGl]=useState(true);
+ const [frameReady,setFrameReady]=useState(false),[contextVersion,setContextVersion]=useState(0);
  useEffect(()=>{
   const narrow=matchMedia(NARROW),motion=matchMedia('(prefers-reduced-motion: reduce)'),connection=navigator.connection;
   const layout=()=>{setBand(narrow.matches?BAND.narrow:BAND.wide);setStem(wallVideoStem(network()));};
@@ -51,21 +52,27 @@ function GameWall({paused}){
   pickSource('/assets/brand/lift/kickflip-coast',512,1000,2e6).then(s=>{if(live)setLiftCodec(s.slice('/assets/brand/lift/kickflip-coast'.length));});
   return()=>{live=false;};
  },[stem]);
- const running=visible&&shown&&!paused&&!reduced,live=useRef(running);live.current=running;
- useEffect(()=>{const v=film.current;if(!v||!src)return;if(running)v.play().catch(()=>{});else{v.pause();clipRef.current?.pause();}},[running,src]);
+ const running=visible&&shown&&!paused&&!reduced&&gl,live=useRef(running);live.current=running;
+ useEffect(()=>{const v=film.current;if(!v||!src)return;if(running)v.play().then(()=>{if(!live.current)v.pause();}).catch(()=>{});else{v.pause();clipRef.current?.pause();pauseMotionRef.current?.();}},[running,src]);
 
  useEffect(()=>{
   const video=film.current,node=lift.current,clip=clipRef.current,surface=canvas.current,tile=node?.querySelector('canvas'),paint=tile?.getContext('2d',{alpha:false});
   if(!src||!video||!node||!clip||!surface||!paint)return;
-  // Paint each new lift-clip frame into the tile canvas (24/s, 512x1000).
-  let clipFrame=0;const clipRvfc=typeof clip.requestVideoFrameCallback==='function';
-  const drawClip=()=>{if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);clipFrame=clipRvfc?clip.requestVideoFrameCallback(drawClip):0;};
-  if(clipRvfc)clipFrame=clip.requestVideoFrameCallback(drawClip);
-  const renderer=createWallRenderer(surface,video,WALL);
+  setFrameReady(false);
+  const renderer=createWallRenderer(surface,video,WALL,{
+   onContextLost:()=>{live.current=false;video.pause();pauseMotion();land();setGl(false);setFrameReady(false);},
+   onContextRestored:()=>{setGl(true);setContextVersion(n=>n+1);},
+  });
   if(!renderer){setGl(false);return;}
   setGl(true);
-  let dead=false,raf=0,last=performance.now(),clock=root.current.__wallClock??0,shownFrame=false;
-  let current=null,pending=null,nextAt=clock+1.2,turn=0,recent=[];
+  // Paint each new lift-clip frame into the tile canvas (24/s, 512x1000).
+  let dead=false,clipFrame=0;const clipRvfc=typeof clip.requestVideoFrameCallback==='function';
+  const drawClip=()=>{if(dead)return;if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);clipFrame=clipRvfc?clip.requestVideoFrameCallback(drawClip):0;};
+  if(clipRvfc)clipFrame=clip.requestVideoFrameCallback(drawClip);
+  let raf=0,last=performance.now(),clock=root.current.__wallClock??0,shownFrame=false;
+  let current=null,pending=null,cancelSeek=null,nextAt=clock+1.2,turn=0,recent=[];
+  const pauseMotion=()=>{if(current)current.started=false;if(pending?.seeking){cancelSeek?.();pending=null;nextAt=clock+.3;}};
+  pauseMotionRef.current=pauseMotion;
   const lead=.35,seekLead=.12;
   const land=()=>{node.classList.remove('is-lifting');node.style.transform='';clip.pause();current=null;};
   const plan=()=>{
@@ -78,9 +85,8 @@ function GameWall({paused}){
   const begin=(game,hold=0)=>{
    const place=liftPlacement(game,clock);
    Object.assign(node.style,{left:`${place.left}%`,top:`${place.top}%`,width:`${place.width}%`,height:`${place.height}%`,transform:'translate3d(0,0,0)'});
-   if(hold>0)setTimeout(()=>{if(!dead&&current?.game===game)clip.play().catch(()=>{});},hold);else clip.play().catch(()=>{});
    node.classList.remove('is-lifting');void node.offsetWidth;node.classList.add('is-lifting');
-   current={game,t0:clock,rippled:false};recent=[game.id];
+   current={game,t0:clock,playAt:clock+hold/1000,started:false,rippled:false};recent=[game.id];
   };
   const tick=nowMs=>{
    if(dead)return;
@@ -93,10 +99,14 @@ function GameWall({paused}){
     if(video.readyState>=2&&!video.paused){const err=((video.currentTime-clock)%3+4.5)%3-1.5;clock+=err*.03;}
    }
    // Offscreen or paused: keep the last frame, spend nothing.
-   if(!running&&shownFrame){raf=requestAnimationFrame(tick);return;}
-   if(renderer.draw(clock,nowMs/1000)&&!shownFrame){shownFrame=true;root.current?.classList.add('is-live');}
+   if(!running){
+    pauseMotion();
+    if(shownFrame){raf=requestAnimationFrame(tick);return;}
+   }
+   if(renderer.draw(clock,nowMs/1000)&&!shownFrame){shownFrame=true;setFrameReady(true);}
    if(running){
     if(current){
+     if(!current.started&&clock>=current.playAt){current.started=true;clip.play().then(()=>{if(!live.current)clip.pause();}).catch(()=>{});}
      const e=clock-current.t0,ms=e*1000;
      node.style.transform=`translate3d(0,${-e*WALL_SPEED/WALL.tileH*100}%,0)`;
      if(!clipRvfc)drawClip();
@@ -111,11 +121,15 @@ function GameWall({paused}){
      const game=pending.game;pending.seeking=true;
      if(video.readyState<2||clip.readyState<2||!hasRunway(game,video.currentTime+seekLead)){recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}
      else{
-      let done=false;const go=()=>{if(done||dead)return;done=true;clip.removeEventListener('seeked',go);turn=pending?.turn??turn;pending=null;if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);
-       // The seek aimed slightly ahead; hold that frame until the wall reaches it, then play in lockstep.
+      let done=false,timer;const cancel=()=>{done=true;clearTimeout(timer);clip.removeEventListener('seeked',go);cancelSeek=null;};
+      const go=()=>{if(done||dead)return;cancel();const nextTurn=pending?.turn;pending=null;
+       if(!live.current){nextAt=clock+.3;return;}turn=nextTurn??turn;
+       if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);
+       // Hold on the shared wall clock, so scrolling away cannot start playback in the background.
        const ahead=(((liftClipTime(game,video.currentTime)-clip.currentTime)%3)+3)%3,hold=ahead>1.5?(3-ahead)*1000:0;
        begin(game,hold);};
-      clip.addEventListener('seeked',go);setTimeout(()=>{if(!done&&!dead){done=true;clip.removeEventListener('seeked',go);recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}},400);
+      cancelSeek=cancel;clip.addEventListener('seeked',go);
+      timer=setTimeout(()=>{if(!done&&!dead){cancel();recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}},400);
       clip.currentTime=liftClipTime(game,video.currentTime+seekLead);
      }
     }
@@ -123,10 +137,10 @@ function GameWall({paused}){
    raf=requestAnimationFrame(tick);
   };
   raf=requestAnimationFrame(tick);
-  return()=>{dead=true;cancelAnimationFrame(raf);if(clipRvfc&&clipFrame)clip.cancelVideoFrameCallback(clipFrame);if(root.current){root.current.__wallClock=clock;root.current.classList.remove('is-live');}land();renderer.dispose();};
- },[src,band,liftCodec]);
+  return()=>{dead=true;cancelAnimationFrame(raf);if(pauseMotionRef.current===pauseMotion)pauseMotionRef.current=null;cancelSeek?.();if(clipRvfc&&clipFrame)clip.cancelVideoFrameCallback(clipFrame);if(root.current)root.current.__wallClock=clock;land();renderer.dispose();};
+ },[src,band,liftCodec,contextVersion]);
 
- return <div ref={root} className={`hero-game-wall ${running?'is-running':''} ${gl?'':'is-static'}`} aria-hidden="true">
+ return <div ref={root} className={`hero-game-wall ${running?'is-running':''} ${frameReady?'is-live':''} ${gl?'':'is-static'}`} aria-hidden="true">
   <div className="game-wall-plane">
    <img className="game-wall-poster" src="/assets/brand/game-wall-poster.jpg" alt="" style={{aspectRatio:`${WALL.w}/${WALL.h}`}}/>
    <canvas ref={canvas} className="game-wall-canvas" style={{aspectRatio:`${WALL.w}/${WALL.h}`}}/>
