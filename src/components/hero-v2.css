@@ -26,7 +26,7 @@
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 150px - var(--perch-size)*.53));padding:60px 24px 72px}.game-wall-plane{left:-37%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:radial-gradient(ellipse 105% 90% at 0 100%,#0b110e 54%,#0b110edb 62%,#0b110e55 76%,#0b110e00 100%),linear-gradient(90deg,#0b110e66,#0b110e00 80%),linear-gradient(180deg,#0b110e66,#0b110e00 25%)}}
-@media(max-width:600px){.slop-hero{--perch-size:clamp(132px,40vw,150px);margin-bottom:46px;padding:40px 20px 72px;min-height:min(680px,calc(100svh - 150px - var(--perch-size)*.53))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:max-content;max-width:100%;margin-top:26px}.slop-hero>.hero-perch{right:14px}.game-wall-plane{--phone-wall-width:max(1100px,calc(100svh + 420px));left:calc(50vw - var(--phone-wall-width)*.29);width:var(--phone-wall-width)}}
+@media(max-width:600px){.slop-hero{--perch-size:clamp(132px,40vw,150px);margin-bottom:46px;padding:28px 20px 44px;min-height:min(680px,calc(100svh - 150px - var(--perch-size)*.53))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:16px}.slop-hero-entry{width:max-content;max-width:100%;margin-top:22px}.slop-hero>.hero-perch{right:14px}.game-wall-plane{--phone-wall-width:max(1100px,calc(100svh + 420px));left:calc(50vw - var(--phone-wall-width)*.29);width:var(--phone-wall-width)}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
 /* Lift: a featured game rises out of its own slot at the wall's angle, rides
@@ -66,9 +66,18 @@
 @keyframes slop-outline-fill{0%,40%{color:transparent}100%{color:#f4f7ea2e}}
 @keyframes slop-underline{to{transform:scaleX(1)}}
 /* Compact label and Slop mark, with a soft lime glow and hover sweep. */
-.slop-hero-entry>a.slop-hero-play{position:relative;overflow:hidden;isolation:isolate;width:max-content;gap:12px;padding:0 24px;min-height:58px;font-size:16px;letter-spacing:-.01em;box-shadow:0 18px 50px -18px #c5f564b3}
+.slop-hero-entry>a.slop-hero-play{position:relative;overflow:hidden;isolation:isolate;width:max-content;gap:10px;padding:0 21px;min-height:50px;font-size:15px;letter-spacing:-.01em;box-shadow:0 18px 50px -18px #c5f564b3}
 .slop-hero-play>svg:last-child{width:20px;height:22px;opacity:.85}
 .slop-hero-play:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,#ffffff8c 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s ease}
 .slop-hero-play:hover:before{transform:translateX(120%)}
-@media(max-width:600px){.slop-hero-entry>a.slop-hero-play{justify-content:center;min-height:56px}.slop-hero-line.is-outline{-webkit-text-stroke-width:1.5px}}
+@media(max-width:600px){.slop-hero-entry>a.slop-hero-play{justify-content:center;min-height:50px}.slop-hero-line.is-outline{-webkit-text-stroke-width:1.5px}}
 @media(prefers-reduced-motion:reduce){.slop-hero-line>i,.slop-hero-line>em>i,.slop-hero h1 em:after{animation:none!important}.slop-hero h1 em:after{transform:none}.slop-hero-line.is-outline{color:#f4f7ea2e}}
+
+/* Small mobile downloads sit below the main web-play action. */
+.slop-hero-downloads{width:max-content;max-width:100%;margin-top:8px}
+.slop-hero-downloads .download-pair{display:flex;gap:8px;flex-wrap:nowrap}
+.slop-hero-downloads .download-pair>a{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:64px;min-height:44px;padding:0 10px;border:1px solid #f4f7ea38;border-radius:9px;color:#f4f7ead9;background:#0b110e33;font-size:12px;font-weight:550;text-decoration:none;white-space:nowrap;transition:background .18s,border-color .18s}
+.slop-hero-downloads .download-pair>a:hover{background:#c5f56420;border-color:#c5f56499;color:#c5f564}
+.slop-hero-downloads .download-pair>a:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.slop-hero-downloads .download-pair svg{width:14px;height:16px;fill:currentColor;flex:none}
+.slop-hero-downloads .download-pair>a:last-child svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}

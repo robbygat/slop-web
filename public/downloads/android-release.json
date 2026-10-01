@@ -1,11 +1,18 @@
 {
-  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2072/Slop-3.7.7-build-2072-universal.apk",
-  "file": "Slop-3.7.7-build-2072-universal.apk",
+  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2073/Slop-3.7.7-build-2073-universal.apk",
+  "file": "Slop-3.7.7-build-2073-universal.apk",
   "version": "3.7.7",
-  "build": 2072,
-  "date": "September 29, 2026",
-  "size": "155 MB",
-  "sha256": "5969af8945a29c9ccbfd65502f0b56f1afff78202fb786e49426c23a030a6cea",
+  "build": 2073,
+  "date": "October 1, 2026",
+  "size": "168 MB",
+  "sha256": "de0774561e60846aded5783f1052e032ba304a3108f37cde52bb5e7a0a2cf969",
   "architectures": "Universal APK",
-  "minAndroid": "7.0"
+  "minAndroid": "7.0",
+  "package": "game.slop.api",
+  "source": {
+    "commit": "4acc17a4102ec6b895c74e14d9e822a83d4ac03b",
+    "includesWorkingTreeChanges": true,
+    "inputSha256": "75fff7ce0fc93ae43b64f3500a1f92e61198776a81d2c84cfc066fa5eb9c5625",
+    "inputFiles": 2135
+  }
 }
