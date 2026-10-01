@@ -2,7 +2,7 @@
 .game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
 .game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
 .game-wall{transform-style:preserve-3d}
-.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:2948/1536;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:2948/1536;object-fit:fill;backface-visibility:hidden;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
 .slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
@@ -15,22 +15,21 @@
 .slop-hero-play{background:var(--lime);color:#11200f}
 .slop-hero-play>svg{width:20px;height:22px}
 .slop-hero-play:hover{transform:translateY(-2px);box-shadow:0 12px 44px -8px #c5f564a6}
-.slop-hero-explore{color:var(--ink);border:1px solid #ffffff2e;background:#0b110e80;backdrop-filter:blur(8px)}
-.slop-hero-explore:hover{background:#ffffff14}
 /* The crowned Slop sits on the hero's bottom edge, legs over the next section. */
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-30%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
+@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
 @media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
 /* Lift: a game rises out of its real slot at the wall's own angle, rides up
    with its column, and drops back into the same glowing opening. */
-.game-lift{position:absolute;aspect-ratio:128/250;transform-style:preserve-3d;animation:game-lift-ride var(--lift-ms) linear both}
+.game-lift{position:absolute;aspect-ratio:128/250;transform-style:preserve-3d;will-change:transform}
 .game-lift-slot{position:absolute;inset:-1px;border-radius:9%;background:radial-gradient(ellipse at 50% 50%,#1b2a12,#050806 70%);box-shadow:inset 0 0 0 2px #c5f564,inset 0 0 24px #c5f564aa,0 0 26px #c5f56499;opacity:0;animation:game-lift-open var(--lift-ms) ease both}
-.game-lift-tile{position:relative;width:100%;height:100%;border-radius:9%;overflow:hidden;background:#0b110e;animation:game-lift-rise var(--lift-ms) cubic-bezier(.3,.75,.25,1) both;will-change:transform}
-.game-lift-tile>video{display:block;width:100%;height:100%;object-fit:cover}
-@keyframes game-lift-ride{from{transform:none}to{transform:translateY(var(--rise))}}
+.game-lift-tile{position:relative;width:100%;height:100%;border-radius:9%;overflow:hidden;background:#0b110e center/cover no-repeat;animation:game-lift-rise var(--lift-ms) cubic-bezier(.3,.75,.25,1) both;will-change:transform}
+.game-lift-tile>video{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+/* iOS Safari: clip video to the radius inside a 3D context without flicker. */
+.game-lift-tile{isolation:isolate;backface-visibility:hidden;-webkit-mask-image:-webkit-radial-gradient(#fff,#000)}
 @keyframes game-lift-open{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}
 .game-lift-slot:after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 2px #c5f564;opacity:0;animation:game-lift-ripple var(--lift-ms) ease-out both}
 @keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}86%{opacity:0;transform:scale(1)}88%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
@@ -39,9 +38,10 @@
 @keyframes game-lift-rise{
  0%{transform:translateZ(0);box-shadow:0 0 0 0 #c5f56400;opacity:0}
  6%{opacity:1;transform:translateZ(0)}
- 26%{transform:translateZ(130px) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
- 72%{transform:translateZ(130px) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
+ 26%{transform:translateZ(var(--lift-z,130px)) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
+ 72%{transform:translateZ(var(--lift-z,130px)) scale(1.12);box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480}
  88%{transform:translateZ(0) scale(1);box-shadow:0 0 0 2px #c5f564cc,0 0 30px #c5f56466}
  92%{transform:translateZ(6px) scale(1.01)}
  94%{opacity:1}
  100%{transform:translateZ(0) scale(1);box-shadow:0 0 0 0 #c5f56400;opacity:0}}
+@media(max-width:900px){.game-lift{--lift-z:70px}}

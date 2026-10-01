@@ -62,3 +62,16 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
   a light sheen crosses the game as it rises, and it drops back into the same opening and cross-fades into the wall.
 - **If game-wall*.mp4 is ever re-rendered with different geometry, update `WALL` and the offset formula in Hero.jsx.**
 - Wall source and lift spots update when the viewport crosses 900px / 1000px.
+
+## Round 6 — glitch fixes
+- Wall re-rendered: every source tile is now a seamless 3.0s crossfaded loop and each tile starts at a random phase,
+  so the wall no longer "blinks" every 3.5s when all 132 clips restarted together. Loop is 15s (WALL.loop=15).
+  Loop-point similarity now equals normal frame-to-frame (verified with SSIM).
+- Lift ride is frame-locked: `requestVideoFrameCallback` (rAF fallback) positions the lifted game from the wall's
+  media time, so stalls, throttling and the loop seam can't pull it off its slot. Verified the slot math against real
+  decoded frames (gap rows land where the code expects).
+- Lifts only use whole tiles that stay fully on the wall for the entire ride (fixed half-cut slots on phones).
+- Lift clips pre-cropped to the exact slot shape (512×1000 = 128:250) → no black margins; each clip is buffered
+  (`canplaythrough`) before a lift starts, with its poster as the tile background.
+- iOS Safari hardening on the 3D video layers. Mobile: wall sits lower, lift height 70px so it never hides behind the header.
+- Removed the redundant "Explore games" button — only "Let's play" remains.
