@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {HERO_WALL,HERO_FEATURED,HERO_WALL_GAMES,HERO_LIFT_MS,WALL_SPEED,tileY,liftWindow,nextLiftInBand,liftPlacement,liftClipTime,wallVideoStem} from '../src/lib/hero-wall.js';
+import {HERO_WALL,HERO_FEATURED,HERO_WALL_GAMES,HERO_LIFT_MS,WALL_SPEED,hasRunway,tileY,liftWindow,nextLiftInBand,liftPlacement,liftClipTime,wallVideoStem} from '../src/lib/hero-wall.js';
 
 const COLS=HERO_WALL.w/HERO_WALL.cellW;
 
@@ -13,8 +13,8 @@ test('broken and landscape clips are not on the wall',()=>{
  for(const name of ['Hole Rush','Blocks','Neon Bastion','Rift Runner','Void Pong','Neon Pinball','Neon Velocity'])assert.ok(!HERO_WALL_GAMES.includes(name),name);
 });
 
-test('featured games sit at their own cell on upward even columns',()=>{
- assert.deepEqual(HERO_FEATURED.map(f=>f.name),['Kickflip Coast','Run Infinite','Aqua Slide','Cube Surfer','Stumble Run','Draw Climber']);
+test('featured games sit at their own cell on upward even columns spread left, center and right',()=>{
+ assert.deepEqual(HERO_FEATURED.map(f=>f.name),['Kickflip Coast','Run Infinite','Aqua Slide','Cube Surfer','Join Clash 3D','Draw Climber']);
  for(const f of HERO_FEATURED){
   assert.equal(f.col%2,0);
   assert.equal(HERO_WALL_GAMES[f.row*COLS+f.col],f.name);
@@ -55,4 +55,13 @@ test('phones and constrained connections get the lighter wall',()=>{
  assert.equal(wallVideoStem({}),'/assets/brand/game-wall-hd');
  assert.equal(wallVideoStem({narrow:true}),'/assets/brand/game-wall');
  assert.equal(wallVideoStem({saveData:true}),'/assets/brand/game-wall');
+});
+
+test('lifted takes never loop: a lift only starts with enough runway to land',()=>{
+ for(const f of HERO_FEATURED)assert.ok(f.runway>=HERO_LIFT_MS/1000+1.5,`${f.id} take is long enough`);
+ for(let v=0;v<6;v+=.05){
+  const n=nextLiftInBand(v*2,.58,.8,{videoTime:v});if(!n)continue;
+  assert.ok(hasRunway(n.lift,v+n.delay));
+  assert.ok(liftClipTime(n.lift,v+n.delay)+HERO_LIFT_MS/1000<=n.lift.runway);
+ }
 });

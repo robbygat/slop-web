@@ -120,3 +120,9 @@ See CODEX_HERO_NOTE.md for the full architecture. Summary: static 3s grid video 
 rate; single rAF clock for wall/lift/shockwave; hidden videos (a visible playing <video> caps Chrome at 30fps);
 lift clip painted to canvas and phase-locked within ~7ms; square tiles; slam landing with shader shockwave;
 AV1/HEVC/H.264 chosen per device via mediaCapabilities. Wall: 19 MB → 6–8 MB desktop, 10 MB → ~3 MB phones.
+
+## Round 10 — clean loops, no-loop lifts, even spread
+Natural loop points per tile; lifted copies are continuous takes (no mid-lift snap-back); featured = Kickflip Coast,
+Run Infinite, Aqua Slide, Cube Surfer, Join Clash 3D, Draw Climber in columns 2/4/6 (left/center/right on both
+layouts); scroll clock locked to video clock with build-planned phases so every featured game is always eligible;
+strict left→center→right rotation; lift 4.2s. See CODEX_HERO_NOTE.md.

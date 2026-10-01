@@ -25,7 +25,7 @@
 /* The crowned Slop sits on the hero's bottom edge, legs over the next section. */
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
+@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-37%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
 @media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
@@ -48,7 +48,7 @@
 .is-lifting>.game-lift-tile:after{animation:game-lift-sheen var(--lift-ms) ease both}
 @keyframes game-lift-open{0%{opacity:0}8%,86%{opacity:1}100%{opacity:0}}
 @keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}85%{opacity:0;transform:scale(1)}86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
-@keyframes game-lift-rise{0%{opacity:0;transform:translateZ(0)}5%{opacity:1;transform:translateZ(0)}30%,72%{opacity:1;transform:translateZ(var(--z)) scale(1.38)}80%{transform:translateZ(calc(var(--z)*.9)) scale(1.34);animation-timing-function:cubic-bezier(.55,0,1,.45)}86%{transform:translateZ(-14px) scale(.96)}90%{transform:translateZ(8px) scale(1.02)}94%{transform:translateZ(-2px) scale(.995)}97%{opacity:1;transform:translateZ(0)}100%{opacity:0;transform:translateZ(0)}}
+@keyframes game-lift-rise{0%{opacity:0;transform:translateZ(0)}5%{opacity:1;transform:translateZ(0)}30%,72%{opacity:1;transform:translateZ(var(--z)) scale(1.38)}80%{transform:translateZ(calc(var(--z)*.9)) scale(1.34);animation-timing-function:cubic-bezier(.55,0,1,.45)}86%{opacity:1;transform:translateZ(-14px) scale(.96)}90%{transform:translateZ(8px) scale(1.02)}93%{opacity:1}96%,100%{opacity:0;transform:translateZ(0)}}
 @keyframes game-lift-glow{0%,8%{opacity:0}26%,72%{opacity:1}90%{opacity:.5}100%{opacity:0}}
 @keyframes game-lift-sheen{0%,22%{transform:translateX(-70%)}42%,100%{transform:translateX(70%)}}
 @media(max-width:900px){.game-lift{--lift-z:90px}}

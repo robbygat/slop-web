@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import HeroPerch from './HeroPerch.jsx';
 import SlopMark from './SlopMark.jsx';
-import {HERO_LIFT_MS as LIFT_MS,HERO_WALL as WALL,WALL_SPEED,liftClipTime,liftPlacement,nextLiftInBand,tileY,wallVideoStem} from '../lib/hero-wall.js';
+import {HERO_LIFT_MS as LIFT_MS,HERO_WALL as WALL,WALL_SPEED,hasRunway,liftClipTime,liftPlacement,pickLift,tileY,wallVideoStem} from '../lib/hero-wall.js';
 import {createWallRenderer} from './HeroWallGL.js';
 import './brand-home.css';
 import './home-hero.css';
@@ -12,7 +12,7 @@ import './hero-v2.css';
 // so motion is perfectly smooth and the file carries no motion at all. One
 // clock drives the shader, the lifted game and the landing shockwave in the
 // same frame, so the lift can never drift from its slot.
-const BAND={wide:[.58,.8],narrow:[.4,.56]},NARROW='(max-width: 900px)';
+const BAND={wide:[.58,.8],narrow:[.36,.5]},NARROW='(max-width: 900px)';
 
 // Prefer the codec this device decodes smoothly and power-efficiently.
 const CODECS=[['-av1.mp4','video/mp4; codecs="av01.0.08M.08"'],['-hevc.mp4','video/mp4; codecs="hvc1.1.6.L120.90"'],['.mp4','video/mp4; codecs="avc1.640028"']];
@@ -65,13 +65,13 @@ function GameWall({paused}){
   if(!renderer){setGl(false);return;}
   setGl(true);
   let dead=false,raf=0,last=performance.now(),clock=root.current.__wallClock??0,shownFrame=false;
-  let current=null,pending=null,nextAt=clock+1.2,lastCol=null,recent=[];
+  let current=null,pending=null,nextAt=clock+1.2,turn=0,recent=[];
   const lead=.35,seekLead=.12;
   const land=()=>{node.classList.remove('is-lifting');node.style.transform='';clip.pause();current=null;};
   const plan=()=>{
-   const next=nextLiftInBand(clock,band[0],band[1],{recent,avoidCol:lastCol,lead});
-   if(!next){nextAt=clock+1;return;}
-   pending={game:next.lift,at:clock+next.delay-seekLead,seeking:false};
+   const next=pickLift(clock,band[0],band[1],{turn,recent,lead,videoTime:video.currentTime});
+   if(!next){nextAt=clock+.4;return;}
+   pending={game:next.lift,at:clock+next.delay-seekLead,seeking:false,turn:next.turn};
    const want=`/assets/brand/lift/${next.lift.id}${liftCodec}`;
    if(!clip.src.endsWith(want)){clip.src=want;node.querySelector('.game-lift-tile').style.backgroundImage=`url(/assets/brand/lift/${next.lift.id}.jpg)`;clip.load();}
   };
@@ -80,13 +80,18 @@ function GameWall({paused}){
    Object.assign(node.style,{left:`${place.left}%`,top:`${place.top}%`,width:`${place.width}%`,height:`${place.height}%`,transform:'translate3d(0,0,0)'});
    if(hold>0)setTimeout(()=>{if(!dead&&current?.game===game)clip.play().catch(()=>{});},hold);else clip.play().catch(()=>{});
    node.classList.remove('is-lifting');void node.offsetWidth;node.classList.add('is-lifting');
-   current={game,t0:clock,rippled:false};lastCol=game.col;recent=[...recent,game.id].slice(-3);
+   current={game,t0:clock,rippled:false};recent=[game.id];
   };
   const tick=nowMs=>{
    if(dead)return;
    const dt=Math.min(.1,(nowMs-last)/1000);last=nowMs;
    const running=live.current;
-   if(running)clock+=dt;
+   if(running){
+    clock+=dt;
+    // Gently lock the scroll clock to the video clock (both 3s-periodic) so each
+    // featured tile always reaches the lift line at its planned loop time.
+    if(video.readyState>=2&&!video.paused){const err=((video.currentTime-clock)%3+4.5)%3-1.5;clock+=err*.03;}
+   }
    // Offscreen or paused: keep the last frame, spend nothing.
    if(!running&&shownFrame){raf=requestAnimationFrame(tick);return;}
    if(renderer.draw(clock,nowMs/1000)&&!shownFrame){shownFrame=true;root.current?.classList.add('is-live');}
@@ -104,9 +109,9 @@ function GameWall({paused}){
     else if(pending&&!pending.seeking&&clock>=pending.at){
      // Seek the lifted copy to the frame the wall is about to show; rise once it lands there.
      const game=pending.game;pending.seeking=true;
-     if(video.readyState<2||clip.readyState<2){recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}
+     if(video.readyState<2||clip.readyState<2||!hasRunway(game,video.currentTime+seekLead)){recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}
      else{
-      let done=false;const go=()=>{if(done||dead)return;done=true;clip.removeEventListener('seeked',go);pending=null;if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);
+      let done=false;const go=()=>{if(done||dead)return;done=true;clip.removeEventListener('seeked',go);turn=pending?.turn??turn;pending=null;if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);
        // The seek aimed slightly ahead; hold that frame until the wall reaches it, then play in lockstep.
        const ahead=(((liftClipTime(game,video.currentTime)-clip.currentTime)%3)+3)%3,hold=ahead>1.5?(3-ahead)*1000:0;
        begin(game,hold);};
@@ -133,7 +138,7 @@ function GameWall({paused}){
   </div>
   {/* A visibly playing <video> caps Chrome's animation rate at 30fps, so both
       videos stay hidden and are only used as frame sources. */}
-  <video ref={clipRef} className="game-wall-source" muted loop playsInline preload="auto" disablePictureInPicture/>
+  <video ref={clipRef} className="game-wall-source" muted playsInline preload="auto" disablePictureInPicture/>
   <video ref={film} className="game-wall-source" src={reduced?undefined:src||undefined} muted loop playsInline preload="auto" disablePictureInPicture/>
   <span className="slop-hero-veil"/>
  </div>;

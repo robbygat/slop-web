@@ -7,7 +7,7 @@ import layout from './hero-wall-layout.json' with {type:'json'};
 export const HERO_WALL=Object.freeze({...layout.wall});
 export const HERO_FEATURED=Object.freeze(layout.lifts.map(lift=>Object.freeze({...lift})));
 export const HERO_WALL_GAMES=Object.freeze([...layout.games]);
-export const HERO_LIFT_MS=4600;
+export const HERO_LIFT_MS=4200;
 const {h:H,cellW,cellH,tileW,tileH,w:W,loop,tileLoop,colOffset}=HERO_WALL;
 export const WALL_SPEED=H/loop; // px per second every column travels
 
@@ -29,15 +29,19 @@ export function liftWindow(){
 
 // The soonest featured game inside the visible band [lo, hi] (fractions of wall
 // height), so lifts start wherever a featured game happens to be. Skips recent
-// games and prefers the other column; `lead` leaves time to seek its clip.
-export function nextLiftInBand(time,lo,hi,{recent=[],avoidCol=null,lead=.35}={}){
+// games and rotates columns (left, center, right); `lead` leaves time to seek its clip.
+// `videoTime` (the wall video's clock) lets it skip lifts whose continuous take
+// would run out before landing.
+export function nextLiftInBand(time,lo,hi,{recent=[],avoidCol=null,recentCols=[],lead=.35,videoTime=null}={}){
  const {min,max}=liftWindow(),top=Math.max(min,lo*H),bottom=Math.min(max,hi*H);
  let best=null;
  for(const lift of HERO_FEATURED){
   if(recent.includes(lift.id))continue;
   const y=tileY(lift.col,lift.row,time);
   const delay=y-WALL_SPEED*lead>=top&&y<=bottom?lead:mod(y-bottom,H)/WALL_SPEED;
-  const score=delay+(lift.col===avoidCol?2.5:0);
+  if(videoTime!==null&&!hasRunway(lift,videoTime+delay))continue;
+  // Rotate sides: penalise the last column most, the one before it less.
+  const age=recentCols.indexOf(lift.col),score=delay+(lift.col===avoidCol?2.5:0)+(age===0?3:age===1?1.5:0);
   if(!best||score<best.score)best={lift,delay,score};
  }
  return best;
@@ -51,3 +55,24 @@ export function liftPlacement(lift,time){
 
 // Loop time the wall video shows for this tile, so the lifted copy matches it.
 export const liftClipTime=(lift,videoTime)=>mod(videoTime+lift.phase,tileLoop);
+
+// Lifted copies are continuous takes (no loop): a lift may only start while the
+// take has enough left to play through the landing.
+export const hasRunway=(lift,videoTime)=>liftClipTime(lift,videoTime)+HERO_LIFT_MS/1000+.15<=lift.runway;
+
+// Featured columns in left -> center -> right order.
+export const LIFT_COLUMNS=Object.freeze([...new Set(HERO_FEATURED.map(lift=>lift.col))].sort((a,b)=>a-b));
+
+// Strict rotation across columns: the soonest eligible game in the next column,
+// unless that is more than `maxWait` seconds away (then the soonest anywhere).
+export function pickLift(time,lo,hi,{turn=0,recent=[],videoTime=null,lead=.35,maxWait=3.5}={}){
+ const options={recent,lead,videoTime};
+ for(let k=0;k<LIFT_COLUMNS.length;k++){
+  const col=LIFT_COLUMNS[(turn+k)%LIFT_COLUMNS.length];
+  const only=HERO_FEATURED.filter(l=>l.col!==col).map(l=>l.id);
+  const next=nextLiftInBand(time,lo,hi,{...options,recent:[...recent,...only]});
+  if(next&&next.delay<=maxWait)return {...next,turn:(turn+k+1)%LIFT_COLUMNS.length};
+ }
+ const any=nextLiftInBand(time,lo,hi,options);
+ return any&&{...any,turn:(LIFT_COLUMNS.indexOf(any.lift.col)+1)%LIFT_COLUMNS.length};
+}
