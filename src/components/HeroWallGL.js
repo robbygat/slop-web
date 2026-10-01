@@ -28,7 +28,7 @@ void main(){
  gl_FragColor=vec4(c+vec3(.77,.96,.39)*glow,1.);
 }`;
 
-export function createWallRenderer(canvas,video,wall){
+export function createWallRenderer(canvas,video,wall,{onContextLost,onContextRestored}={}){
  const gl=canvas.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,powerPreference:'high-performance',preserveDrawingBuffer:false});
  if(!gl||gl.isContextLost())return null;
  const shader=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);return gl.getShaderParameter(s,gl.COMPILE_STATUS)?s:null;};
@@ -46,12 +46,14 @@ export function createWallRenderer(canvas,video,wall){
  const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
  for(const [k,val] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,val);
  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([11,17,14]));
- let fresh=false,hasFrame=false,frameHandle=0,lost=false;
+ let fresh=false,hasFrame=false,frameHandle=0,lost=false,disposed=false;
  // Upload only when the decoder presents a new frame (24/s), draw every display frame.
  const rvfc=typeof video.requestVideoFrameCallback==='function';
- const onFrame=()=>{fresh=true;frameHandle=video.requestVideoFrameCallback(onFrame);};
+ const onFrame=()=>{if(disposed)return;fresh=true;frameHandle=video.requestVideoFrameCallback(onFrame);};
  if(rvfc)frameHandle=video.requestVideoFrameCallback(onFrame);
- const onLost=e=>{e.preventDefault();lost=true;};canvas.addEventListener('webglcontextlost',onLost);
+ const onLost=e=>{e.preventDefault();if(disposed)return;lost=true;onContextLost?.();};
+ const onRestored=()=>{if(!disposed)onContextRestored?.();};
+ canvas.addEventListener('webglcontextlost',onLost);canvas.addEventListener('webglcontextrestored',onRestored);
  const size=()=>{
   // Never render more pixels than the video has; CSS scales the canvas.
   const w=Math.min(video.videoWidth||wall.w,wall.w),h=Math.round(w*wall.h/wall.w);
@@ -59,10 +61,10 @@ export function createWallRenderer(canvas,video,wall){
  };
  let ripple=[0,0,-1,0];
  return {
-  get ready(){return hasFrame&&!lost;},
+  get ready(){return hasFrame&&!lost&&!disposed;},
   ripple(x,y,strength=1,startedAt){ripple=[x,y,startedAt,strength];},
   draw(time,now){
-   if(lost)return false;
+   if(lost||disposed)return false;
    if(video.readyState>=2&&(fresh||!rvfc||!hasFrame)){
     size();gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,video);fresh=false;hasFrame=true;
    }
@@ -72,6 +74,6 @@ export function createWallRenderer(canvas,video,wall){
    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
    return true;
   },
-  dispose(){if(rvfc&&frameHandle)video.cancelVideoFrameCallback(frameHandle);canvas.removeEventListener('webglcontextlost',onLost);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);},
+  dispose(){disposed=true;if(rvfc&&frameHandle)video.cancelVideoFrameCallback(frameHandle);canvas.removeEventListener('webglcontextlost',onLost);canvas.removeEventListener('webglcontextrestored',onRestored);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);},
  };
 }
