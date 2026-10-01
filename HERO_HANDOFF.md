@@ -39,3 +39,15 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
 - Home hero no longer says "Hundreds of games · play instantly" or "There's always a score to beat".
 - Social headline is now "Stay connected with friends."
 - Create (`Connect.jsx`) header: replaced the coin-op robot + overlapping Slop badge with the single `core` robot.
+
+## Round 4 — wall quality, performance, lifting phones
+- Wall is now ONE video with the scrolling baked in (each of 22 columns scrolls, alternating up/down, seamless 14s loop).
+  No CSS scroll animation and no second decoder → much smoother.
+  - `game-wall-hd.mp4` 2948×1536 (~15 MB) for ≥1000px screens on fast connections; `game-wall.mp4` 1600w (~7.5 MB) otherwise. Poster: `game-wall-poster.jpg`.
+  - Tiles rendered at 128×250 (near native 164×320) with lanczos — much sharper.
+  - Rebuild: ffmpeg xstack/vstack+crop per column from `slop-mobile/output/slop-update-film/media/recent-wall/tiles`.
+- Lifting phones: every ~6s a crisp upright phone (bezel, notch, lime rim + glow, name chip) rises out of the tilted wall
+  in screen space, plays the game, and sinks back. Clips in `public/assets/brand/lift/*.mp4|.jpg` (480w):
+  Kickflip Coast, Run Infinite, Aqua Slide, Cube Surfer, Stumble Run, Draw Climber (sources in slop-mobile film media).
+  Desktop: right side, 3 rotating spots. Mobile: above the headline. Off for reduced motion; pauses offscreen/hidden tab.
+- Follow-ups: consider moving the big MP4s to a CDN/Supabase storage instead of git; add AV1/WebM variants; make lifted phones clickable to open that game (need slugs).

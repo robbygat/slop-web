@@ -1,11 +1,8 @@
 .slop-hero{--ink:#f4f7ea;--lime:#c5f564;--perch-size:clamp(120px,12vw,175px);position:relative;isolation:isolate;display:flex;align-items:center;min-height:min(780px,calc(100dvh - 90px));padding:80px 5vw 100px;background:#0b110e;color:var(--ink);overflow:visible;margin-bottom:calc(var(--perch-size)*.5)}
 .game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
-.game-wall-plane{position:absolute;left:24%;top:-38%;width:max(1700px,115vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
-.game-wall-track{display:flex;flex-direction:column;animation:game-wall-scroll 60s linear infinite;animation-play-state:paused}
-.game-wall.is-running .game-wall-track{animation-play-state:running}
-.game-wall video{display:block;width:100%;height:auto;aspect-ratio:2244/1158;object-fit:cover;background:#0d1411}
-@keyframes game-wall-scroll{to{transform:translateY(-50%)}}
-.slop-hero-veil{position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
+.game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
+.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:1440/742;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
 .slop-hero h1>span{display:block;white-space:nowrap;animation:slop-hero-in .8s cubic-bezier(.2,.8,.2,1) both}
@@ -25,3 +22,27 @@
 @media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-30%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
 @media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
+
+/* Lift: a crisp, upright phone rises out of the tilted wall, plays, and sinks back.
+   It lives in screen space (not inside the plane) so it is always sharp and visible. */
+.game-lift-stage{position:absolute;inset:0;z-index:1;perspective:1400px;pointer-events:none}
+.game-lift{--w:clamp(170px,15vw,250px);position:absolute;left:66%;top:50%;width:var(--w);transform-style:preserve-3d;animation:game-lift var(--lift-ms) cubic-bezier(.3,.7,.2,1) both}
+.game-lift.spot-1{left:80%;top:44%}.game-lift.spot-2{left:72%;top:58%}
+.game-lift.is-held{animation-play-state:paused}
+.game-lift-phone{position:relative;aspect-ratio:9/19.5;border-radius:calc(var(--w)*.16);padding:calc(var(--w)*.035);background:linear-gradient(145deg,#2b332e,#0b110e 40%,#1d2420);box-shadow:inset 0 0 0 1.5px #ffffff26,0 0 0 2px #c5f564,0 50px 90px -20px #000,0 0 120px -20px #c5f564aa}
+.game-lift-phone>video{display:block;width:100%;height:100%;object-fit:cover;border-radius:calc(var(--w)*.13);background:#0b110e}
+.game-lift-phone>i{position:absolute;left:50%;top:calc(var(--w)*.06);width:28%;height:calc(var(--w)*.06);transform:translateX(-50%);border-radius:99px;background:#050806}
+.game-lift-shadow{position:absolute;left:10%;right:10%;bottom:-9%;height:12%;border-radius:50%;background:radial-gradient(closest-side,#c5f56466,transparent);filter:blur(8px);transform:translateZ(-60px)}
+.game-lift-name{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);padding:8px 14px;border-radius:99px;background:#f4f7ea;color:#0b110e;font-size:13px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;box-shadow:0 10px 30px -8px #000;animation:game-lift-name var(--lift-ms) ease both}
+@keyframes game-lift{
+ 0%{opacity:0;transform:translate(-50%,-50%) translateY(14%) rotateX(42deg) rotateZ(-20deg) scale(.42)}
+ 9%{opacity:1;transform:translate(-50%,-50%) translateY(14%) rotateX(42deg) rotateZ(-20deg) scale(.42)}
+ 24%{transform:translate(-50%,-50%) translateY(-4%) rotateX(-6deg) rotateZ(3deg) scale(1.04)}
+ 32%{transform:translate(-50%,-50%) rotateX(2deg) rotateZ(-1deg) scale(1)}
+ 56%{transform:translate(-50%,-50%) translateY(-2%) rotateX(0) rotateZ(1deg) rotateY(-6deg) scale(1)}
+ 78%{opacity:1;transform:translate(-50%,-50%) rotateX(2deg) rotateZ(-1deg) rotateY(4deg) scale(1)}
+ 93%{opacity:1;transform:translate(-50%,-50%) translateY(14%) rotateX(42deg) rotateZ(-20deg) scale(.42)}
+ 100%{opacity:0;transform:translate(-50%,-50%) translateY(14%) rotateX(42deg) rotateZ(-20deg) scale(.42)}}
+@keyframes game-lift-name{0%,26%{opacity:0;transform:translateX(-50%) translateY(10px)}34%,74%{opacity:1;transform:translateX(-50%)}84%,100%{opacity:0;transform:translateX(-50%) translateY(10px)}}
+@media(max-width:900px){.game-lift,.game-lift.spot-1,.game-lift.spot-2{--w:clamp(120px,30vw,190px);left:72%;top:27%}.game-lift.spot-1{left:30%;top:24%}.game-lift.spot-2{left:58%;top:22%}.game-lift-name{font-size:11px;bottom:-38px;padding:6px 11px}}
+@media(max-width:600px){.game-lift,.game-lift.spot-1,.game-lift.spot-2{--w:clamp(110px,30vw,135px);top:21%}.game-lift-name{bottom:-32px}}
