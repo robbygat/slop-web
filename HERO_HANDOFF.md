@@ -94,5 +94,35 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
 - The hero uses its own `hero-game-wall` CSS class, keeping the Home catalogue grid in normal flow. Copy says “your Slop.” Shared Quests icons match the mobile app’s crossed-swords painter.
 - Play titles rotate through four short entrances on each actual game change, settling at a stable readable pose. Reduced-motion preferences disable the entrances; game identity and input handlers are unchanged.
 
-### Hero motion follow-up
-The first combined release is live on main `12e5a19702dc45628d21c4dc3d259247e9054b60` (PR52, successful Pages run36815520833). The user still observed lift stutter. Code inspection found that the raised card itself advanced in the baked video's24fps/even-pixel steps while its depth animation ran at display rate. Keep the canvas crop frame-exact, separate raised travel from that crop, and keep exact alignment at launch and landing. Large animated shadow and background-position effects have also been replaced with static shadow and transformed sheen layers.
+## Round 8 — hero wall rebuilt after #52 (branch claude/hero-wall-fix)
+Problems in #52: columns 2 and 4 were overwritten with the same six featured games (duplicates on screen); the
+lift copied pixels from the 3K wall video into a canvas every frame (main-thread readback → stutter) and moved
+in 24fps steps; phones were given the 3K wall.
+
+Now:
+- `tools/build-hero-wall.py` rebuilds everything from the full-res source clips. **Every game appears exactly once**
+  (126 games, 21×6). Removed: Hole Rush, Blocks (broken) and the landscape desktop captures Neon Bastion, Rift Runner,
+  Void Pong, Neon Pinball, Neon Velocity. Added Surfy Sub. Tiles are seamless 3s crossfaded loops at random phases.
+  Featured games (Kickflip Coast, Run Infinite, Aqua Slide, Cube Surfer, Stumble Run, Draw Climber) live in columns 2/4,
+  rows 0/2/4, and are exported as phase-matched 512×1000 lift loops. Layout + phases → `src/lib/hero-wall-layout.json`.
+  `tools/prepare-hero-curated-wall.py` is removed.
+- Lift engine (Hero.jsx): one game at a time; it lifts wherever a featured game currently is inside a visible band,
+  preferring the other column and games not seen recently (~every 6s). The clip is buffered and seeked to the exact
+  frame the wall is showing before it rises (no black flash), the ride is a compositor Web Animation corrected only if
+  it drifts from the wall's media clock, and only transform/opacity animate. No canvas, no React renders mid-lift.
+- Measured in the browser: zero frames over 40ms across 20–25s runs on desktop and 375px mobile; lifted clip readyState 4
+  at every lift; lift stays above the headline on phones.
+- Phones (≤900px) and slow connections get the 1600px wall again.
+- Headline: outlined "Just one" that fills in, words rise in, lime underline on "game."; CTA has a play disc + light sweep.
+
+## Round 9 — GPU wall, 120fps, slam ripple
+See CODEX_HERO_NOTE.md for the full architecture. Summary: static 3s grid video + WebGL column scrolling at display
+rate; single rAF clock for wall/lift/shockwave; hidden videos (a visible playing <video> caps Chrome at 30fps);
+lift clip painted to canvas and phase-locked within ~7ms; square tiles; slam landing with shader shockwave;
+AV1/HEVC/H.264 chosen per device via mediaCapabilities. Wall: 19 MB → 6–8 MB desktop, 10 MB → ~3 MB phones.
+
+## Round 10 — clean loops, no-loop lifts, even spread
+Natural loop points per tile; lifted copies are continuous takes (no mid-lift snap-back); featured = Kickflip Coast,
+Run Infinite, Aqua Slide, Cube Surfer, Join Clash 3D, Draw Climber in columns 2/4/6 (left/center/right on both
+layouts); scroll clock locked to video clock with build-planned phases so every featured game is always eligible;
+strict left→center→right rotation; lift 4.2s. See CODEX_HERO_NOTE.md.

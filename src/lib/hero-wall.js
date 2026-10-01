@@ -1,65 +1,78 @@
-// Geometry shared by the baked wall and the lift's captured video frame.
-export const HERO_WALL=Object.freeze({w:2948,h:1536,cellW:134,cellH:256,tileW:128,tileH:250,loop:15});
-export const HERO_LIFT_MS=5200;
+import layout from './hero-wall-layout.json' with {type:'json'};
 
-// Screen size does not reduce wall sharpness; only explicit data constraints do.
-export function wallVideoSource({saveData=false,effectiveType=''}={}){
- return saveData||['slow-2g','2g','3g'].includes(effectiveType)
-  ?'/assets/brand/game-wall.mp4':'/assets/brand/game-wall-hd.mp4';
-}
+// Geometry and featured games of the hero wall (tools/build-hero-wall.py).
+// Every game appears exactly once. The wall video is the grid standing still;
+// the page scrolls columns on the GPU, one wall height per `loop` seconds, even
+// columns up and odd columns down, each offset by col*colOffset.
+export const HERO_WALL=Object.freeze({...layout.wall});
+export const HERO_FEATURED=Object.freeze(layout.lifts.map(lift=>Object.freeze({...lift})));
+export const HERO_WALL_GAMES=Object.freeze([...layout.games]);
+export const HERO_LIFT_MS=4200;
+const {h:H,cellW,cellH,tileW,tileH,w:W,loop,tileLoop,colOffset}=HERO_WALL;
+export const WALL_SPEED=H/loop; // px per second every column travels
 
 const mod=(value,period)=>((value%period)+period)%period;
-// Match the baked 24fps FFmpeg crop: nearest source frame, then nearest pixel
-// rounded down to an even coordinate for the video's chroma alignment.
-function wallCrop(col,time){
- const frameTime=Math.round(time*24)/24;
- const position=mod(frameTime*HERO_WALL.h/HERO_WALL.loop+col*137,HERO_WALL.h);
- return 2*Math.floor((position+.5)/2);
+
+// Phones and constrained connections get the 1600px cut; codec is chosen by the page.
+export function wallVideoStem({saveData=false,effectiveType='',narrow=false}={}){
+ return narrow||saveData||['slow-2g','2g','3g'].includes(effectiveType)?'/assets/brand/game-wall':'/assets/brand/game-wall-hd';
 }
 
-// Even columns travel upward. Pick a complete tile with enough space to remain
-// on the wall for the entire lift, nearest the requested fraction of its height.
-export function findWallSlot(col,time,start){
- if(!Number.isInteger(col)||col<0||col>=HERO_WALL.w/HERO_WALL.cellW||col%2
-  ||!Number.isFinite(time)||!Number.isFinite(start))return null;
- const crop=wallCrop(col,time);
- const ride=HERO_WALL.h/HERO_WALL.loop*HERO_LIFT_MS/1000,min=ride+8,max=HERO_WALL.h-HERO_WALL.tileH-8;
+// Top edge (wall px) of a tile in an upward (even) column at wall clock t.
+export const tileY=(col,row,time)=>mod(row*cellH-(time*WALL_SPEED+col*colOffset),H);
+
+// A lift must stay whole on the wall for its full ride (never wraps an edge).
+export function liftWindow(){
+ const ride=WALL_SPEED*HERO_LIFT_MS/1000;
+ return {ride,min:Math.ceil(ride)+8,max:H-tileH-8};
+}
+
+// The soonest featured game inside the visible band [lo, hi] (fractions of wall
+// height), so lifts start wherever a featured game happens to be. Skips recent
+// games and rotates columns (left, center, right); `lead` leaves time to seek its clip.
+// `videoTime` (the wall video's clock) lets it skip lifts whose continuous take
+// would run out before landing.
+export function nextLiftInBand(time,lo,hi,{recent=[],avoidCol=null,recentCols=[],lead=.35,videoTime=null}={}){
+ const {min,max}=liftWindow(),top=Math.max(min,lo*H),bottom=Math.min(max,hi*H);
  let best=null;
- for(let row=0;row<HERO_WALL.h/HERO_WALL.cellH;row++){
-  const y=mod(row*HERO_WALL.cellH-crop,HERO_WALL.h);
-  if(y<min||y>max)continue;
-  const distance=Math.abs(y-start*HERO_WALL.h);
-  if(!best||distance<best.distance)best={y,distance,row};
+ for(const lift of HERO_FEATURED){
+  if(recent.includes(lift.id))continue;
+  const y=tileY(lift.col,lift.row,time);
+  const delay=y-WALL_SPEED*lead>=top&&y<=bottom?lead:mod(y-bottom,H)/WALL_SPEED;
+  if(videoTime!==null&&!hasRunway(lift,videoTime+delay))continue;
+  // Rotate sides: penalise the last column most, the one before it less.
+  const age=recentCols.indexOf(lift.col),score=delay+(lift.col===avoidCol?2.5:0)+(age===0?3:age===1?1.5:0);
+  if(!best||score<best.score)best={lift,delay,score};
  }
- return best?{left:col*HERO_WALL.cellW/HERO_WALL.w*100,top:best.y/HERO_WALL.h*100,col,row:best.row,initialY:best.y}:null;
+ return best;
 }
 
-// Follow the same baked tile row in each decoded frame. A slightly earlier
-// first frame and a loop seam both resolve directly to their actual wall pixels.
-export function sampleWallLift(slot,frameTime,videoWidth,videoHeight){
- const y=mod(slot.row*HERO_WALL.cellH-wallCrop(slot.col,frameTime),HERO_WALL.h);
- return {offsetPercent:(y-slot.initialY)/HERO_WALL.tileH*100,source:{
-  x:slot.col*HERO_WALL.cellW/HERO_WALL.w*videoWidth,
-  y:y/HERO_WALL.h*videoHeight,
-  width:HERO_WALL.tileW/HERO_WALL.w*videoWidth,
-  height:HERO_WALL.tileH/HERO_WALL.h*videoHeight,
- }};
+// Plane position of a lift (CSS %), from the same clock that drives the shader.
+export function liftPlacement(lift,time){
+ const y=tileY(lift.col,lift.row,time);
+ return {left:lift.col*cellW/W*100,top:y/H*100,width:tileW/W*100,height:tileH/H*100,y};
 }
 
-const smoothstep=value=>{const x=Math.max(0,Math.min(1,value));return x*x*(3-2*x);};
+// Loop time the wall video shows for this tile, so the lifted copy matches it.
+export const liftClipTime=(lift,videoTime)=>mod(videoTime+lift.phase,tileLoop);
 
-// Canvas pixels remain tied to the decoded frame; the lifted tile can ride
-// smoothly between frames. Extrapolation stops after one source-frame interval.
-export function sampleWallRide(slot,frame,now,progress,playbackRate=1){
- const expected=Number.isFinite(frame.expectedDisplayTime)?frame.expectedDisplayTime:now;
- const ahead=Math.min(1/24,Math.max(0,(now-expected)/1000)*Math.max(0,playbackRate));
- const mediaTime=frame.mediaTime+ahead;
- const frameY=mod(slot.row*HERO_WALL.cellH-wallCrop(slot.col,frame.mediaTime),HERO_WALL.h);
- const continuousCrop=mod(mediaTime*HERO_WALL.h/HERO_WALL.loop+slot.col*137,HERO_WALL.h);
- const continuousY=mod(slot.row*HERO_WALL.cellH-continuousCrop,HERO_WALL.h);
- // Match the CSS flat launch (0–6%) and landing (88–100%). The middle uses
- // continuous column geometry, avoiding the baked even-pixel crop's sawtooth.
- const blend=Math.min(smoothstep((progress-.06)/.20),1-smoothstep((progress-.72)/.16));
- const y=frameY+(continuousY-frameY)*blend;
- return {offsetPercent:(y-slot.initialY)/HERO_WALL.tileH*100,frameOffsetPercent:(frameY-slot.initialY)/HERO_WALL.tileH*100};
+// Lifted copies are continuous takes (no loop): a lift may only start while the
+// take has enough left to play through the landing.
+export const hasRunway=(lift,videoTime)=>liftClipTime(lift,videoTime)+HERO_LIFT_MS/1000+.15<=lift.runway;
+
+// Featured columns in left -> center -> right order.
+export const LIFT_COLUMNS=Object.freeze([...new Set(HERO_FEATURED.map(lift=>lift.col))].sort((a,b)=>a-b));
+
+// Strict rotation across columns: the soonest eligible game in the next column,
+// unless that is more than `maxWait` seconds away (then the soonest anywhere).
+export function pickLift(time,lo,hi,{turn=0,recent=[],videoTime=null,lead=.35,maxWait=3.5}={}){
+ const options={recent,lead,videoTime};
+ for(let k=0;k<LIFT_COLUMNS.length;k++){
+  const col=LIFT_COLUMNS[(turn+k)%LIFT_COLUMNS.length];
+  const only=HERO_FEATURED.filter(l=>l.col!==col).map(l=>l.id);
+  const next=nextLiftInBand(time,lo,hi,{...options,recent:[...recent,...only]});
+  if(next&&next.delay<=maxWait)return {...next,turn:(turn+k+1)%LIFT_COLUMNS.length};
+ }
+ const any=nextLiftInBand(time,lo,hi,options);
+ return any&&{...any,turn:(LIFT_COLUMNS.indexOf(any.lift.col)+1)%LIFT_COLUMNS.length};
 }

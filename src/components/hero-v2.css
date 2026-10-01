@@ -2,7 +2,14 @@
 .hero-game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
 .game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
 .hero-game-wall{transform-style:preserve-3d}
-.game-wall-film{display:block;width:100%;height:auto;aspect-ratio:2948/1536;object-fit:fill;backface-visibility:hidden;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-canvas,.game-wall-poster{display:block;width:100%;height:auto;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-poster{position:absolute;inset:0 0 auto}
+.game-wall-canvas{position:relative;opacity:0;transition:opacity .4s ease}
+.hero-game-wall.is-live .game-wall-canvas{opacity:1}
+.hero-game-wall.is-static .game-wall-canvas{visibility:hidden}
+/* Decoded only as a texture source; kept in the DOM so iOS keeps it playing. */
+.game-wall-source{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
+.hero-game-wall:not(.is-running) .game-lift *{animation-play-state:paused}
 .slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
@@ -18,31 +25,53 @@
 /* The crowned Slop sits on the hero's bottom edge, legs over the next section. */
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-30%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
+@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 70px}.game-wall-plane{left:-37%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:linear-gradient(0deg,#0b110e 30%,#0b110ed9 50%,#0b110e33 75%,#0b110e80 100%)}}
 @media(max-width:600px){.slop-hero{--perch-size:92px;padding:40px 20px 56px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
-/* Lift: a game rises out of its real slot at the wall's own angle, rides up
-   with its column, and drops back into the same glowing opening. */
-.game-lift{position:absolute;aspect-ratio:128/250;transform-style:preserve-3d;will-change:transform}
-.game-lift-slot{position:absolute;inset:-1px;border-radius:9%;background:radial-gradient(ellipse at 50% 50%,#1b2a12,#050806 70%);box-shadow:inset 0 0 0 2px #c5f564,inset 0 0 24px #c5f564aa,0 0 26px #c5f56499;opacity:0;animation:game-lift-open var(--lift-ms) ease both}
-.game-lift-tile{position:relative;width:100%;height:100%;border-radius:9%;overflow:hidden;background:#0b110e center/cover no-repeat;box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480;animation:game-lift-rise var(--lift-ms) cubic-bezier(.3,.75,.25,1) both;will-change:transform,opacity}
-.game-lift-canvas{display:block;width:100%;height:100%;visibility:hidden;backface-visibility:hidden;transform:translateZ(0)}
-/* The curated wall cells are cropped to fill before encoding; no second content transform. */
-/* iOS Safari: clip video to the radius inside a 3D context without flicker. */
-.game-lift-tile{isolation:isolate;backface-visibility:hidden;-webkit-mask-image:-webkit-radial-gradient(#fff,#000)}
-@keyframes game-lift-open{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}
-.game-lift-slot:after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 2px #c5f564;opacity:0;animation:game-lift-ripple var(--lift-ms) ease-out both}
-@keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}86%{opacity:0;transform:scale(1)}88%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
-.game-lift-tile:after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,#ffffff40 50%,transparent 65%);transform:translate3d(-130%,0,0);animation:game-lift-sheen var(--lift-ms) ease both;will-change:transform;pointer-events:none}
-@keyframes game-lift-sheen{0%,22%{transform:translate3d(-130%,0,0)}40%,100%{transform:translate3d(130%,0,0)}}
-@keyframes game-lift-rise{
- 0%{transform:translateZ(0);opacity:0}
- 6%{opacity:1;transform:translateZ(0)}
- 26%{transform:translateZ(var(--lift-z,130px)) scale(1.12)}
- 72%{transform:translateZ(var(--lift-z,130px)) scale(1.12)}
- 88%{transform:translateZ(0) scale(1)}
- 92%{transform:translateZ(6px) scale(1.01)}
- 94%{opacity:1}
- 100%{transform:translateZ(0) scale(1);opacity:0}}
-@media(max-width:900px){.game-lift{--lift-z:70px}}
+/* Lift: a featured game rises out of its own slot at the wall's angle, rides
+   with its column, and settles back into the same glowing opening. Only
+   transform and opacity animate, so every frame stays on the compositor. */
+.game-lift{--z:var(--lift-z,170px);position:absolute;transform-style:preserve-3d;will-change:transform;visibility:hidden;pointer-events:none}
+.game-lift.is-lifting{visibility:visible}
+.game-lift>*{position:absolute;inset:0}
+.game-lift-slot{inset:-1px;background:radial-gradient(ellipse at 50% 50%,#1b2a12,#050806 70%);box-shadow:inset 0 0 0 2px #c5f564,inset 0 0 24px #c5f564aa,0 0 26px #c5f56499;opacity:0}
+.game-lift-slot:after{content:'';position:absolute;inset:0;box-shadow:0 0 0 2px #c5f564;opacity:0}
+.game-lift-glow{box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480;opacity:0;will-change:transform,opacity}
+.game-lift-tile{overflow:hidden;background:#0b110e center/cover no-repeat;opacity:0;will-change:transform,opacity;backface-visibility:hidden}
+.game-lift-tile>canvas{display:block;width:100%;height:100%}
+.game-lift-tile:after{content:'';position:absolute;inset:-20% -60%;background:linear-gradient(115deg,transparent 40%,#ffffff3a 50%,transparent 60%);transform:translateX(-70%);pointer-events:none}
+.is-lifting>.game-lift-slot{animation:game-lift-open var(--lift-ms) ease both}
+.is-lifting>.game-lift-slot:after{animation:game-lift-ripple var(--lift-ms) ease-out both}
+.is-lifting>.game-lift-tile{animation:game-lift-rise var(--lift-ms) cubic-bezier(.45,0,.2,1) both}
+.is-lifting>.game-lift-glow{animation:game-lift-rise var(--lift-ms) cubic-bezier(.45,0,.2,1) both,game-lift-glow var(--lift-ms) ease both}
+.is-lifting>.game-lift-tile:after{animation:game-lift-sheen var(--lift-ms) ease both}
+@keyframes game-lift-open{0%{opacity:0}8%,86%{opacity:1}100%{opacity:0}}
+@keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}85%{opacity:0;transform:scale(1)}86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes game-lift-rise{0%{opacity:0;transform:translateZ(0)}5%{opacity:1;transform:translateZ(0)}30%,72%{opacity:1;transform:translateZ(var(--z)) scale(1.38)}80%{transform:translateZ(calc(var(--z)*.9)) scale(1.34);animation-timing-function:cubic-bezier(.55,0,1,.45)}86%{opacity:1;transform:translateZ(-14px) scale(.96)}90%{transform:translateZ(8px) scale(1.02)}93%{opacity:1}96%,100%{opacity:0;transform:translateZ(0)}}
+@keyframes game-lift-glow{0%,8%{opacity:0}26%,72%{opacity:1}90%{opacity:.5}100%{opacity:0}}
+@keyframes game-lift-sheen{0%,22%{transform:translateX(-70%)}42%,100%{transform:translateX(70%)}}
+@media(max-width:900px){.game-lift{--lift-z:90px}}
+
+/* Headline: "Just one" draws in as an outline, then each word rises; "game." glows. */
+.slop-hero h1>.slop-hero-line{display:block;white-space:nowrap;animation:none}
+.slop-hero-line>i,.slop-hero-line>em>i{display:inline-block;font-style:normal;animation:slop-word .9s cubic-bezier(.16,1,.3,1) both}
+.slop-hero-line>i:nth-child(2){animation-delay:.07s}
+.slop-hero-line+.slop-hero-line>i{animation-delay:.16s}
+.slop-hero-line+.slop-hero-line>em>i{animation-delay:.24s}
+.slop-hero h1>.slop-hero-line.is-outline{color:transparent;-webkit-text-stroke:2px #f4f7eacc;animation:slop-outline-fill 1.6s .5s ease both}
+.slop-hero h1 em{position:relative;color:var(--lime);text-shadow:0 0 50px #c5f56466}
+.slop-hero h1 em:after{content:'';position:absolute;left:.04em;right:.12em;bottom:-.04em;height:.07em;border-radius:99px;background:var(--lime);transform:scaleX(0);transform-origin:0 50%;animation:slop-underline .7s .75s cubic-bezier(.65,0,.35,1) both;box-shadow:0 0 24px #c5f56499}
+@keyframes slop-word{from{opacity:0;transform:translateY(.45em) rotate(4deg)}to{opacity:1;transform:none}}
+@keyframes slop-outline-fill{0%,40%{color:transparent}100%{color:#f4f7ea2e}}
+@keyframes slop-underline{to{transform:scaleX(1)}}
+/* Button: a play disc, a soft lime glow, and a light sweep on hover. */
+.slop-hero-entry>a.slop-hero-play{position:relative;overflow:hidden;isolation:isolate;gap:14px;padding:0 26px 0 8px;min-height:64px;font-size:16px;letter-spacing:-.01em;box-shadow:0 18px 50px -18px #c5f564b3}
+.slop-hero-play-disc{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#0b110e;color:var(--lime);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.slop-hero-play-disc>svg{margin-left:2px}
+.slop-hero-play>svg:last-child{width:20px;height:22px;margin-left:6px;opacity:.85}
+.slop-hero-play:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,#ffffff8c 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s ease}
+.slop-hero-play:hover:before{transform:translateX(120%)}
+.slop-hero-play:hover .slop-hero-play-disc{transform:scale(1.08) rotate(-8deg)}
+@media(max-width:600px){.slop-hero-entry>a.slop-hero-play{justify-content:flex-start;min-height:62px}.slop-hero-play>svg:last-child{margin-left:auto}.slop-hero-line.is-outline{-webkit-text-stroke-width:1.5px}}
+@media(prefers-reduced-motion:reduce){.slop-hero-line>i,.slop-hero-line>em>i,.slop-hero h1 em:after{animation:none!important}.slop-hero h1 em:after{transform:none}.slop-hero-line.is-outline{color:#f4f7ea2e}}
