@@ -1,4 +1,4 @@
-.slop-hero{--ink:#f4f7ea;--lime:#c5f564;--perch-size:clamp(216px,21.6vw,315px);position:relative;isolation:isolate;display:flex;align-items:center;min-height:min(780px,calc(100dvh - 90px - var(--perch-size)*.53));padding:80px 5vw 100px;background:#0b110e;color:var(--ink);overflow:visible;margin-bottom:calc(var(--perch-size)*.53 + 18px)}
+.slop-hero{--ink:#f4f7ea;--lime:#c5f564;--perch-size:clamp(198px,19.8vw,289px);position:relative;isolation:isolate;display:flex;align-items:center;min-height:min(780px,calc(100dvh - 90px));padding:80px 5vw 100px;background:#0b110e;color:var(--ink);overflow:visible;margin-bottom:clamp(60px,6vw,87.5px)}
 .hero-game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
 .game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
 .hero-game-wall{transform-style:preserve-3d}
@@ -10,7 +10,7 @@
 /* Decoded only as a texture source; kept in the DOM so iOS keeps it playing. */
 .game-wall-source{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
 .hero-game-wall:not(.is-running) .game-lift *{animation-play-state:paused}
-.slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),radial-gradient(ellipse 68% 65% at 0 100%,#0b110e 28%,#0b110ed9 52%,#0b110e00 100%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
+.slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),radial-gradient(ellipse 75% 70% at 0 100%,#0b110e 65%,#0b110eb3 78%,#0b110e00 100%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
 .slop-hero h1>span{display:block;white-space:nowrap;animation:slop-hero-in .8s cubic-bezier(.2,.8,.2,1) both}
@@ -25,8 +25,8 @@
 /* The crowned Slop sits on the hero's bottom edge, legs over the next section. */
 .slop-hero>.hero-perch{right:6vw;bottom:calc(var(--perch-size)*-.53)}
 @keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 150px - var(--perch-size)*.53));padding:60px 24px calc(var(--perch-size)*.97 + 18px)}.game-wall-plane{left:-37%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:radial-gradient(ellipse 105% 90% at 0 100%,#0b110e 28%,#0b110ee6 47%,#0b110e66 68%,#0b110e00 100%),linear-gradient(90deg,#0b110e66,#0b110e00 80%),linear-gradient(180deg,#0b110e66,#0b110e00 25%)}}
-@media(max-width:600px){.slop-hero{--perch-size:166px;padding:40px 20px calc(var(--perch-size)*.97 + 18px);min-height:min(680px,calc(100svh - 150px - var(--perch-size)*.53))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:max-content;max-width:100%;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
+@media(max-width:900px){.slop-hero{align-items:flex-end;min-height:min(720px,calc(100svh - 80px));padding:60px 24px 72px}.game-wall-plane{left:-37%;top:-8%;width:max(1100px,220vw);transform:rotateX(40deg) rotateZ(-18deg)}.slop-hero-veil{background:radial-gradient(ellipse 105% 90% at 0 100%,#0b110e 54%,#0b110edb 62%,#0b110e55 76%,#0b110e00 100%),linear-gradient(90deg,#0b110e66,#0b110e00 80%),linear-gradient(180deg,#0b110e66,#0b110e00 25%)}}
+@media(max-width:600px){.slop-hero{--perch-size:clamp(132px,40vw,150px);margin-bottom:46px;padding:40px 20px 72px;min-height:min(680px,calc(100svh - 70px))}.slop-hero h1{font-size:clamp(50px,15vw,66px)}.slop-hero-lede{font-size:15px;margin-top:20px}.slop-hero-entry{width:max-content;max-width:100%;margin-top:26px}.slop-hero>.hero-perch{right:14px}}
 @media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}}
 
 /* Lift: a featured game rises out of its own slot at the wall's angle, rides
