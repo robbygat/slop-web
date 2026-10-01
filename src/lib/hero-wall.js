@@ -45,3 +45,21 @@ export function sampleWallLift(slot,frameTime,videoWidth,videoHeight){
   height:HERO_WALL.tileH/HERO_WALL.h*videoHeight,
  }};
 }
+
+const smoothstep=value=>{const x=Math.max(0,Math.min(1,value));return x*x*(3-2*x);};
+
+// Canvas pixels remain tied to the decoded frame; the lifted tile can ride
+// smoothly between frames. Extrapolation stops after one source-frame interval.
+export function sampleWallRide(slot,frame,now,progress,playbackRate=1){
+ const expected=Number.isFinite(frame.expectedDisplayTime)?frame.expectedDisplayTime:now;
+ const ahead=Math.min(1/24,Math.max(0,(now-expected)/1000)*Math.max(0,playbackRate));
+ const mediaTime=frame.mediaTime+ahead;
+ const frameY=mod(slot.row*HERO_WALL.cellH-wallCrop(slot.col,frame.mediaTime),HERO_WALL.h);
+ const continuousCrop=mod(mediaTime*HERO_WALL.h/HERO_WALL.loop+slot.col*137,HERO_WALL.h);
+ const continuousY=mod(slot.row*HERO_WALL.cellH-continuousCrop,HERO_WALL.h);
+ // Match the CSS flat launch (0–6%) and landing (88–100%). The middle uses
+ // continuous column geometry, avoiding the baked even-pixel crop's sawtooth.
+ const blend=Math.min(smoothstep((progress-.06)/.20),1-smoothstep((progress-.72)/.16));
+ const y=frameY+(continuousY-frameY)*blend;
+ return {offsetPercent:(y-slot.initialY)/HERO_WALL.tileH*100,frameOffsetPercent:(frameY-slot.initialY)/HERO_WALL.tileH*100};
+}
