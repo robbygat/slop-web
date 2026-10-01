@@ -3,3 +3,4 @@
 .hero-perch.is-active>.hero-perch-head{animation-play-state:running;will-change:transform}
 @keyframes hero-head-look{0%,100%{transform:rotate(-.2deg) translateY(0)}22%{transform:rotate(.9deg) translateY(-.35px)}48%{transform:rotate(.25deg) translateY(-.15px)}73%{transform:rotate(-1.1deg) translateY(.25px)}}
 @media(prefers-reduced-motion:reduce){.hero-perch>.hero-perch-head{animation:none;transform:none}}
+.hero-perch.is-video>video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:transparent}

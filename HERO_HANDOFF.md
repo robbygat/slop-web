@@ -75,3 +75,12 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
   (`canplaythrough`) before a lift starts, with its poster as the tile background.
 - iOS Safari hardening on the 3D video layers. Mobile: wall sits lower, lift height 70px so it never hides behind the header.
 - Removed the redundant "Explore games" button — only "Let's play" remains.
+
+## Round 7 — waving crowned Slop
+- Generated in Higgsfield (Kling 3.0 pro, 5s, start frame = end frame = the existing `ledge-slop.webp` pose on magenta,
+  so it loops seamlessly): the robot turns its head, waves, swings its legs, and returns to the pose.
+- Keyed to transparency with ffmpeg (magenta key, so the lime S on its screen is untouched), 420×630:
+  `public/assets/robots/ledge-slop-wave.webm` (VP9 alpha, 280 KB — Chrome/Android/Firefox) and
+  `ledge-slop-wave.mov` (HEVC alpha, 750 KB — Safari/iOS). `HeroPerch.jsx` picks one via `canPlayType`
+  (don't use <source> fallbacks: React reports the skipped source as an error). Still image stays as poster,
+  reduced-motion and no-alpha fallback. Plays only while visible.
