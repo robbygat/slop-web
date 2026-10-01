@@ -1,8 +1,8 @@
 {
-  "file": "Slop-3.7.7-build-2073-universal.apk",
-  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2073/Slop-3.7.7-build-2073-universal.apk",
+  "file": "Slop-3.7.7-build-2074-universal.apk",
+  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2074/Slop-3.7.7-build-2074-universal.apk",
   "version": "3.7.7",
-  "versionCode": 2073,
+  "versionCode": 2074,
   "package": "game.slop.api",
   "architectures": [
     "arm64-v8a",
@@ -11,22 +11,20 @@
   ],
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 167766058,
-  "sha256": "de0774561e60846aded5783f1052e032ba304a3108f37cde52bb5e7a0a2cf969",
+  "bytes": 183923538,
+  "sha256": "0a6ad686ae280d3959f91bd281732c9827b4ec58fa51586256355c84fe4b8a2f",
   "adsEnabled": false,
   "AD_ID_permission": false,
   "signingCertificateSha256": "4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab",
   "source": {
     "commit": "4acc17a4102ec6b895c74e14d9e822a83d4ac03b",
-    "includesWorkingTreeChanges": true,
-    "inputSha256": "75fff7ce0fc93ae43b64f3500a1f92e61198776a81d2c84cfc066fa5eb9c5625",
-    "inputFiles": 2135
+    "includesWorkingTreeChanges": true
   },
   "verification": {
     "archive": "aapt2 package/version/SDK and all three ABIs verified; SHA-256 matches the fresh release APK",
-    "signature": "APK Signature Scheme v2 verified; certificate matches website build 2072",
-    "source": "Build-input fingerprint unchanged; 858 packaged runtime/media files match current source",
-    "tests": "26 focused mobile signing, SDK and ad-configuration checks passed"
+    "signature": "APK Signature Scheme v2 verified; certificate matches website builds 2072 and 2073",
+    "assets": "V6 desktop promo video/poster, privacy policy and onboarding video/start/end posters byte-match reviewed source",
+    "tests": "422 focused feed/crown-target/promo/return/progression checks passed; full Flutter analysis clean"
   },
   "limitations": [
     "No physical-device installation was performed during this website download update."
