@@ -1,28 +1,35 @@
-# Hero redesign — handoff for Codex
+# Hero + Social redesign — handoff for Codex
 
-Branch: `claude/hero-redesign` (worktree at `~/Documents/slop-web-hero`, based on `origin/main` @ 7e2c97c)
+Branch: `claude/hero-redesign` (worktree `~/Documents/slop-web-hero`, based on `origin/main` @ 7e2c97c). Not pushed yet.
 
-## What changed
-- `src/components/Hero.jsx` — rewritten. Centered, type-led hero: eyebrow pill, giant headline
-  "Just one / more **game.**" (lime), one line of copy, two CTAs (Let's play → `#/feed`,
-  Explore games → scrolls to `#discover`).
-- The crowned Slop (`HeroPerch`, unchanged) now **sits on top of the word "game."** with its legs
-  over the letters, and drops in on load. It's inside the `h1` line so it tracks the type at every size.
-- `src/components/hero-v2.css` — new styles (`.slop-hero*`). Dark ink stage (#0d1411) in both themes,
-  masked dot grid, soft lime glow, staggered entrance. Mobile (≤600px) stacks full-width CTAs.
-  Reduced motion disables all animation.
-- Removed from the hero: the world-card image, the 3D/lite robot orbit (`HeroScene`, `LiteHeroScene`).
-  Those files and `home-hero.css` are **left in place, just unused by Hero** — `home-hero.css` is
-  still imported because it holds the `.lite-*` and `.brand-home .featured-heading` rules.
+## 1. Home hero — 132-game wall
+- `src/components/Hero.jsx` + new `src/components/hero-v2.css`.
+- Background is a **single tiled clip of 132 real game recordings**:
+  `public/assets/brand/game-wall.mp4` (2244×1158, 3.5s loop, 2.7 MB) + `game-wall-poster.jpg`.
+  Built with ffmpeg `xstack` from the marketing tiles in
+  `~/Documents/slop-mobile/output/slop-update-film/media/recent-wall/tiles/000–131.mp4` (22 cols × 6 rows, 96×187 tiles).
+- Two copies of the clip are stacked in a 3D-tilted plane and scrolled endlessly with CSS (`game-wall-scroll`, 60s).
+  Plays only while on screen; paused for reduced motion / when `suspended`.
+- Left-aligned headline "Just one / more **game.**", copy, Let's play + Explore games.
+- The crowned Slop (`HeroPerch`) still sits on the hero's bottom edge.
+- No longer used by Hero: `HeroScene`/`LiteHeroScene` (moved to Social), `hero-arcade-world*.webp`.
+
+## 2. Social — cast on top, newest phone-shaped games
+- `src/pages/Social.jsx` + new `src/pages/social-v2.css`.
+- New dark cover `.social-stage`: "Better with a rival." on the left, the **moving 3D robot cast** on the right
+  (`SocialCast` → `HeroScene`, falls back to `LiteHeroScene` for reduced motion / slow connections).
+  Reuses the `.hero-stage` orbit rules from `home-hero.css` (imported by Social).
+- Crown board now loads `loadDiscoveryPage({order:'new', platform:'mobile', limit:16})` instead of popular
+  (popular surfaced the oldest games), shows up to 10.
+- Rival cards are now **9:16 phone cards**: full-bleed preview, name/holder/score/CTA overlaid at the bottom.
+  Auto-fill grid on desktop, horizontal snap scroller on mobile.
 
 ## Verified
-- Desktop + 375px mobile in the browser; `npm test` (314 pass, 0 fail); `npm run build` OK.
+Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass / 0 fail. `npm run build` OK.
 
 ## Follow-ups for Codex
-1. Decide whether to delete `HeroScene.jsx`, `LiteHeroScene.jsx`, `robots/hero-scene.ts`,
-   `lib/hero-composition.js`, `hero-arcade-world*.webp` and the dead `.home-hero`/`.hero-*` rules
-   in `home-hero.css` (check nothing else imports them first).
-2. `.brand-home .featured-heading{padding-right:…}` reserved space for the old perch that hung
-   below the hero — it can be removed now.
-3. Tune perch position (`.slop-hero .hero-perch` `right`/`top`/`translateY(-63%)`) if the font changes.
-4. Check dark/light theme toggle and 700–1100px widths; open a PR to `main`.
+1. Crowned-first ordering still applies inside the 16 newest; decide if pure newest is preferred.
+2. Consider regenerating `game-wall.mp4` as the catalog changes (script idea: same xstack, newest 132 previews from `game_preview_videos`). Optionally add a WebM/AV1 version.
+3. Old `.social-club-cover` rules in `social-club.css` and old `.home-hero`/`.hero-intro` rules in `home-hero.css` are now dead — clean up.
+4. `.brand-home .featured-heading{padding-right}` still reserves room for the perch — keep (perch is still there).
+5. Check light theme, 700–1100px widths, and the 3D scene's GPU cost on low-end Android in Social; then open the PR to `main`.

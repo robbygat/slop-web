@@ -18,7 +18,12 @@ import SocialActivity from '../components/SocialActivity.jsx';
 import './social-club.css';
 import {GameCard, GameDetail} from './Play.jsx';
 import {chatInbox,chatMessages,createDirectChat,markChatRead,sendChatMessage} from '../lib/chat.js';
+import HeroScene from '../components/HeroScene.jsx';
+import LiteHeroScene from '../components/LiteHeroScene.jsx';
+import {lightHero} from '../lib/hero-policy.js';
+import '../components/home-hero.css';
 import './social.css';
+import './social-v2.css';
 
 const personName = person => person.display_name || person.username || 'Slop player';
 const handle = person => person.username ? `@${person.username}` : 'Slop player';
@@ -100,7 +105,10 @@ function SocialSpace({params}) {
   }
 
   return <div className="social-club">
-    <header className="social-club-cover"><div><h1>Better with a rival.</h1><p>Meet through a game. Stay for the rematch.</p></div><div className="social-club-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Share your player card</Button><button onClick={()=>openMessages()}><Icon name="social" size={18}/>Messages</button></div></header>
+    <header className="social-stage">
+     <div className="social-stage-copy"><span className="social-stage-eyebrow"><span/>Meet the Slop crew</span><h1>Better with<br/>a <em>rival.</em></h1><p>Meet through a game. Stay for the rematch.</p><div className="social-stage-actions"><Button icon="share" onClick={()=>{if(requireAuth())setSharing(true);}}>Share your player card</Button><button onClick={()=>openMessages()}><Icon name="social" size={18}/>Messages</button></div></div>
+     <SocialCast paused={!!person||sharing||messageTarget!==undefined||!!rivalGame}/>
+    </header>
     <div className="social-section-tabs" role="group" aria-label="Social section"><button aria-pressed={section==='rivals'} onClick={()=>setSection('rivals')}><Icon name="crown" size={18}/>Crown board</button><button aria-pressed={section==='activity'} onClick={()=>setSection('activity')}><Icon name="social" size={18}/>Activity{hasActivity&&<span className="social-unread-dot" aria-label="New activity"/>}</button><button aria-pressed={section==='people'} onClick={()=>setSection('people')}><Icon name="user" size={18}/>People</button></div>
     {section==='rivals'&&<CrownBoard user={user} following={following} requireAuth={requireAuth} revision={crownRevision}
       paused={!!person||sharing||messageTarget!==undefined||!!rivalGame} onPlay={setRivalGame}
@@ -129,6 +137,14 @@ function SocialSpace({params}) {
   </div>;
 }
 
+// The Slop crew wanders the Social cover. The 3D cast falls back to the
+// lightweight orbit on constrained connections or reduced motion.
+function SocialCast({paused}){
+ const policy=()=>lightHero({reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,saveData:navigator.connection?.saveData,effectiveType:navigator.connection?.effectiveType});
+ const [light]=useState(policy);
+ return <div className="hero-stage social-cast">{light?<LiteHeroScene paused={paused}/>:<HeroScene paused={paused}/>}</div>;
+}
+
 function CrownBoard({user, following, requireAuth, revision, paused, onPlay, onProfile}) {
   const [entries,setEntries]=useState(null),[scope,setScope]=useState('everyone');
   const [loading,setLoading]=useState(true),[error,setError]=useState(null),[copied,setCopied]=useState(null),[copyError,setCopyError]=useState(null);
@@ -137,7 +153,7 @@ function CrownBoard({user, following, requireAuth, revision, paused, onPlay, onP
     if(pending.current)return;
     pending.current=true;const current=++request.current;setLoading(true);setError(null);
     try {
-      const page=await loadDiscoveryPage({order:'popular',limit:12});
+      const page=await loadDiscoveryPage({order:'new',platform:'mobile',limit:16});
       const rows=page.games.length?await publicRead(supabase.rpc('game_crowns',{p_games:page.games.map(game=>game.slug)}),{timeoutMs:7000}):[];
       if(live.current&&current===request.current)setEntries(crownBoardEntries(page.games,rows));
     } catch(failure) {if(live.current&&current===request.current)setError(new Error('The crown board could not refresh. Try again in a moment.'));}
@@ -157,24 +173,24 @@ function CrownBoard({user, following, requireAuth, revision, paused, onPlay, onP
     catch {if(live.current)setCopyError(new Error('Could not copy the challenge. Open the game and use its share option.'));}
   }
   const visible=filterCrownBoard(entries||[],{scope,following,userId:user?.id});
-  const ordered=[...visible.filter(entry=>entry.state==='crowned'),...visible.filter(entry=>entry.state!=='crowned')].slice(0,6);
+  const ordered=[...visible.filter(entry=>entry.state==='crowned'),...visible.filter(entry=>entry.state!=='crowned')].slice(0,10);
   return <section className="social-arena" aria-labelledby="social-arena-title">
-    <div className="social-arena-heading"><div><span className="social-arena-eyebrow"><Icon name="crown" size={16}/>The crown board</span><h2 id="social-arena-title">A name. A score.<br/>Your next rival.</h2><p>Real crown holders. A game you can jump into. A score worth chasing.</p></div><div className="social-arena-path" aria-label="How to start a rivalry"><span><b>01</b>Pick a crown</span><Icon name="arrow" size={18}/><span><b>02</b>Beat the score</span><Icon name="arrow" size={18}/><span><b>03</b>Invite a rematch</span></div></div>
+    <div className="social-arena-heading"><div><span className="social-arena-eyebrow"><Icon name="crown" size={16}/>The crown board</span><h2 id="social-arena-title">A name. A score.<br/>Your next rival.</h2><p>The newest games on Slop and whoever holds the crown. Jump in and take it.</p></div><div className="social-arena-path" aria-label="How to start a rivalry"><span><b>01</b>Pick a crown</span><Icon name="arrow" size={18}/><span><b>02</b>Beat the score</span><Icon name="arrow" size={18}/><span><b>03</b>Invite a rematch</span></div></div>
     <div className="social-arena-toolbar"><div role="group" aria-label="Crown board players">{[['everyone','Everyone'],['following','Following'],['mine','Your crowns']].map(([id,label])=><button key={id} aria-pressed={scope===id} onClick={()=>{if(id==='everyone'||requireAuth())setScope(id);}}>{label}</button>)}</div><button className="social-arena-refresh" aria-label="Refresh crown board" disabled={loading} onClick={refresh}><Icon name="refresh" size={16}/><span>{loading?'Refreshing…':'Refresh'}</span></button></div>
     <Notice error={error} onRetry={refresh}/>{error&&entries&&<p className="social-arena-stale">Showing the last crown board we received.</p>}
     {loading&&!entries?<div className="social-arena-skeleton" role="status" aria-label="Finding crown holders">{[0,1,2].map(id=><div key={id}><span/><i/><i/></div>)}</div>:ordered.length?<div className={`social-rival-grid ${loading?'is-loading':''}`} aria-busy={loading}>{ordered.map(entry=><RivalCard key={entry.game.id} entry={entry} own={entry.holder?.user_id===user?.id} paused={paused} copied={copied===entry.game.id} onCopy={()=>copyChallenge(entry)} onPlay={()=>onPlay(entry.game)} onProfile={()=>onProfile(entry.holder)}/>)}</div>:!error&&<div className="social-arena-empty"><Icon name="crown" size={30}/><h3>{scope==='following'?'Your next rivalry starts with a follow.':scope==='mine'?'Put your name on the board.':'The next game is waiting.'}</h3><p>{scope==='following'?'No one you follow holds a crown in these featured games yet. Explore the board or find your people below.':scope==='mine'?'You don’t hold a crown in these featured games yet. Pick a game and make a run at it.':'Find a game, set a score, and bring a friend.'}</p>{scope==='everyone'?<a className="button secondary" href="#/feed">Find a game<Icon name="arrow" size={16}/></a>:<Button variant="secondary small" onClick={()=>setScope('everyone')}>Explore the crown board<Icon name="arrow" size={16}/></Button>}</div>}
     <Notice error={copyError}/>
-    {entries?.length>0&&<p className="social-arena-note">Crown holders in featured popular games. Scores refresh when you return from a run.</p>}
+    {entries?.length>0&&<p className="social-arena-note">Crown holders in the newest mobile games. Scores refresh when you return from a run.</p>}
   </section>;
 }
 
 function RivalCard({entry, own, paused, copied, onCopy, onPlay, onProfile}) {
   const {game,holder,state}=entry;
   return <article className={`social-rival-card ${own?'is-yours':''}`}>
-    <button className="social-rival-preview" onClick={onPlay} aria-label={`Play ${game.name}`}><GamePreview game={game} paused={paused}/><span className="social-rival-play"><Icon name="play" fill="currentColor" size={18}/></span><span className="social-rival-game-name">{game.name}</span></button>
-    <div className="social-rival-body">{holder?<><div className="social-rival-target"><button className="social-rival-person" onClick={onProfile} aria-label={`Meet crown holder @${holder.username}`}><RobotPortrait look={holder.slop_look} alt="" animated={!paused}/><span><small>{own?'Your crown':'Crown holder'}</small><strong>@{holder.username}</strong></span></button><Icon name="crown" size={22}/></div><div className="social-rival-score"><span>{own?'Your score':'Score to beat'}</span><strong>{holder.score.toLocaleString()}</strong></div></>:<div className="social-rival-no-holder"><Icon name="crown" size={25}/><strong>{state==='open'?'Make the first mark.':'Find your next game.'}</strong><p>{state==='open'?'No crown holder yet. Your next run could start a rivalry.':'The crown holder is unavailable right now. You can still play.'}</p></div>}
-      <div className="social-rival-actions"><Button onClick={onPlay}>{own?'Defend your score':holder?'Play for the crown':'Play this game'}<Icon name="arrow" size={16}/></Button>{holder&&<button type="button" className="social-rival-copy" onClick={onCopy} aria-label={copied?`Challenge for ${game.name} copied`:`Copy challenge for ${game.name}`} title={copied?'Challenge copied':'Copy a challenge to share'}><Icon name={copied?'check':'share'} size={18}/><span>{copied?'Copied':'Challenge'}</span></button>}</div>
-      {copied&&<span className="social-rival-copy-status" role="status">Score and game link copied. Send it to your next rival.</span>}
+    <button className="social-rival-preview" onClick={onPlay} aria-label={`Play ${game.name}`}><GamePreview game={game} paused={paused}/><span className="social-rival-play"><Icon name="play" fill="currentColor" size={18}/></span></button>
+    <div className="social-rival-body"><span className="social-rival-game-name">{game.name}</span>{holder?<><button className="social-rival-person" onClick={onProfile} aria-label={`Meet crown holder @${holder.username}`}><RobotPortrait look={holder.slop_look} alt="" animated={!paused}/><span><small>{own?'Your crown':'Crown holder'}</small><strong>@{holder.username}</strong></span></button><div className="social-rival-score"><Icon name="crown" size={16}/><strong>{holder.score.toLocaleString()}</strong><span>{own?'your score':'to beat'}</span></div></>:<div className="social-rival-no-holder"><Icon name="crown" size={16}/><strong>{state==='open'?'No crown yet. Take it.':'Crown unavailable.'}</strong></div>}
+      <div className="social-rival-actions"><Button onClick={onPlay}>{own?'Defend':holder?'Take the crown':'Play'}<Icon name="arrow" size={15}/></Button>{holder&&<button type="button" className="social-rival-copy" onClick={onCopy} aria-label={copied?`Challenge for ${game.name} copied`:`Copy challenge for ${game.name}`} title={copied?'Challenge copied':'Copy a challenge to share'}><Icon name={copied?'check':'share'} size={17}/></button>}</div>
+      {copied&&<span className="social-rival-copy-status" role="status">Challenge copied.</span>}
     </div>
   </article>;
 }

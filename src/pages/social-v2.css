@@ -1,0 +1,46 @@
+.social-stage{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:center;gap:20px;margin:20px 0 28px;padding:clamp(28px,4vw,56px);border-radius:34px;overflow:hidden;background:radial-gradient(ellipse 55% 70% at 75% 50%,#c5f56426,transparent 70%),radial-gradient(#ffffff14 1px,transparent 1.4px) 0 0/24px 24px,#0b110e;color:#f4f7ea}
+.social-stage-copy{position:relative;z-index:2}
+.social-stage-eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 14px 7px 11px;border:1px solid #ffffff1f;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.03em;color:#f4f7eab3}
+.social-stage-eyebrow>span{width:8px;height:8px;border-radius:50%;background:#c5f564;animation:slop-live 1.8s ease-out infinite}
+.social-stage h1{margin:22px 0 18px;font-size:clamp(52px,6.4vw,104px);font-weight:700;letter-spacing:-.07em;line-height:.9}
+.social-stage h1 em{font-style:normal;color:#c5f564}
+.social-stage-copy>p{margin:0;font-size:16px;line-height:1.5;color:#f4f7ea99}
+.social-stage-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:28px}
+.social-stage-actions>.button{background:#c5f564;color:#11200f;border:0}
+.social-stage-actions>button:last-child{display:inline-flex;align-items:center;gap:9px;min-height:46px;padding:0 20px;border-radius:99px;border:1px solid #ffffff2e;background:transparent;color:#f4f7ea;font-size:13px;cursor:pointer}
+.social-stage .hero-stage.social-cast{height:clamp(340px,34vw,480px);background:transparent;border:0;box-shadow:none;border-radius:0;overflow:visible}
+.social-cast .lite-connections path{stroke:#c5f564;opacity:.35}
+@keyframes slop-live{0%{box-shadow:0 0 0 0 #c5f56499}to{box-shadow:0 0 0 9px #c5f56400}}
+
+/* Crown board: newest mobile games as phone-shaped cards. */
+.social-rival-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.social-rival-card{aspect-ratio:9/16;border:0;border-radius:22px;background:#0b110e;color:#fff;box-shadow:0 10px 30px -14px #0b110e80;transition:transform .2s}
+.social-rival-card:hover{transform:translateY(-4px)}
+.social-rival-card.is-yours{box-shadow:0 0 0 2px #c5f564}
+.social-rival-preview{position:absolute;inset:0;height:auto}
+.social-rival-preview:after{background:linear-gradient(180deg,#0b110e66 0,#0b110e00 22%,#0b110e00 45%,#0b110ef2 88%)}
+.social-rival-preview .game-preview>img,.social-rival-preview .game-preview>video{object-position:center}
+.social-rival-play{top:12px;right:12px;bottom:auto}
+.social-rival-body{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;flex-direction:column;gap:9px;padding:14px;background:none;pointer-events:none}
+.social-rival-body>*{pointer-events:auto}
+.social-rival-body .social-rival-game-name{position:static;font-size:19px;font-weight:650;letter-spacing:-.03em;line-height:1.1;color:#fff}
+.social-rival-body .social-rival-person{display:flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:#fff;text-align:left;cursor:pointer;min-width:0}
+.social-rival-body .social-rival-person .slop{width:30px;height:30px;flex:none}
+.social-rival-body .social-rival-person small{display:block;font-size:9px;color:#ffffffa6}
+.social-rival-body .social-rival-person strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.social-rival-body .social-rival-score{display:flex;align-items:baseline;gap:6px;margin:0;color:#fff}
+.social-rival-body .social-rival-score>svg{color:#c5f564;align-self:center}
+.social-rival-body .social-rival-score>strong{font-size:22px;letter-spacing:-.03em}
+.social-rival-body .social-rival-score>span{font-size:10px;color:#ffffffa6}
+.social-rival-body .social-rival-no-holder{display:flex;align-items:center;gap:7px;padding:0;color:#fff;font-size:12px}
+.social-rival-body .social-rival-no-holder>svg{color:#c5f564}
+.social-rival-body .social-rival-actions{display:flex;gap:6px;margin:0}
+.social-rival-body .social-rival-actions>.button{flex:1;min-height:40px;padding:8px 12px;font-size:12px;background:#c5f564;color:#11200f;border:0;justify-content:space-between}
+.social-rival-body .social-rival-copy{width:40px;min-height:40px;padding:0;display:grid;place-items:center;border-radius:99px;border:1px solid #ffffff38;background:#ffffff14;color:#fff}
+.social-rival-body .social-rival-copy>span{display:none}
+.social-rival-copy-status{font-size:10px;color:#c5f564}
+@media(max-width:900px){.social-stage{grid-template-columns:1fr;padding:28px 22px 10px}.social-stage .hero-stage.social-cast{height:320px;margin:0 -10px}}
+@media(max-width:700px){.social-stage{margin-top:8px;border-radius:26px}.social-stage h1{font-size:clamp(46px,13vw,60px)}.social-stage-actions>*{flex:1;justify-content:center}.social-stage .hero-stage.social-cast{height:280px}.social-rival-card{width:min(220px,calc(100vw - 120px))}}
+@media(prefers-reduced-motion:reduce){.social-stage-eyebrow>span{animation:none}.social-rival-card{transition:none}}
+.social-rival-body .social-rival-score{justify-content:flex-start}
+@media(max-width:600px){.social-stage .hero-stage.social-cast{grid-area:auto;width:auto;max-width:none;height:300px;margin:4px -6px 0;border-radius:0;overflow:visible}}
