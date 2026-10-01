@@ -150,7 +150,7 @@ export default function Hero({suspended=false}){
   <div className="slop-hero-copy">
    <h1 id="hero-title" aria-label="Just one more game."><span className="slop-hero-line is-outline" aria-hidden="true"><i>Just</i> <i>one</i></span><span className="slop-hero-line" aria-hidden="true"><i>more</i> <em><i>game.</i></em></span></h1>
    <p className="slop-hero-lede">Find your next obsession. Put your name on the leaderboard.</p>
-   <div className="slop-hero-entry"><a className="slop-hero-play" href="#/feed"><span className="slop-hero-play-disc" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span>Let’s play<SlopMark/></a></div>
+   <div className="slop-hero-entry"><a className="slop-hero-play" href="#/feed">Let’s play<SlopMark/></a></div>
   </div>
   <HeroPerch paused={suspended}/>
  </section>;
