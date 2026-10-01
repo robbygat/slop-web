@@ -15,6 +15,9 @@ const LIFTS=[
  {id:'stumble-run',name:'Stumble Run'},{id:'draw-climber',name:'Draw Climber'},
 ];
 const LIFT_MS=5200;
+// [even column, start row %] on the plane; even columns scroll up, so a lifted
+// game rides upward with its column. Picked to stay in view beside the copy.
+const SPOTS={wide:[[4,70],[6,74],[2,66],[8,62]],narrow:[[2,94],[4,92],[2,88],[4,96]]};
 const wallSource=()=>{const c=navigator.connection;return matchMedia('(min-width: 1000px)').matches&&!c?.saveData&&!['slow-2g','2g','3g'].includes(c?.effectiveType)?'/assets/brand/game-wall-hd.mp4':'/assets/brand/game-wall.mp4';};
 function GameWall({paused}){
  const root=useRef(null),[visible,setVisible]=useState(true),[shown,setShown]=useState(()=>!document.hidden),[turn,setTurn]=useState(0);
@@ -23,18 +26,17 @@ function GameWall({paused}){
  const running=visible&&shown&&!paused&&!reduced;
  useEffect(()=>{root.current?.querySelectorAll('video').forEach(v=>{if(running)v.play().catch(()=>{});else v.pause();});},[running,turn]);
  useEffect(()=>{if(!running)return;const t=setTimeout(()=>setTurn(n=>n+1),LIFT_MS+700);return()=>clearTimeout(t);},[running,turn]);
+ const [spots]=useState(()=>matchMedia('(max-width: 900px)').matches?SPOTS.narrow:SPOTS.wide),spot=spots[turn%spots.length];
  const game=LIFTS[turn%LIFTS.length],next=LIFTS[(turn+1)%LIFTS.length];
  return <div ref={root} className={`game-wall ${running?'is-running':''}`} aria-hidden="true">
-  <div className="game-wall-plane"><video className="game-wall-film" src={src} poster="/assets/brand/game-wall-poster.jpg" muted loop playsInline preload="auto" autoPlay={!reduced} disablePictureInPicture/></div>
+  <div className="game-wall-plane">
+   <video className="game-wall-film" src={src} poster="/assets/brand/game-wall-poster.jpg" muted loop playsInline preload="auto" autoPlay={!reduced} disablePictureInPicture/>
+   {!reduced&&<div key={turn} className={`game-lift ${running?'':'is-held'}`} style={{left:`${(spot[0]+.5)*100/22}%`,top:`${spot[1]}%`,'--lift-ms':`${LIFT_MS}ms`}}>
+    <div className="game-lift-tile"><video src={`/assets/brand/lift/${game.id}.mp4`} poster={`/assets/brand/lift/${game.id}.jpg`} muted loop playsInline autoPlay preload="auto" disablePictureInPicture/></div>
+   </div>}
+  </div>
+  {!reduced&&<link rel="preload" as="video" href={`/assets/brand/lift/${next.id}.mp4`}/>}
   <span className="slop-hero-veil"/>
-  {!reduced&&<div className="game-lift-stage">
-   <div key={turn} className={`game-lift spot-${turn%3} ${running?'':'is-held'}`} style={{'--lift-ms':`${LIFT_MS}ms`}}>
-    <span className="game-lift-shadow"/>
-    <div className="game-lift-phone"><video src={`/assets/brand/lift/${game.id}.mp4`} poster={`/assets/brand/lift/${game.id}.jpg`} muted loop playsInline autoPlay preload="auto" disablePictureInPicture/><i/></div>
-    <span className="game-lift-name">{game.name}</span>
-   </div>
-   <link rel="preload" as="video" href={`/assets/brand/lift/${next.id}.mp4`}/>
-  </div>}
  </div>;
 }
 

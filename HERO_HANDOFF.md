@@ -46,8 +46,10 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
   - `game-wall-hd.mp4` 2948×1536 (~15 MB) for ≥1000px screens on fast connections; `game-wall.mp4` 1600w (~7.5 MB) otherwise. Poster: `game-wall-poster.jpg`.
   - Tiles rendered at 128×250 (near native 164×320) with lanczos — much sharper.
   - Rebuild: ffmpeg xstack/vstack+crop per column from `slop-mobile/output/slop-update-film/media/recent-wall/tiles`.
-- Lifting phones: every ~6s a crisp upright phone (bezel, notch, lime rim + glow, name chip) rises out of the tilted wall
-  in screen space, plays the game, and sinks back. Clips in `public/assets/brand/lift/*.mp4|.jpg` (480w):
-  Kickflip Coast, Run Infinite, Aqua Slide, Cube Surfer, Stumble Run, Draw Climber (sources in slop-mobile film media).
-  Desktop: right side, 3 rotating spots. Mobile: above the headline. Off for reduced motion; pauses offscreen/hidden tab.
+- Lifting games (revised per user): NO phone frame and NOT shown front-on. Every ~6s one game tile lifts a little off the
+  tilted wall at the wall's own angle (translateZ inside `.game-wall-plane`), rides upward with its column (even columns
+  scroll up), glows lime, plays its clip, then settles back. Clips in `public/assets/brand/lift/*.mp4|.jpg` (480w):
+  Kickflip Coast, Run Infinite, Aqua Slide, Cube Surfer, Stumble Run, Draw Climber. Positions: `SPOTS` in Hero.jsx
+  (column index + start row %, separate sets for wide/narrow) — measured so they stay on-screen beside the copy.
+  Off for reduced motion; pauses offscreen/hidden tab.
 - Follow-ups: consider moving the big MP4s to a CDN/Supabase storage instead of git; add AV1/WebM variants; make lifted phones clickable to open that game (need slugs).
