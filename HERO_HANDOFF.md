@@ -114,3 +114,9 @@ Now:
   at every lift; lift stays above the headline on phones.
 - Phones (≤900px) and slow connections get the 1600px wall again.
 - Headline: outlined "Just one" that fills in, words rise in, lime underline on "game."; CTA has a play disc + light sweep.
+
+## Round 9 — GPU wall, 120fps, slam ripple
+See CODEX_HERO_NOTE.md for the full architecture. Summary: static 3s grid video + WebGL column scrolling at display
+rate; single rAF clock for wall/lift/shockwave; hidden videos (a visible playing <video> caps Chrome at 30fps);
+lift clip painted to canvas and phase-locked within ~7ms; square tiles; slam landing with shader shockwave;
+AV1/HEVC/H.264 chosen per device via mediaCapabilities. Wall: 19 MB → 6–8 MB desktop, 10 MB → ~3 MB phones.

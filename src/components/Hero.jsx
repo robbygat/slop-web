@@ -1,108 +1,140 @@
 import React,{useEffect,useRef,useState} from 'react';
 import HeroPerch from './HeroPerch.jsx';
 import SlopMark from './SlopMark.jsx';
-import {HERO_LIFT_MS as LIFT_MS,HERO_WALL,elapsedMs,liftClipTime,liftPlacement,liftWindow,nextLiftInBand,wallVideoSource} from '../lib/hero-wall.js';
+import {HERO_LIFT_MS as LIFT_MS,HERO_WALL as WALL,WALL_SPEED,liftClipTime,liftPlacement,nextLiftInBand,tileY,wallVideoStem} from '../lib/hero-wall.js';
+import {createWallRenderer} from './HeroWallGL.js';
 import './brand-home.css';
 import './home-hero.css';
 import './hero-v2.css';
 
-// The hero wall: every game exactly once, baked into one 15s video whose
-// columns scroll in alternating directions. Six featured games lift out of
-// their own slot exactly when they reach the lift line:
-//  - the ride runs on the compositor (Web Animations, display refresh rate) and
-//    is only nudged back to the wall's media clock if it ever drifts;
-//  - one game at a time, alternating sides, and only after its clip is buffered
-//    and seeked to the matching frame, so a lift never flashes black;
-//  - the lifted copy is a high-res loop of the same tile, phase-locked to the
-//    frame the wall is showing, so nothing pops when it leaves or lands;
-//  - no React renders, canvas copies or layout work happen during a lift.
-// Visible band (fractions of wall height) a lift may start in, so games rise from
-// wherever they happen to be, not one fixed spot.
-const LINE={wide:[.58,.8],narrow:[.4,.56]},NARROW='(max-width: 900px)';
+// The hero wall: every game exactly once. The wall video is the grid standing
+// still (3s loop); a WebGL shader scrolls each column at display refresh rate,
+// so motion is perfectly smooth and the file carries no motion at all. One
+// clock drives the shader, the lifted game and the landing shockwave in the
+// same frame, so the lift can never drift from its slot.
+const BAND={wide:[.58,.8],narrow:[.4,.56]},NARROW='(max-width: 900px)';
+
+// Prefer the codec this device decodes smoothly and power-efficiently.
+const CODECS=[['-av1.mp4','video/mp4; codecs="av01.0.08M.08"'],['-hevc.mp4','video/mp4; codecs="hvc1.1.6.L120.90"'],['.mp4','video/mp4; codecs="avc1.640028"']];
+async function pickSource(stem,width,height,bitrate){
+ const caps=navigator.mediaCapabilities;
+ const probe=document.createElement('video');
+ const results=await Promise.all(CODECS.map(async([suffix,contentType])=>{
+  if(!probe.canPlayType(contentType))return null;
+  if(!caps?.decodingInfo)return {suffix,smooth:true,efficient:suffix==='.mp4'};
+  try{const info=await caps.decodingInfo({type:'file',video:{contentType,width,height,bitrate,framerate:24}});return info.supported?{suffix,smooth:info.smooth,efficient:info.powerEfficient}:null;}catch{return null;}
+ }));
+ const ok=results.filter(Boolean);
+ const best=ok.find(r=>r.smooth&&r.efficient)||ok.find(r=>r.smooth)||{suffix:'.mp4'};
+ return stem+best.suffix;
+}
 const network=()=>({...(navigator.connection||{}),narrow:matchMedia(NARROW).matches});
+
 function GameWall({paused}){
- const root=useRef(null),film=useRef(null),lift=useRef(null);
+ const root=useRef(null),canvas=useRef(null),film=useRef(null),lift=useRef(null),clipRef=useRef(null);
  const [visible,setVisible]=useState(true),[shown,setShown]=useState(()=>!document.hidden);
  const [reduced,setReduced]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
- const [src,setSrc]=useState(()=>wallVideoSource(network())),[line,setLine]=useState(()=>matchMedia(NARROW).matches?LINE.narrow:LINE.wide);
+ const [stem,setStem]=useState(()=>wallVideoStem(network())),[band,setBand]=useState(()=>matchMedia(NARROW).matches?BAND.narrow:BAND.wide);
+ const [src,setSrc]=useState(null),[liftCodec,setLiftCodec]=useState('.mp4'),[gl,setGl]=useState(true);
  useEffect(()=>{
   const narrow=matchMedia(NARROW),motion=matchMedia('(prefers-reduced-motion: reduce)'),connection=navigator.connection;
-  const layout=()=>{setLine(narrow.matches?LINE.narrow:LINE.wide);setSrc(wallVideoSource(network()));};
+  const layout=()=>{setBand(narrow.matches?BAND.narrow:BAND.wide);setStem(wallVideoStem(network()));};
   const preference=()=>setReduced(motion.matches);
   narrow.addEventListener('change',layout);motion.addEventListener('change',preference);connection?.addEventListener?.('change',layout);
   const o=new IntersectionObserver(([e])=>setVisible(e.isIntersecting));o.observe(root.current);
   const v=()=>setShown(!document.hidden);document.addEventListener('visibilitychange',v);
   return()=>{narrow.removeEventListener('change',layout);motion.removeEventListener('change',preference);connection?.removeEventListener?.('change',layout);o.disconnect();document.removeEventListener('visibilitychange',v);};
  },[]);
- const running=visible&&shown&&!paused&&!reduced;
- useEffect(()=>{const v=film.current;if(!v)return;if(running)v.play().catch(()=>{});else v.pause();},[running,src]);
+ useEffect(()=>{
+  let live=true;const hd=stem.endsWith('-hd');
+  pickSource(stem,hd?WALL.w:1600,hd?WALL.h:Math.round(1600*WALL.h/WALL.w),hd?16e6:8e6).then(s=>{if(live)setSrc(s);});
+  pickSource('/assets/brand/lift/kickflip-coast',512,1000,2e6).then(s=>{if(live)setLiftCodec(s.slice('/assets/brand/lift/kickflip-coast'.length));});
+  return()=>{live=false;};
+ },[stem]);
+ const running=visible&&shown&&!paused&&!reduced,live=useRef(running);live.current=running;
+ useEffect(()=>{const v=film.current;if(!v||!src)return;if(running)v.play().catch(()=>{});else{v.pause();clipRef.current?.pause();}},[running,src]);
 
  useEffect(()=>{
-  const wall=film.current;
-  if(!running||!wall)return;
-  const node=lift.current,video=node?.querySelector('video');if(!node||!video)return;
-  const rvfc=typeof wall.requestVideoFrameCallback==='function';
-  // One game at a time, preferring the other column and a game not seen
-  // recently, with a breather between lifts.
-  let dead=false,timer=0,frame=0,ride=null,current=null,lastCol=null,recent=[];
-  const stopFrames=()=>{if(frame)rvfc?wall.cancelVideoFrameCallback(frame):cancelAnimationFrame(frame);frame=0;};
-  const land=()=>{stopFrames();ride?.cancel();ride=null;node.classList.remove('is-lifting');video.pause();current=null;};
-  const pick=()=>nextLiftInBand(wall.currentTime,line[0],line[1],{recent,avoidCol:lastCol});
-  const schedule=()=>{
-   if(dead)return;
-   if(wall.readyState<2){timer=setTimeout(schedule,250);return;}
-   const next=pick();if(!next){timer=setTimeout(schedule,500);return;}
-   // Buffer this game's clip while it travels to the line.
-   if(!video.src.endsWith(`/${next.lift.id}.mp4`)){video.src=`/assets/brand/lift/${next.lift.id}.mp4`;node.querySelector('.game-lift-tile').style.backgroundImage=`url(/assets/brand/lift/${next.lift.id}.jpg)`;video.load();}
-   timer=setTimeout(()=>start(next.lift),Math.max(0,next.delay*1000/(wall.playbackRate||1)-160));
+  const video=film.current,node=lift.current,clip=clipRef.current,surface=canvas.current,tile=node?.querySelector('canvas'),paint=tile?.getContext('2d',{alpha:false});
+  if(!src||!video||!node||!clip||!surface||!paint)return;
+  // Paint each new lift-clip frame into the tile canvas (24/s, 512x1000).
+  let clipFrame=0;const clipRvfc=typeof clip.requestVideoFrameCallback==='function';
+  const drawClip=()=>{if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);clipFrame=clipRvfc?clip.requestVideoFrameCallback(drawClip):0;};
+  if(clipRvfc)clipFrame=clip.requestVideoFrameCallback(drawClip);
+  const renderer=createWallRenderer(surface,video,WALL);
+  if(!renderer){setGl(false);return;}
+  setGl(true);
+  let dead=false,raf=0,last=performance.now(),clock=root.current.__wallClock??0,shownFrame=false;
+  let current=null,pending=null,nextAt=clock+1.2,lastCol=null,recent=[];
+  const lead=.35,seekLead=.12;
+  const land=()=>{node.classList.remove('is-lifting');node.style.transform='';clip.pause();current=null;};
+  const plan=()=>{
+   const next=nextLiftInBand(clock,band[0],band[1],{recent,avoidCol:lastCol,lead});
+   if(!next){nextAt=clock+1;return;}
+   pending={game:next.lift,at:clock+next.delay-seekLead,seeking:false};
+   const want=`/assets/brand/lift/${next.lift.id}${liftCodec}`;
+   if(!clip.src.endsWith(want)){clip.src=want;node.querySelector('.game-lift-tile').style.backgroundImage=`url(/assets/brand/lift/${next.lift.id}.jpg)`;clip.load();}
   };
-  const start=game=>{
-   if(dead)return;
-   const t=wall.currentTime,{min,max}=liftWindow(0);
-   const remember=()=>{lastCol=game.col;recent=[...recent,game.id].slice(-3);};
-   const skip=()=>{remember();schedule();};
-   // A stalled wall or an unbuffered clip skips this pass rather than flash black.
-   if(wall.paused||wall.readyState<2||video.readyState<2)return skip();
-   // Seek the lifted copy to the frame the wall will show, and rise only once it is there.
-   const lead=.16;video.currentTime=liftClipTime(game,t+lead);
-   let done=false;const go=()=>{
-    if(done||dead)return;done=true;video.removeEventListener('seeked',go);
-    const now=wall.currentTime,place=liftPlacement(game,now);
-    if(place.y<min-12||place.y>max+12)return skip();
-    Object.assign(node.style,{left:`${place.left}%`,top:`${place.top}%`,width:`${place.width}%`});
-    // Already on the right frame (seeked ahead by `lead`); the sync below trims any residue.
-    video.play().catch(()=>{});
-    node.classList.remove('is-lifting');void node.offsetWidth;node.classList.add('is-lifting');
-    ride=node.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(0,${place.ridePercent}%,0)`}],{duration:LIFT_MS,easing:'linear',fill:'both'});
-    current={game,t:now};remember();
-    // Keep the compositor ride and the lifted clip on the wall's media clock.
-    const sync=(_now,meta)=>{
-     if(dead||!current)return;
-     const media=meta?.mediaTime??wall.currentTime,expected=elapsedMs(current.t,media);
-     if(ride&&expected<LIFT_MS&&Math.abs(ride.currentTime-expected)>34)ride.currentTime=expected;
-     const want=liftClipTime(game,media),off=Math.abs(video.currentTime-want);if(off>.15&&off<2.85)video.currentTime=want;
-     frame=rvfc?wall.requestVideoFrameCallback(sync):requestAnimationFrame(sync);
-    };
-    frame=rvfc?wall.requestVideoFrameCallback(sync):requestAnimationFrame(sync);
-    ride.onfinish=()=>{land();timer=setTimeout(schedule,900);};
-   };
-   video.addEventListener('seeked',go);setTimeout(go,220);
+  const begin=(game,hold=0)=>{
+   const place=liftPlacement(game,clock);
+   Object.assign(node.style,{left:`${place.left}%`,top:`${place.top}%`,width:`${place.width}%`,height:`${place.height}%`,transform:'translate3d(0,0,0)'});
+   if(hold>0)setTimeout(()=>{if(!dead&&current?.game===game)clip.play().catch(()=>{});},hold);else clip.play().catch(()=>{});
+   node.classList.remove('is-lifting');void node.offsetWidth;node.classList.add('is-lifting');
+   current={game,t0:clock,rippled:false};lastCol=game.col;recent=[...recent,game.id].slice(-3);
   };
-  const stall=()=>{ride?.pause();video.pause();},resume=()=>{if(ride&&current){ride.currentTime=Math.min(LIFT_MS,elapsedMs(current.t,wall.currentTime));ride.play();video.play().catch(()=>{});}};
-  wall.addEventListener('waiting',stall);wall.addEventListener('playing',resume);
-  schedule();
-  return()=>{dead=true;clearTimeout(timer);land();wall.removeEventListener('waiting',stall);wall.removeEventListener('playing',resume);};
- },[running,line,src]);
+  const tick=nowMs=>{
+   if(dead)return;
+   const dt=Math.min(.1,(nowMs-last)/1000);last=nowMs;
+   const running=live.current;
+   if(running)clock+=dt;
+   // Offscreen or paused: keep the last frame, spend nothing.
+   if(!running&&shownFrame){raf=requestAnimationFrame(tick);return;}
+   if(renderer.draw(clock,nowMs/1000)&&!shownFrame){shownFrame=true;root.current?.classList.add('is-live');}
+   if(running){
+    if(current){
+     const e=clock-current.t0,ms=e*1000;
+     node.style.transform=`translate3d(0,${-e*WALL_SPEED/WALL.tileH*100}%,0)`;
+     if(!clipRvfc)drawClip();
+     if(!current.rippled&&ms>=LIFT_MS*.86){
+      current.rippled=true;
+      renderer.ripple((current.game.col*WALL.cellW+WALL.tileW/2),tileY(current.game.col,current.game.row,clock)+WALL.tileH/2,1.25,nowMs/1000);
+     }
+     if(ms>=LIFT_MS){land();nextAt=clock+.9;}
+    }else if(!pending&&clock>=nextAt)plan();
+    else if(pending&&!pending.seeking&&clock>=pending.at){
+     // Seek the lifted copy to the frame the wall is about to show; rise once it lands there.
+     const game=pending.game;pending.seeking=true;
+     if(video.readyState<2||clip.readyState<2){recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}
+     else{
+      let done=false;const go=()=>{if(done||dead)return;done=true;clip.removeEventListener('seeked',go);pending=null;if(clip.readyState>=2)paint.drawImage(clip,0,0,tile.width,tile.height);
+       // The seek aimed slightly ahead; hold that frame until the wall reaches it, then play in lockstep.
+       const ahead=(((liftClipTime(game,video.currentTime)-clip.currentTime)%3)+3)%3,hold=ahead>1.5?(3-ahead)*1000:0;
+       begin(game,hold);};
+      clip.addEventListener('seeked',go);setTimeout(()=>{if(!done&&!dead){done=true;clip.removeEventListener('seeked',go);recent=[...recent,game.id].slice(-3);pending=null;nextAt=clock+.3;}},400);
+      clip.currentTime=liftClipTime(game,video.currentTime+seekLead);
+     }
+    }
+   }
+   raf=requestAnimationFrame(tick);
+  };
+  raf=requestAnimationFrame(tick);
+  return()=>{dead=true;cancelAnimationFrame(raf);if(clipRvfc&&clipFrame)clip.cancelVideoFrameCallback(clipFrame);if(root.current){root.current.__wallClock=clock;root.current.classList.remove('is-live');}land();renderer.dispose();};
+ },[src,band,liftCodec]);
 
- return <div ref={root} className={`hero-game-wall ${running?'is-running':''}`} aria-hidden="true">
+ return <div ref={root} className={`hero-game-wall ${running?'is-running':''} ${gl?'':'is-static'}`} aria-hidden="true">
   <div className="game-wall-plane">
-   <video ref={film} className="game-wall-film" style={{aspectRatio:`${HERO_WALL.w}/${HERO_WALL.h}`}} src={reduced?undefined:src} poster="/assets/brand/game-wall-poster.jpg" muted loop playsInline preload={reduced?'none':'auto'} disablePictureInPicture/>
+   <img className="game-wall-poster" src="/assets/brand/game-wall-poster.jpg" alt="" style={{aspectRatio:`${WALL.w}/${WALL.h}`}}/>
+   <canvas ref={canvas} className="game-wall-canvas" style={{aspectRatio:`${WALL.w}/${WALL.h}`}}/>
    <div ref={lift} className="game-lift" style={{'--lift-ms':`${LIFT_MS}ms`}}>
     <span className="game-lift-slot"/>
     <span className="game-lift-glow"/>
-    <div className="game-lift-tile"><video muted loop playsInline preload="auto" disablePictureInPicture/></div>
+    <div className="game-lift-tile"><canvas width="512" height="1000"/></div>
    </div>
   </div>
+  {/* A visibly playing <video> caps Chrome's animation rate at 30fps, so both
+      videos stay hidden and are only used as frame sources. */}
+  <video ref={clipRef} className="game-wall-source" muted loop playsInline preload="auto" disablePictureInPicture/>
+  <video ref={film} className="game-wall-source" src={reduced?undefined:src||undefined} muted loop playsInline preload="auto" disablePictureInPicture/>
   <span className="slop-hero-veil"/>
  </div>;
 }

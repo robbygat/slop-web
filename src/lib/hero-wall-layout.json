@@ -9,6 +9,7 @@
   "loop": 15,
   "fps": 24,
   "tileLoop": 3.0,
+  "videoLoop": 3.0,
   "colOffset": 137
  },
  "lifts": [

@@ -2,7 +2,14 @@
 .hero-game-wall{position:absolute;inset:0;z-index:-2;overflow:hidden;perspective:1600px;contain:paint}
 .game-wall-plane{position:absolute;left:22%;top:-12%;width:max(1700px,118vw);transform:rotateX(42deg) rotateZ(-20deg);transform-origin:50% 0;transform-style:preserve-3d}
 .hero-game-wall{transform-style:preserve-3d}
-.game-wall-film{display:block;width:100%;height:auto;object-fit:fill;backface-visibility:hidden;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-canvas,.game-wall-poster{display:block;width:100%;height:auto;background:#0b110e;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.game-wall-poster{position:absolute;inset:0 0 auto}
+.game-wall-canvas{position:relative;opacity:0;transition:opacity .4s ease}
+.hero-game-wall.is-live .game-wall-canvas{opacity:1}
+.hero-game-wall.is-static .game-wall-canvas{visibility:hidden}
+/* Decoded only as a texture source; kept in the DOM so iOS keeps it playing. */
+.game-wall-source{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
+.hero-game-wall:not(.is-running) .game-lift *{animation-play-state:paused}
 .slop-hero-veil{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,#0b110e 22%,#0b110ee6 38%,#0b110e40 62%,#0b110e00 80%),linear-gradient(0deg,#0b110e 0,#0b110e00 30%),linear-gradient(180deg,#0b110ecc 0,#0b110e00 22%),radial-gradient(ellipse 50% 60% at 20% 55%,#c5f5641a,transparent)}
 .slop-hero-copy{position:relative;max-width:640px}
 .slop-hero h1{margin:0;font-size:clamp(64px,8.6vw,148px);font-weight:700;letter-spacing:-.07em;line-height:.88}
@@ -25,23 +32,23 @@
 /* Lift: a featured game rises out of its own slot at the wall's angle, rides
    with its column, and settles back into the same glowing opening. Only
    transform and opacity animate, so every frame stays on the compositor. */
-.game-lift{--z:var(--lift-z,170px);position:absolute;aspect-ratio:128/250;transform-style:preserve-3d;will-change:transform;visibility:hidden;pointer-events:none}
+.game-lift{--z:var(--lift-z,170px);position:absolute;transform-style:preserve-3d;will-change:transform;visibility:hidden;pointer-events:none}
 .game-lift.is-lifting{visibility:visible}
-.game-lift>*{position:absolute;inset:0;border-radius:9%}
+.game-lift>*{position:absolute;inset:0}
 .game-lift-slot{inset:-1px;background:radial-gradient(ellipse at 50% 50%,#1b2a12,#050806 70%);box-shadow:inset 0 0 0 2px #c5f564,inset 0 0 24px #c5f564aa,0 0 26px #c5f56499;opacity:0}
-.game-lift-slot:after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 2px #c5f564;opacity:0}
+.game-lift-slot:after{content:'';position:absolute;inset:0;box-shadow:0 0 0 2px #c5f564;opacity:0}
 .game-lift-glow{box-shadow:0 0 0 2px #c5f564,0 40px 60px -14px #000d,0 0 50px #c5f56480;opacity:0;will-change:transform,opacity}
-.game-lift-tile{overflow:hidden;background:#0b110e center/cover no-repeat;opacity:0;will-change:transform,opacity;isolation:isolate;backface-visibility:hidden;-webkit-mask-image:-webkit-radial-gradient(#fff,#000)}
-.game-lift-tile>video{display:block;width:100%;height:100%;object-fit:cover}
+.game-lift-tile{overflow:hidden;background:#0b110e center/cover no-repeat;opacity:0;will-change:transform,opacity;backface-visibility:hidden}
+.game-lift-tile>canvas{display:block;width:100%;height:100%}
 .game-lift-tile:after{content:'';position:absolute;inset:-20% -60%;background:linear-gradient(115deg,transparent 40%,#ffffff3a 50%,transparent 60%);transform:translateX(-70%);pointer-events:none}
 .is-lifting>.game-lift-slot{animation:game-lift-open var(--lift-ms) ease both}
 .is-lifting>.game-lift-slot:after{animation:game-lift-ripple var(--lift-ms) ease-out both}
 .is-lifting>.game-lift-tile{animation:game-lift-rise var(--lift-ms) cubic-bezier(.45,0,.2,1) both}
 .is-lifting>.game-lift-glow{animation:game-lift-rise var(--lift-ms) cubic-bezier(.45,0,.2,1) both,game-lift-glow var(--lift-ms) ease both}
 .is-lifting>.game-lift-tile:after{animation:game-lift-sheen var(--lift-ms) ease both}
-@keyframes game-lift-open{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0}}
-@keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}86%{opacity:0;transform:scale(1)}88%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
-@keyframes game-lift-rise{0%{opacity:0;transform:translateZ(0)}5%{opacity:1;transform:translateZ(0)}30%,70%{opacity:1;transform:translateZ(var(--z)) scale(1.38)}90%{transform:translateZ(0) scale(1)}93%{transform:translateZ(5px) scale(1.012)}96%{opacity:1;transform:translateZ(0)}100%{opacity:0;transform:translateZ(0)}}
+@keyframes game-lift-open{0%{opacity:0}8%,86%{opacity:1}100%{opacity:0}}
+@keyframes game-lift-ripple{0%,5%{opacity:0;transform:scale(1)}7%{opacity:.9;transform:scale(1)}20%{opacity:0;transform:scale(1.35)}85%{opacity:0;transform:scale(1)}86%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes game-lift-rise{0%{opacity:0;transform:translateZ(0)}5%{opacity:1;transform:translateZ(0)}30%,72%{opacity:1;transform:translateZ(var(--z)) scale(1.38)}80%{transform:translateZ(calc(var(--z)*.9)) scale(1.34);animation-timing-function:cubic-bezier(.55,0,1,.45)}86%{transform:translateZ(-14px) scale(.96)}90%{transform:translateZ(8px) scale(1.02)}94%{transform:translateZ(-2px) scale(.995)}97%{opacity:1;transform:translateZ(0)}100%{opacity:0;transform:translateZ(0)}}
 @keyframes game-lift-glow{0%,8%{opacity:0}26%,72%{opacity:1}90%{opacity:.5}100%{opacity:0}}
 @keyframes game-lift-sheen{0%,22%{transform:translateX(-70%)}42%,100%{transform:translateX(70%)}}
 @media(max-width:900px){.game-lift{--lift-z:90px}}
