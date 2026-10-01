@@ -1,0 +1,24 @@
+.slop-hero{--ink:#f4f7ea;--lime:#c5f564;position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(70px,9vw,130px) 6vw clamp(64px,8vw,110px);background:#0d1411;color:var(--ink)}
+.slop-hero-grid{position:absolute;inset:0;z-index:-2;background-image:radial-gradient(#ffffff1c 1px,transparent 1.4px);background-size:26px 26px;mask-image:radial-gradient(ellipse 70% 65% at 50% 45%,#000 20%,transparent 75%)}
+.slop-hero-glow{position:absolute;left:50%;bottom:-45%;z-index:-1;width:min(1100px,120vw);aspect-ratio:2/1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,#c5f56438,transparent);filter:blur(10px)}
+.slop-hero-eyebrow{display:inline-flex;align-items:center;gap:8px;margin:0 0 clamp(26px,3vw,40px);padding:8px 15px;border:1px solid #ffffff1f;border-radius:99px;background:#ffffff08;font-size:12px;font-weight:550;letter-spacing:.02em;color:#f4f7eab3;animation:slop-hero-in .7s cubic-bezier(.2,.8,.2,1) both}
+.slop-hero-eyebrow>svg{color:var(--lime)}
+.slop-hero h1{margin:0;font-size:clamp(64px,10.5vw,176px);font-weight:700;letter-spacing:-.07em;line-height:.88;text-wrap:nowrap}
+.slop-hero h1>span{display:block;animation:slop-hero-in .8s cubic-bezier(.2,.8,.2,1) both}
+.slop-hero h1>span:first-child{color:#f4f7ea8c}
+.slop-hero-last{position:relative;animation-delay:.08s!important}
+.slop-hero-last em{font-style:normal;color:var(--lime)}
+/* The perch sits on the cap line of "game." with its legs over the letters. */
+.slop-hero .hero-perch{--perch-size:clamp(70px,9.5vw,160px);position:absolute;right:-.32em;bottom:auto;top:.02em;width:var(--perch-size);transform:translateY(-63%);z-index:2;animation:slop-hero-drop .9s .35s cubic-bezier(.2,1.3,.4,1) both}
+.slop-hero-copy{max-width:30ch;margin:clamp(28px,3vw,40px) 0 0;font-size:clamp(15px,1.3vw,19px);line-height:1.5;color:#f4f7ea99;animation:slop-hero-in .8s .16s cubic-bezier(.2,.8,.2,1) both}
+.slop-hero-entry{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:clamp(28px,3vw,38px);animation:slop-hero-in .8s .24s cubic-bezier(.2,.8,.2,1) both}
+.slop-hero-entry>a{display:inline-flex;align-items:center;gap:12px;min-height:56px;padding:0 26px;border-radius:99px;font-size:15px;font-weight:600;transition:transform .18s,background .18s,box-shadow .18s}
+.slop-hero-play{background:var(--lime);color:#11200f;box-shadow:0 0 0 0 #c5f56400}
+.slop-hero-play>svg{width:20px;height:22px}
+.slop-hero-play:hover{transform:translateY(-2px);box-shadow:0 10px 40px -8px #c5f5648c}
+.slop-hero-explore{color:var(--ink);border:1px solid #ffffff26}
+.slop-hero-explore:hover{background:#ffffff0f}
+@keyframes slop-hero-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes slop-hero-drop{from{opacity:0;transform:translateY(-130%)}to{opacity:1;transform:translateY(-63%)}}
+@media(max-width:600px){.slop-hero{padding:56px 20px 60px}.slop-hero h1{font-size:clamp(46px,14.5vw,64px)}.slop-hero .hero-perch{--perch-size:clamp(52px,15vw,66px)}.slop-hero-copy{font-size:15px}.slop-hero-entry{width:100%;flex-direction:column;align-items:stretch}.slop-hero-entry>a{justify-content:center}}
+@media(prefers-reduced-motion:reduce){.slop-hero *{animation:none!important}.slop-hero .hero-perch{transform:translateY(-63%)}}
