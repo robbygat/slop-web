@@ -93,3 +93,6 @@ Desktop 1440 + 375px mobile in the browser for both pages. `npm test`: 314 pass 
 - The perch chooses HEVC alpha for Apple WebKit and VP9 alpha elsewhere; Social crown-card controls use 44px touch targets.
 - The hero uses its own `hero-game-wall` CSS class, keeping the Home catalogue grid in normal flow. Copy says “your Slop.” Shared Quests icons match the mobile app’s crossed-swords painter.
 - Play titles rotate through four short entrances on each actual game change, settling at a stable readable pose. Reduced-motion preferences disable the entrances; game identity and input handlers are unchanged.
+
+### Hero motion follow-up
+The first combined release is live on main `12e5a19702dc45628d21c4dc3d259247e9054b60` (PR52, successful Pages run36815520833). The user still observed lift stutter. Code inspection found that the raised card itself advanced in the baked video's24fps/even-pixel steps while its depth animation ran at display rate. Keep the canvas crop frame-exact, separate raised travel from that crop, and keep exact alignment at launch and landing. Large animated shadow and background-position effects have also been replaced with static shadow and transformed sheen layers.

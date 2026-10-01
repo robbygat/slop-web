@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {HERO_WALL,HERO_LIFT_MS,findWallSlot,sampleWallLift,wallVideoSource} from '../src/lib/hero-wall.js';
+import {HERO_WALL,HERO_LIFT_MS,findWallSlot,sampleWallLift,sampleWallRide,wallVideoSource} from '../src/lib/hero-wall.js';
 
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-8,`${actual} should equal ${expected}`);
 const hd=(slot,time)=>sampleWallLift(slot,time,2948,1536);
@@ -105,5 +105,48 @@ test('save-data and constrained connections select the smaller wall source',()=>
  const smallSource='/assets/brand/game-wall.mp4';
  for(const hints of [{saveData:true},{saveData:true,effectiveType:'4g'}, {effectiveType:'slow-2g'}, {effectiveType:'2g'}, {effectiveType:'3g'}]){
   assert.equal(wallVideoSource(hints),smallSource);
+ }
+});
+
+test('airborne motion interpolates smoothly instead of using the even-pixel crop steps',()=>{
+ const slot={...findWallSlot(4,0,732/1536),t:0};
+ const frame={mediaTime:0,expectedDisplayTime:1000};
+ const samples=[0,10,20,30].map(ms=>sampleWallRide(slot,frame,1000+ms,.5));
+ for(let index=1;index<samples.length;index++){
+  close(samples[index].offsetPercent-samples[index-1].offsetPercent,-.4096);
+  close(samples[index].frameOffsetPercent,0);
+ }
+ const before=sampleWallRide(slot,frame,1000+1000/24,.5);
+ const next=sampleWallRide(slot,{mediaTime:1/24,expectedDisplayTime:1000+1000/24},1000+1000/24,.5);
+ close(before.offsetPercent,next.offsetPercent);
+ assert.notEqual(before.frameOffsetPercent,next.frameOffsetPercent);
+});
+
+test('smooth ride crosses the video loop seam without changing the selected tile row',()=>{
+ const slot={...findWallSlot(4,14.5,.68),t:14.5};
+ const before=sampleWallRide(slot,{mediaTime:15-1/24,expectedDisplayTime:1000},1000+1000/24,.5);
+ const after=sampleWallRide(slot,{mediaTime:0,expectedDisplayTime:1000+1000/24},1000+1000/24,.5);
+ close(before.offsetPercent,after.offsetPercent);
+});
+
+test('stalled or early frame clocks cannot extrapolate beyond one source frame',()=>{
+ const slot={...findWallSlot(4,0,732/1536),t:0},frame={mediaTime:0,expectedDisplayTime:1000};
+ const atFrame=sampleWallRide(slot,frame,1000,.5);
+ const early=sampleWallRide(slot,frame,990,.5);
+ const bounded=sampleWallRide(slot,frame,1000+1000/24,.5);
+ const stalled=sampleWallRide(slot,frame,9000,.5);
+ close(early.offsetPercent,atFrame.offsetPercent);
+ close(stalled.offsetPercent,bounded.offsetPercent);
+ close(stalled.offsetPercent,-102.4/24/250*100);
+ close(sampleWallRide(slot,frame,9000,.5,0).offsetPercent,atFrame.offsetPercent);
+});
+
+test('launch and landing use the exact decoded frame even when selection chose a later frame',()=>{
+ const slot={...findWallSlot(4,.028,732/1536),t:.028},frame={mediaTime:0,expectedDisplayTime:1000};
+ const exact=hd(slot,0);
+ assert.equal(exact.source.y,732);
+ for(const progress of [0,.03,.06,.88,.92,1]){
+  const ride=sampleWallRide(slot,frame,1015,progress);
+  close(ride.offsetPercent,exact.offsetPercent);close(ride.frameOffsetPercent,exact.offsetPercent);
  }
 });
