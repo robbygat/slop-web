@@ -5,6 +5,7 @@ import {gameFormat} from '../lib/game-format.js';
 import {loadFeedCrown} from '../lib/leaderboard.js';
 import {getSession} from '../lib/supabase.js';
 import {createFeedWheel} from '../lib/feed-wheel.js';
+import {nextFeedTitleEntrance} from '../lib/feed-title-motion.js';
 import {readFeedReturn,writeFeedReturn} from '../lib/feed-return.js';
 import {createFeedCrownSync} from '../lib/feed-crown-sync.js';
 import {useAuth} from '../auth.jsx';
@@ -22,6 +23,8 @@ export default function Feed(){
  const [filters,setFilters]=useState(false);
  const [order,setOrder]=useState(initial?.order||'newest'),[platform,setPlatform]=useState(initial?.platform||'all'),[games,setGames]=useState(initial?.games||[]),[active,setActive]=useState(initial?.active||null);
  const [loading,setLoading]=useState(!initial),[error,setError]=useState(null),[selected,setSelected]=useState(null),[discussion,setDiscussion]=useState(false);
+ const [titleEntrance,setTitleEntrance]=useState(()=>nextFeedTitleEntrance(null,initial?.active));
+ useLayoutEffect(()=>{setTitleEntrance(previous=>nextFeedTitleEntrance(previous,active));},[active]);
  const [likes,setLikes]=useState(new Set()),[counts,setCounts]=useState({}),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(null),[shared,setShared]=useState(null),[leaders,setLeaders]=useState({});
  const stream=useRef(null),cards=useRef(new Map()),epoch=useRef(0),pending=useRef(false),cursor=useRef(initial?.next||null),hasMore=useRef(initial?!!initial.next:true),crownGame=useRef(null),crownSync=useRef(null),likePending=useRef(false),paging=useRef({index:0,count:0,blocked:false});
  const restoration=useRef(initial),context=useRef(null);
@@ -73,13 +76,13 @@ export default function Feed(){
   <header className="reels-toolbar"><a className="reels-back" href="#/home" aria-label="Back to Home" title="Back to Home"><Icon name="back" size={19}/><span>Back</span></a><div className="reels-order" role="group" aria-label="Game feed"><button aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Newest</button><span aria-hidden="true"/><button aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>For You</button></div><div className="reels-tools"><ActivityLink ownerId={user?.id}/><button className="reels-filter" aria-label={`Game preferences: ${platform==='all'?'all games':platform+' games'}`} aria-haspopup="dialog" onClick={()=>setFilters(true)}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M4 7h7m5 0h4M4 17h3m5 0h8"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>{platform!=='all'&&<i/>}</button></div></header>
   {actionError&&<div className="reels-error"><Notice error={actionError}/></div>}
   <div className="reel-stream" ref={stream} tabIndex={0} aria-label="Swipe games, use arrow keys to browse, or Enter to play" onKeyDown={e=>{if(e.target.closest('button,a,input,textarea')||selected)return;if(e.key==='Enter'){e.preventDefault();const game=games.find(g=>g.id===active);if(game)open(game);return;}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1);}}}>
-   {games.map(game=>{const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],wide=gameFormat(game).orientation==='landscape';return <article className={`reel ${wide?'reel-wide':''}`} key={game.id} data-game={game.id} ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} aria-label={game.name}>
+   {games.map(game=>{const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],wide=gameFormat(game).orientation==='landscape';return <article className={`reel ${wide?'reel-wide':''}`} key={game.id} data-game={game.id} data-title-entrance={live&&titleEntrance?.gameId===game.id?titleEntrance.variant:undefined} ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} aria-label={game.name}>
     <div className="reel-stage">
      <button className="reel-media" onClick={()=>open(game)} aria-label={`Play ${game.name}`} tabIndex={live?0:-1}><GamePreview game={game} paused={!live||!!selected||filters}/></button>
-     <div className="reel-caption"><h2>{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters} compact/>{game.description&&<p className="reel-description">{game.description}</p>}</div>
+     <div className="reel-caption"><h2 className="reel-title">{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters} compact/>{game.description&&<p className="reel-description">{game.description}</p>}</div>
 
     </div>
-    <aside className="reel-side"><h2>{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters}/>{game.description&&<p className="reel-side-description">{game.description}</p>}<Button onClick={()=>open(game)} tabIndex={live?0:-1}>{holder?'Play for first place':'Play game'} <Icon name={holder?'crown':'play'} size={16}/></Button></aside>
+    <aside className="reel-side"><h2 className="reel-title">{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters}/>{game.description&&<p className="reel-side-description">{game.description}</p>}<Button onClick={()=>open(game)} tabIndex={live?0:-1}>{holder?'Play for first place':'Play game'} <Icon name={holder?'crown':'play'} size={16}/></Button></aside>
     <div className="reel-rail"><button className="reel-start" onClick={()=>open(game)} aria-label={`Start ${game.name}`} tabIndex={live?0:-1}><Icon name="play" fill="currentColor"/><span>Play</span></button><button className={liked?'is-liked':''} onClick={()=>toggleLike(game)} disabled={busy} aria-label={liked?'Unlike this game':'Like this game'} tabIndex={live?0:-1}><Icon name="heart" fill={liked?'currentColor':'none'}/><span>{counts[game.slug]?.likes??'Like'}</span></button><button onClick={()=>open(game,true)} aria-label={`Comments for ${game.name}`} tabIndex={live?0:-1}><Icon name="social"/><span>Chat</span></button><button onClick={()=>share(game)} aria-label={`Share ${game.name}`} tabIndex={live?0:-1}><Icon name="share"/><span>{shared===game.id?'Copied':'Share'}</span></button></div>
    </article>;})}
    <div className="reels-end">{loading?<Loading label="Finding your next game…"/>:error?<Notice error={error} onRetry={()=>more(!games.length)}/>:!games.length?<p>No games in this format yet.</p>:hasMore.current?<button className="button" onClick={()=>more()}>Find more games</button>:<><h2>All caught up.</h2><a className="button" href="#/home">Back to the arcade</a></>}</div>

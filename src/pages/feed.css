@@ -62,3 +62,18 @@ html:has(.reels-page),body:has(.reels-page){overflow:hidden;background:#101715;s
 .reels-tools .activity-link{background:#22332b;color:#edf4e9;border-color:#ffffff26;width:40px;height:40px}
 .reels-tools .activity-count{border-color:#101715;background:#c5f564;color:#17231d}
 @media(max-width:600px){.reels-toolbar{grid-template-columns:74px minmax(0,1fr) 88px;padding-inline:10px}.reels-tools{gap:3px}.reels-tools .activity-link{width:39px}.reels-order{gap:10px}.reels-order>button{font-size:13px}}
+
+/* Each active-game entry gets one short title entrance; the heading settles
+   fully readable without looping or changing the surrounding layout. */
+.reel-title{transform-origin:0 70%}
+@media(prefers-reduced-motion:no-preference){
+ .reel[data-title-entrance] .reel-title{animation-duration:.48s;animation-timing-function:cubic-bezier(.22,.7,.3,1);animation-iteration-count:1;animation-fill-mode:both}
+ .reel[data-title-entrance=rise] .reel-title{animation-name:feed-title-rise}
+ .reel[data-title-entrance=slide] .reel-title{animation-name:feed-title-slide}
+ .reel[data-title-entrance=settle] .reel-title{animation-name:feed-title-settle}
+ .reel[data-title-entrance=tilt] .reel-title{animation-name:feed-title-tilt}
+}
+@keyframes feed-title-rise{from{opacity:.65;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes feed-title-slide{from{opacity:.7;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes feed-title-settle{0%{opacity:.7;transform:translateY(6px) scale(.95)}65%{opacity:1;transform:translateY(-1px) scale(1.01)}100%{opacity:1;transform:none}}
+@keyframes feed-title-tilt{0%{opacity:.75;transform:translateY(5px) rotate(-2deg)}65%{opacity:1;transform:rotate(.6deg)}100%{opacity:1;transform:none}}

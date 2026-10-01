@@ -1,9 +1,21 @@
-import React from 'react';
+import React,{useId} from 'react';
+
+// Exact 28px sword geometry from the mobile QuestNavIcon painter. The rear
+// blade is masked only along the front edge, leaving a clear seam over any UI.
+export function QuestGlyph({transform}){
+ const seamId=useId(),blade='M5 3L10 4L21 15L17 19L6 8Z';
+ const sword=<g fill="currentColor" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={blade}/><path d="M16 20L22 14M20 19L24 23M22.5 24.5L25 22" fill="none"/></g>;
+ return <g transform={transform}>
+  <defs><mask id={seamId} maskUnits="userSpaceOnUse" x="-2" y="-2" width="32" height="32" style={{maskType:'luminance'}}><rect x="-2" y="-2" width="32" height="32" fill="white" stroke="none"/><path d={blade} fill="none" stroke="black" strokeWidth="4.5" strokeLinejoin="round"/></mask></defs>
+  <g mask={`url(#${seamId})`}><g transform="translate(28 0) scale(-1 1)">{sword}</g></g>
+  {sword}
+ </g>;
+}
 const paths={
  bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></>,
  coins:<><ellipse cx="12" cy="7" rx="8" ry="4"/><path d="M4 7v5c0 5 16 5 16 0V7M4 12v5c0 5 16 5 16 0v-5"/></>,
  cursor:<path d="m5 3 14 10-7 1-4 7Z"/>,
- quest:<><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></>,
+ quest:<QuestGlyph transform="scale(.8571428571428571)"/>,
  pause:<><path d="M8 5v14M16 5v14" strokeWidth="3"/></>,
  moon:<path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z"/>,
  sun:<><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></>,
