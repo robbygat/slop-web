@@ -6,7 +6,9 @@ const HASH=/^[a-f0-9]{64}$/;
 export const validAssetRequest=e=>e?.type==='persist-asset-request'&&typeof e.request==='string'&&e.request.length>0&&e.request.length<=120&&typeof e.path==='string'&&e.path.length<=220&&PATH.test(e.path);
 const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
 export class PersistentAssetCache {
- constructor({indexedDB=globalThis.indexedDB,fetcher=globalThis.fetch,cap=MAX_CACHE,now=Date.now,name='slop-release-assets-v1'}={}){Object.assign(this,{indexedDB,fetcher,cap,now,name});this.inflight=new Map();}
+ // Native Window.fetch rejects the cache instance as its receiver. Keep the
+ // browser receiver for the default while leaving injected transports intact.
+ constructor({indexedDB=globalThis.indexedDB,fetcher=(...args)=>globalThis.fetch(...args),cap=MAX_CACHE,now=Date.now,name='slop-release-assets-v1'}={}){Object.assign(this,{indexedDB,fetcher,cap,now,name});this.inflight=new Map();}
  open(){return this.opening??=new Promise((resolve,reject)=>{if(!this.indexedDB)return reject(Error('Device asset cache unavailable.'));const request=this.indexedDB.open(this.name,1);request.onupgradeneeded=()=>{request.result.createObjectStore('blobs');request.result.createObjectStore('objects',{keyPath:'hash'});request.result.createObjectStore('releases',{keyPath:'key'});};request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result;db.onversionchange=()=>{db.close();this.opening=null;};resolve(db);};}).catch(error=>{this.opening=null;throw error;});}
  async transaction(work){const db=await this.open();return new Promise((resolve,reject)=>{const tx=db.transaction(['objects','blobs','releases'],'readwrite');let value,error;tx.oncomplete=()=>resolve(value);tx.onabort=tx.onerror=()=>reject(error||tx.error);try{work(tx,answer=>{value=answer;},cause=>{error=cause;tx.abort();});}catch(cause){error=cause;tx.abort();}});}
  async cached(hash){return this.transaction((tx,done)=>{const r=tx.objectStore('blobs').get(hash);r.onsuccess=()=>done(r.result||null);});}
