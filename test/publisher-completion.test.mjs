@@ -27,10 +27,23 @@ test('one-job workflow excludes the global video pass and job counts are bounded
  assert.equal(publisherMaxJobs('1'),1);assert.equal(publisherMaxJobs(),8);
  for(const n of [0,9,-1,1.5,'NaN','Infinity'])assert.throws(()=>publisherMaxJobs(n));
  const workflow=await readFile(new URL('../.github/workflows/mcp-autopublish.yml',import.meta.url),'utf8');
- assert.match(workflow,/options: \[incremental, backfill, publish_one\]/);
+ assert.match(workflow,/options: \[incremental, backfill, publish_one, repair_one\]/);
  assert.match(workflow,/SLOP_PUBLISHER_MAX_JOBS: \$\{\{ inputs.videos == 'publish_one' && 1 \|\| 8 \}\}/);
  const videos=workflow.slice(workflow.indexOf('\n  videos:'));
  assert.match(videos,/if: github.ref == 'refs\/heads\/main' && inputs.videos != 'publish_one'/);
+});
+test('one-release repair is manual main-only and excludes publication and catalog passes',async()=>{
+ const workflow=await readFile(new URL('../.github/workflows/mcp-autopublish.yml',import.meta.url),'utf8');
+ const publish=workflow.slice(workflow.indexOf('\n  publish:'),workflow.indexOf('\n  videos:'));
+ const videos=workflow.slice(workflow.indexOf('\n  videos:'),workflow.indexOf('\n  repair-video:'));
+ const repair=workflow.slice(workflow.indexOf('\n  repair-video:'));
+ assert.match(publish,/inputs.videos != 'repair_one'/);
+ assert.match(videos,/inputs.videos != 'repair_one'/);
+ assert.match(repair,/if: github.ref == 'refs\/heads\/main' && github.event_name == 'workflow_dispatch' && inputs.videos == 'repair_one'/);
+ assert.match(repair,/timeout-minutes: 15/);
+ for(const key of ['SLUG','SOURCE_DIGEST','RELEASE_ROOT'])assert.match(repair,new RegExp(`SLOP_REPAIR_${key}:`));
+ assert.match(repair,/run: node scripts\/mcp-publisher\/repair-video.mjs/);
+ assert.doesNotMatch(repair,/run:.*\$\{\{/,'inputs are env values, never shell fragments');
 });
 
 const digest = async manifest => (await import('../src/lib/bundle-contracts.js')).sha256(manifest.map(f=>`${f.path}:${f.bytes}:${f.sha256}`).join('\n'));

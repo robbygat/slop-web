@@ -1,5 +1,13 @@
 # APK2077 and bounded Worlds upload transport
 
+## First World publication and preview recovery
+
+Knight Crawler published successfully on the first normal publisher attempt at 08:43:35 UTC. The caller's 145-second finish deadline expired two seconds earlier, so workflow36985130838 reported `service_unavailable` and never reached MP4 attachment. Independent public reads confirm the exact reviewed source, `persistent: true`, mobile support and one immutable published release. This is not a reason to republish or send another draft.
+
+The added `repair_one` workflow requires an explicit published MCP slug, source digest and release root. It verifies every immutable source byte before the existing World recorder and uses only the existing OIDC media endpoint. It skips the queue/catalog passes, refuses withdrawn or changed releases, preserves already-attached current previews, and stops on unknown upload outcomes. Twenty targeted repair tests plus workflow guards pass. Full check: 466 web tests pass/9 opt-in skips; 122 MCP tests pass/2 Windows-only skips; production build generates 392 routes. Production repair and public video acceptance remain separate post-merge checks.
+
+The native shared-link resolver also omitted the existing `persistent` field. Guarded migration20261002210000 adds that single authoritative JSON pair while preserving every other definition byte, permission and visibility condition. 115 database checks, live rollback rehearsal, independent preflight/apply/postflight and official history verification pass. The public Knight Crawler resolver now returns200 and `persistent: true`; native shared-link UI acceptance is not claimed.
+
 ## Live follow-up (supersedes the initial upload blocker below)
 
 - PR62 and Pages36979906868 completed. A full download from `https://slop.game/downloads/Slop-3.7.7-build-2077-universal.apk` returned 200 with zero redirects and the exact size/hash below; the fresh browser download page displays build2077. The2076 first-party URL remains available.
