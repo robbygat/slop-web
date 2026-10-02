@@ -1,5 +1,9 @@
+import {inspectBundle,fileBytes} from './bundle-rules.mjs';
+import {mcpRuntimeProblem} from './runtime-policy.mjs';
+export {fileBytes};
 export const VERSION = "1.0.0";
 export const MAX_BODY = 2_300_000;
+export const MAX_DRAFT_BODY = 70_000_000;
 export const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const HASH = /^[0-9a-f]{64}$/;
@@ -59,7 +63,10 @@ export async function validateDraft(input) {
   );
   const name = boundedText(input.name, 80);
   const description = boundedText(input.description ?? "", 240, true);
-  const files = object(input.files);
+  let checked;
+  try { checked=inspectBundle(object(input.files),{retainDecoded:false}); }
+  catch(error) { throw new BridgeError(error.message,error.message.includes('too_large')?413:400); }
+  const files = checked.files;
   let target_platform = "mobile";
   if (Object.hasOwn(files, "slop-platform.json")) {
     let metadata;
@@ -71,36 +78,30 @@ export async function validateDraft(input) {
   }
   const paths = Object.keys(files).sort();
   requireValue(
-    paths.length > 0 && paths.length <= 64 &&
+    paths.length > 0 && paths.length <= checked.budget.files &&
       Object.hasOwn(files, "index.html"),
     "invalid_bundle",
   );
   let bytes = 0;
   const manifest = [];
+  // Reuse one bounded decode buffer only after each awaited digest completes.
+  // Raw source strings remain immutable; SDK/client callers retain independent
+  // byte arrays by default. No 50 MB collection of temporary binary buffers.
+  const binaryBuffer=new Uint8Array(Math.max(0,...paths.filter(path=>typeof files[path]!=='string').map(path=>checked.byteLengths.get(path))));
   for (const path of paths) {
-    // V1 is an intentionally small, self-contained text bundle. No archives,
-    // remote fetching, paid asset manifests, symlinks, hidden paths or binaries.
-    requireValue(
-      path.length <= 160 &&
-        /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*\.(?:html|js|css|json|svg|txt)$/
-          .test(path),
-      "invalid_path",
-    );
-    requireValue(
-      typeof files[path] === "string" && !files[path].includes("\u0000"),
-      "invalid_file",
-    );
     requireValue(
       !/slop.*(?:asset|entitlement)|(?:asset|entitlement).*manifest/i.test(
         path,
       ),
       "store_assets_not_supported",
     );
-    const data = new TextEncoder().encode(files[path]);
+    // Decode/hash one bounded asset at a time instead of retaining 50 MB of
+    // binary buffers while serializing the outgoing source descriptors.
+    const data = fileBytes(path,files[path],binaryBuffer);
     requireValue(data.length > 0, "empty_file");
     bytes += data.length;
     requireValue(
-      data.length <= 512_000 && bytes <= 2_000_000,
+      data.length <= checked.budget.file && bytes <= checked.budget.total,
       "bundle_too_large",
       413,
     );
@@ -111,6 +112,7 @@ export async function validateDraft(input) {
     });
   }
   requireValue(files["index.html"].trim().length > 0, "empty_entry_point");
+  if(checked.persistent)requireValue(mcpRuntimeProblem(manifest,files['index.html'],true)===null,'runtime_invalid');
   const digest = await sha256(
     manifest.map((e) => `${e.path}:${e.bytes}:${e.sha256}`).join("\n"),
   );
@@ -131,6 +133,7 @@ export async function validateDraft(input) {
     name,
     description,
     target_platform,
+    persistent: checked.persistent,
     files,
     manifest,
     digest,
@@ -146,6 +149,7 @@ export function mime(path) {
     json: "application/json; charset=utf-8",
     svg: "image/svg+xml; charset=utf-8",
     txt: "text/plain; charset=utf-8",
+    glb: "model/gltf-binary", bin: "application/octet-stream", jpg: "image/jpeg", webp: "image/webp", ktx2: "image/ktx2", ogg: "audio/ogg",
   })[path.split(".").pop()];
 }
 export function trustedPreview(receipt, slug, origins, now = Date.now()) {

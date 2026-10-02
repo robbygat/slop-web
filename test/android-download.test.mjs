@@ -6,13 +6,13 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const release = JSON.parse(await read('public/downloads/android-release.json'));
 const manifest = JSON.parse(await read('public/downloads/android-build-manifest.json'));
 
-test('shared Android release metadata names the verified 2074 APK', () => {
-  assert.equal(release.build, 2074);
+test('shared Android release metadata names the verified 2076 APK', () => {
+  assert.equal(release.build, 2076);
   assert.equal(release.package, 'game.slop.api');
   assert.equal(release.version, '3.7.7');
-  assert.equal(release.file, 'Slop-3.7.7-build-2074-universal.apk');
-  assert.equal(release.url, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2074/${release.file}`);
-  assert.equal(release.sha256, '0a6ad686ae280d3959f91bd281732c9827b4ec58fa51586256355c84fe4b8a2f');
+  assert.equal(release.file, 'Slop-3.7.7-build-2076-universal.apk');
+  assert.equal(release.url, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/${release.file}`);
+  assert.equal(release.sha256, '609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab');
 });
 
 test('download page and artifact manifest agree without changing ad gates', () => {
@@ -20,8 +20,9 @@ test('download page and artifact manifest agree without changing ad gates', () =
     assert.equal(manifest[field], release[field]);
   }
   assert.equal(manifest.versionCode, release.build);
-  assert.equal(manifest.bytes, 183923538);
+  assert.equal(manifest.bytes, 184841937);
   assert.equal(manifest.adsEnabled, false);
+  assert.equal(manifest.AD_ID_permission, false);
   assert.equal(manifest.signingCertificateSha256, '4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab');
 });
 

@@ -7,9 +7,13 @@ export const supabase=createClient(API,publicKey,{
   auth:{storageKey:'sb-api-auth-token',flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true},
 });
 let authSnapshot=null;let epoch=0;
+const sessionScopeListeners=new Set();
+export const getSessionEpoch=()=>epoch;
+export function onSessionScope(listener){sessionScopeListeners.add(listener);return()=>sessionScopeListeners.delete(listener);}
 export function syncSession(session){
   if(authSnapshot?.user?.id!==session?.user?.id)epoch++;
   authSnapshot=session?{...session,epoch}:null;
+  for(const listener of sessionScopeListeners){try{listener();}catch{}}
 }
 export const getSession=()=>authSnapshot;
 export const verifySession=createSessionVerifier({publicKey});

@@ -1,6 +1,8 @@
-import { BridgeError, mime, requireValue, UUID, VERSION } from "./contract.mjs";
+import { BridgeError, fileBytes, mime, requireValue, UUID, VERSION } from "./contract.mjs";
 import { createHandler } from "./handler.mjs";
 import { createOidcVerifier } from "./publisher.mjs";
+import { jsonBodyStream } from "./json-body.mjs";
+import { readJsonStream } from "./json-reader.mjs";
 
 const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
 function platformKey(mapName: string, legacyName: string): string {
@@ -50,6 +52,8 @@ async function request(
   extra: Record<string, string> = {},
   apiKey = anon,
   timeoutMs = 30_000,
+  streamJson = false,
+  streamResponse = false,
 ) {
   const response = await fetch(`${base}${path}`, {
     method,
@@ -60,10 +64,10 @@ async function request(
       ...extra,
       ...(body == null ? {} : { "content-type": "application/json" }),
     },
-    body: body == null ? undefined : JSON.stringify(body),
+    body: body == null ? undefined : streamJson ? jsonBodyStream(body) : JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  const result = await response.json().catch(() => null);
+  const result = await (streamResponse ? readJsonStream(response.body) : response.json()).catch(() => null);
   if (!response.ok) {
     if (path === "/functions/v1/game-bundle" &&
       (body as { action?: string } | undefined)?.action === "preview" &&
@@ -95,12 +99,12 @@ const deps = {
     request("/rest/v1/rpc/mcp_service", service.startsWith("sb_secret_") ? null : service, "POST", {
       p_action: action,
       p: input,
-    }, {}, service),
+    }, {}, service, 30_000, action === "send_draft"),
   phone: (token: string, action: string, input: unknown) =>
     request("/rest/v1/rpc/mcp_phone", token, "POST", {
       p_action: action,
       p: input,
-    }),
+    }, {}, anon, 30_000, false, action === "claim_draft"),
   verifyUser: async (token: string) => {
     const user = await request("/auth/v1/user", token);
     requireValue(
@@ -151,7 +155,7 @@ const deps = {
   uploadFiles: async (
     token: string,
     slug: string,
-    files: Record<string, string>,
+    files: Record<string, string | {encoding: 'base64'; data: string}>,
     ownerId: string,
   ) => {
     // Bounded four-request fanout. A failed worker never continues launching
@@ -164,7 +168,7 @@ const deps = {
         p_slug: slug,
         p_objects: entries.map(([path, body]) => ({
           path: `${slug}/${VERSION}/${path}`,
-          bytes: new TextEncoder().encode(body).length,
+          bytes: fileBytes(path,body).length,
           content_type: mime(path),
         })),
       },
@@ -197,7 +201,7 @@ const deps = {
                   "x-metadata": metadata,
                   "cache-control": "max-age=0",
                 },
-                body,
+                body: typeof body==='string'?body:fileBytes(path,body),
                 signal: AbortSignal.timeout(30_000),
               },
             );

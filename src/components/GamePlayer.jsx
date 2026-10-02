@@ -13,6 +13,8 @@ import {lockBodyScroll} from '../lib/scroll-lock.js';
 import {useAuth} from '../auth.jsx';
 import {Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
+import {usePersistentPlayer} from './usePersistentPlayer.js';
+import PersistentRunChoice from './PersistentRunChoice.jsx';
 import './player.css';
 export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
  const {profile,user,signIn}=useAuth();
@@ -29,8 +31,11 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const desktopHint=desktop?(reviewedDesktopGame(game)?.hint||controls?.hint):null;
  const canChangeView=desktop&&!stageAspect&&originalFormat.playerAspect!==wideFormat.playerAspect,wideView=canChangeView&&format.playerAspect===wideFormat.playerAspect;
  const send=message=>{if(['pause','restart','hostReleaseKeys'].includes(message.type))keyboard.current?.release();frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');};
+ const journey=usePersistentPlayer({game,preview,url,generation:restart,send,onReload:()=>setRestart(value=>value+1),onRetire:cause=>{setError(cause);setDoc(null);}});
+ const persistentReplayBusy=useRef(false);
+ const journeyRef=useRef(journey);journeyRef.current=journey;state.current.persistentBlocked=journey.blocked;
  const focusFrame=target=>{frame.current?.focus({preventScroll:true});target?.postMessage(JSON.stringify({type:'hostFocus'}),'*');target?.focus();};
- const focusGame=()=>{if(!state.current.paused&&!state.current.board&&state.current.finished===null&&!state.current.waitingStart&&!document.hidden)focusFrame(frame.current?.contentWindow);};
+ const focusGame=()=>{if(!state.current.paused&&!state.current.persistentBlocked&&!state.current.board&&state.current.finished===null&&!state.current.waitingStart&&!document.hidden)focusFrame(frame.current?.contentWindow);};
  function newRun(interacted){
   const session=getSession(),owner=session?.user&&!session.user.is_anonymous?session.user.id:null;
   const current={score:0,ended:false,interacted,baseline:null,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview?scoreRun(game.slug):null};
@@ -61,7 +66,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  async function signInForNextRound(){await exitExpanded();signIn({gameSlug:game?.slug});}
  useEffect(()=>{
   const bridge=createHostKeyboardBridge({getContext:()=>{const current=state.current;return {frame:frame.current?.contentWindow,
-    enabled:current.ready&&!current.error&&!current.desktopRequired&&!current.paused&&current.finished===null&&!current.board&&!current.waitingStart&&!document.hidden&&!restartGate.current.pending,
+    enabled:current.ready&&!current.error&&!current.desktopRequired&&!current.paused&&!current.persistentBlocked&&current.finished===null&&!current.board&&!current.waitingStart&&!document.hidden&&!restartGate.current.pending,
     ownsKeyboard:!!container.current?.contains(document.activeElement)};},
     send:(target,message)=>target?.postMessage(JSON.stringify(message),'*'),focus:focusFrame,
     onInteraction:()=>{const current=run.current;if(current&&!current.ended)current.interacted=true;}});
@@ -76,7 +81,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   window.addEventListener('keydown',down,true);window.addEventListener('keyup',up,true);window.addEventListener('blur',blurred);document.addEventListener('visibilitychange',hidden);document.addEventListener('pointerdown',pointer,true);document.addEventListener('focusin',focused,true);
   return()=>{bridge.release();keyboard.current=null;window.removeEventListener('keydown',down,true);window.removeEventListener('keyup',up,true);window.removeEventListener('blur',blurred);document.removeEventListener('visibilitychange',hidden);document.removeEventListener('pointerdown',pointer,true);document.removeEventListener('focusin',focused,true);};
  },[]);
- useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send,
+ useImperativeHandle(ref,()=>({capture:request=>send({type:'webCapture',request}),send,flush:()=>journeyRef.current.flush(),
   // One canvas frame as an ImageBitmap (publish-time video capture), or null.
   requestFrame:()=>new Promise(resolve=>{const win=frame.current?.contentWindow;if(!win)return resolve(null);const request='f'+Math.random().toString(36).slice(2,14);
    const done=value=>{clearTimeout(timer);window.removeEventListener('message',on);resolve(value);};
@@ -93,19 +98,24 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   setDoc(null);setError(null);setReady(false);setPointerLocked(false);setPointerError('');setFinished(null);setSave(null);setBaseline(null);setBoard(false);setWaitingStart(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
-  if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
-  else loadDocument(url,{signal:controller.signal,preview}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
+  if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview&&verifiedDocument.current.persistent===game?.persistent)setDoc(verifiedDocument.current.value);
+  else loadDocument(url,{signal:controller.signal,preview,persistent:game?.persistent===true,manifest:game?.bundle_manifest}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,persistent:game?.persistent,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
   return()=>{keyboard.current?.release();restartGate.current.cancel();controller.abort();run.current=null;};
- },[url,restart,preview,game?.id,game?.slug,requireInteraction,desktopRequired]);
+ },[url,restart,preview,game?.id,game?.slug,game?.persistent,requireInteraction,desktopRequired]);
  useEffect(()=>{
   const onMessage=e=>{
-   const event=acceptPlayerEvent(e.source,frame.current?.contentWindow,e.data);if(!event)return;
+   const event=acceptPlayerEvent(e.source,frame.current?.contentWindow,e.data,{persistent:journeyRef.current.enabled});if(!event)return;
+   if(event.type.startsWith('persist-')){
+    if(!journeyRef.current.enabled){send({type:event.type==='persist-init'?'persist-data':'persist-ack',request:event.request,error:'This release is not enabled as a Slop World. Progress cannot be saved.'});setError(new Error('This game needs a published Slop World save capability.'));return;}
+    void journeyRef.current.handle(event);return;
+   }
+   if(event.type==='ready'&&event.source!=='document')journeyRef.current.markReady();
    if(event.type==='restart-ack'){restartGate.current.receive(e.source,event);return;}
    if(restartGate.current.pending){if(event.type==='loadError')restartGate.current.fail(e.source);return;}
    const current=run.current;if(!current)return;
    // The relay's completed document is playable even when a legacy game never
    // emits SDK ready. Only the trusted outer frame can send the loaded signal.
-   if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board||state.current.waitingStart?'pause':'resume'});if(focusAtStart.current){focusAtStart.current=false;focusGame();}}
+   if(event.type==='ready'){setReady(true);send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused||state.current.persistentBlocked||state.current.finished!==null||state.current.board||state.current.waitingStart?'pause':'resume'});if(focusAtStart.current){focusAtStart.current=false;focusGame();}}
    if(event.type==='webInteraction'&&!current.ended)current.interacted=true;
    if(event.type==='webPointerLock'){setPointerLocked(event.locked);if(event.locked)setPointerError('');}
    if(event.type==='webPointerError'){setPointerError('Click the game again to capture your mouse.');}
@@ -125,13 +135,13 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    if(event.type==='loadError'&&!current.ended)setError(new Error(String(event.message||'The game failed to load.').slice(0,300)));
    callbacks.current?.(event);
   };
-  const onVisibility=()=>send({type:document.hidden||state.current.paused||state.current.finished!==null||state.current.board||state.current.waitingStart||restartGate.current.pending?'pause':'resume'});
+  const onVisibility=()=>send({type:document.hidden||state.current.paused||state.current.persistentBlocked||state.current.finished!==null||state.current.board||state.current.waitingStart||restartGate.current.pending?'pause':'resume'});
   window.addEventListener('message',onMessage);document.addEventListener('visibilitychange',onVisibility);
   return()=>{window.removeEventListener('message',onMessage);document.removeEventListener('visibilitychange',onVisibility);};
  },[preview]);
  useEffect(()=>{if(ready)send({type:'hostPointerMode',enabled:pointerMode});},[ready,pointerMode,restart]);
- useEffect(()=>{if(ready)send({type:paused||document.hidden||finished!==null||board||waitingStart?'pause':'resume'});},[paused,ready,finished,board,waitingStart]);
- useEffect(()=>{if(!doc||ready)return;const timer=setTimeout(()=>setError(new Error('This game is taking too long to start. Try reloading it.')),25000);return()=>clearTimeout(timer);},[doc,ready]);
+ useEffect(()=>{if(ready){if(paused||journey.blocked)void journey.flush().catch(()=>{});send({type:paused||journey.blocked||document.hidden||finished!==null||board||waitingStart?'pause':'resume'});}},[paused,ready,finished,board,waitingStart,journey.blocked]);
+ useEffect(()=>{if(!doc||ready||!journey.canMount)return;const timer=setTimeout(()=>setError(new Error('This game is taking too long to start. Try reloading it.')),25000);return()=>clearTimeout(timer);},[doc,ready,journey.canMount]);
  useEffect(()=>{const changed=()=>{if(!document.fullscreenElement)setExpanded(false);};document.addEventListener('fullscreenchange',changed);return()=>document.removeEventListener('fullscreenchange',changed);},[]);
  async function exitExpanded(){const el=container.current;if(el?.hidePopover&&el.matches(':popover-open'))el.hidePopover();el?.removeAttribute('popover');setExpanded(false);if(document.fullscreenElement===el)await document.exitFullscreen().catch(()=>{});}
  useEffect(()=>{if(!expanded)return;const unlock=lockBodyScroll(document.body);const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();exitExpanded();}};document.addEventListener('keydown',key,true);return()=>{unlock();document.removeEventListener('keydown',key,true);};},[expanded]);
@@ -145,8 +155,10 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   focusGame();
  }
  function showBoard(){setBoard(true);send({type:'pause'});}function closeBoard(){state.current={...state.current,board:false};setBoard(false);if(finished===null&&!paused){send({type:'resume'});focusGame();}}
- function replay(){
-  if(restartGate.current.pending)return;
+ async function replay(){
+  if(restartGate.current.pending||persistentReplayBusy.current)return;
+  const capturedJourney=journeyRef.current;
+  if(capturedJourney.enabled){persistentReplayBusy.current=true;try{await capturedJourney.flush();await capturedJourney.newRun();if(!capturedJourney.current())return;}catch(cause){setError(cause);return;}finally{persistentReplayBusy.current=false;}}
   const source=frame.current?.contentWindow,current=run.current;
   const reload=()=>{focusAtStart.current=true;replayIntent.current=true;setRestart(v=>v+1);};
   if(!source||!current||!ready||error){reload();return;}
@@ -160,7 +172,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    setFinished(null);setSave(null);setBaseline(null);setBoard(false);setError(null);setReady(true);
    send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused?'pause':'resume'});focusGame();
   }});
-  if(request)send({type:'restart',request});
+  if(request)send({type:'restart',request,...(journeyRef.current.enabled?{persistent_newrun:true,generation:journeyRef.current.generation(),revision:journeyRef.current.revisions()}:{})});
  }
  function changeView(mode){send({type:'hostReleaseKeys'});setViewChoice({url,mode});focusGame();}
  function startFromRest(){focusAtStart.current=true;replayIntent.current=true;setWaitingStart(false);setRestart(v=>v+1);}
@@ -172,14 +184,16 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  </div>;
  return <div ref={container} className={`game-player ${theater?'theater-player':''} ${expanded?'is-expanded':''} ${pointerLocked?'has-pointer-lock':''} ${format.orientation}`} data-view={canChangeView?(wideView?'wide':'original'):undefined} style={{'--game-aspect':format.playerAspect}}>
   <div className="player-surface"><div className="player-frame" onPointerDownCapture={event=>{if(!event.target.closest?.('button,input,textarea,select,a'))focusGame();}}>
-   {doc&&!error&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad; fullscreen" allowFullScreen referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
+   {doc&&!error&&journey.canMount&&<iframe key={`${url}:${restart}`} ref={frame} tabIndex="0" data-frame-generation={restart} title={title} sandbox="allow-scripts allow-pointer-lock" credentialless="" allow="autoplay; gamepad; fullscreen" allowFullScreen referrerPolicy="no-referrer" src="/game-frame/index.html" onLoad={()=>{if(initialized.current){setError(new Error('This game tried to leave its player. Restart to return to the game.'));return;}initialized.current=true;frame.current?.contentWindow?.postMessage({type:'slop-player-init-v1',...doc},'*');}}/>}
+   <PersistentRunChoice journey={journey}/>
    {previewVideo&&!error&&!ready&&<PlayerPoster key={previewVideo.poster} poster={previewVideo.poster}/>}
-   {!ready&&!error&&<div className="player-boot-status" role="status"><i aria-hidden="true"/><span>Opening game…</span></div>}
+   {!ready&&!error&&!journey.blocked&&<div className="player-boot-status" role="status"><i aria-hidden="true"/><span>Opening game…</span></div>}
    {error&&<div className="player-error"><Notice error={error} onRetry={()=>{focusAtStart.current=true;verifiedDocument.current=null;setRestart(v=>v+1);}}/></div>}
    {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} baseline={baseline?.userId===user?.id?baseline:null} look={profile?.slop_look} onReplay={replay} onRetrySave={retrySave} onSignIn={signInForNextRound} viewerId={user?.id}/>}
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0} viewerId={user?.id}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
+  {journey.enabled&&journey.view.started&&!journey.view.conflict&&<p className="persistent-save-status" role={journey.view.error?'alert':'status'}>{journey.view.error?.message||(journey.view.pending?'Saved on this device · cloud sync pending':'Progress saved on this device')}</p>}
   <div className="player-controls"><div className="player-control-context">{canChangeView&&<div className="player-view-modes" role="group" aria-label="Game display"><button type="button" aria-pressed={!wideView} onClick={()=>changeView('original')} title="Use the game's original shape">Original</button><button type="button" aria-pressed={wideView} onClick={()=>changeView('wide')} title="Use a wider desktop playfield">Wide</button></div>}{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':desktopHint||title}</span>}</div><div>
    {!smallScreen&&<IconButton name="cursor" label={pointerMode?'Turn off mouse capture':'Capture mouse for this game'} aria-pressed={pointerMode} onClick={()=>{const enabled=!pointerMode;setPointerMode(enabled);setPointerError('');send({type:'hostPointerMode',enabled});focusGame();}}/>}
    {game&&!preview&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}

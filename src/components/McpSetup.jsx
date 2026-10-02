@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import {Button,CopyButton} from './ui.jsx';
 import {Icon} from './Icon.jsx';
 import RobotPortrait from './RobotPortrait.jsx';
-export const packageUrl='https://slop.game/downloads/slop-game-mcp-0.5.2.tgz';
+export const packageUrl='https://slop.game/downloads/slop-game-mcp-0.6.0.tgz';
 const config=JSON.stringify({mcpServers:{slop:{type:'stdio',command:'npx',args:['--yes',`--package=${packageUrl}`,'slop-mcp']}}},null,2);
 const openCodeConfig=JSON.stringify({$schema:'https://opencode.ai/config.json',mcp:{slop:{type:'local',command:['npx','--yes',`--package=${packageUrl}`,'slop-mcp'],enabled:true,timeout:60000}}},null,2);
 const clients={

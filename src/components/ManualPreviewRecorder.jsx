@@ -34,8 +34,9 @@ export default function ManualPreviewRecorder({game,onClose}){
   try{assertRecordingOwner(owner,getSession());await video.attach(current.slug,{expectedGame:release});if(alive.current)setPhase('saved');}
   catch(e){if(alive.current){setError(mcpRecoveryError(e));setPhase('review');}}finally{pending.current=false;}
  }
+ async function close(){if(phase==='saving')return;try{await player.current?.flush();if(alive.current)onClose();}catch(error){if(alive.current)setError(error);}}
  const active=phase==='recording',reviewing=['review','saving','saved'].includes(phase);
- return <Modal title={`Record preview · ${game.name}`} onClose={()=>{if(phase!=='saving')onClose();}} className="manual-preview-modal">
+ return <Modal title={`Record preview · ${game.name}`} onClose={close} className="manual-preview-modal">
   {phase==='loading'?<Loading label="Checking your published game…"/>:<>
    <div className="manual-preview-layout">
     {current&&<div className={`manual-preview-stage ${reviewing?'is-reviewing':''}`}>
@@ -48,7 +49,7 @@ export default function ManualPreviewRecorder({game,onClose}){
      {!supported&&<Notice error={new Error(RECORDING_UNSUPPORTED)}/>}
      <Notice error={error||video.error}/>
      <p className="manual-preview-status" role="status">{phase==='saved'?'Preview saved.':phase==='saving'?'Saving your preview…':active?(video.status==='recording'?`Recording · ${seconds}s. Play through a moving moment.`:'Starting the recorder…'):reviewing?'Review your clip before saving.':ready?'Ready when you are.':'Loading your game…'}</p>
-     {phase==='saved'?<Button onClick={onClose}>Done</Button>:reviewing?<div className="manual-preview-actions"><Button disabled={phase==='saving'} onClick={save}>{phase==='saving'?'Saving…':'Save preview'}</Button><Button variant="secondary" disabled={phase==='saving'} onClick={()=>{setClipUrl(null);setPhase('ready');setError(null);}}>Retake</Button></div>:<Button disabled={!current||!ready||!supported||(active&&(seconds<4||video.status!=='recording'))} onClick={active?review:record}>{active?'Review clip':'Record preview'}</Button>}
+     {phase==='saved'?<Button onClick={close}>Done</Button>:reviewing?<div className="manual-preview-actions"><Button disabled={phase==='saving'} onClick={save}>{phase==='saving'?'Saving…':'Save preview'}</Button><Button variant="secondary" disabled={phase==='saving'} onClick={()=>{setClipUrl(null);setPhase('ready');setError(null);}}>Retake</Button></div>:<Button disabled={!current||!ready||!supported||(active&&(seconds<4||video.status!=='recording'))} onClick={active?review:record}>{active?'Review clip':'Record preview'}</Button>}
      <p className="fine">Slop keeps your latest 7 seconds. Clips need visible movement and smooth playback.</p>
     </div>
    </div>

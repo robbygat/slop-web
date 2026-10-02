@@ -1,0 +1,32 @@
+Slop.persist: The save revision is not current.
+Slop.persist: The save revision is not current.
+✖ real SDK checkpoint barrier retains newer edits until the genuine durable host ACK (27.214375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 105.330042
+
+✖ failing tests:
+
+test at test/persistent-sdk-host.test.mjs:96:1
+✖ real SDK checkpoint barrier retains newer edits until the genuine durable host ACK (27.214375ms)
+  AssertionError [ERR_ASSERTION]: ordinary writes must wait while their own checkpoint ACK is held
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/slop-web-persistent-20261002.I8zHz1/worktree/test/persistent-sdk-host.test.mjs:112:10)
+      at runNextTicks (node:internal/process/task_queues:65:5)
+      at process.processImmediate (node:internal/timers:541:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

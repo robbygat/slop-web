@@ -1,0 +1,66 @@
+
+> slop-web@1.0.0 build
+> vite build && node tools/postbuild-routes.mjs
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 303 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                   3.03 kB │ gzip:   1.15 kB
+dist/assets/ManualPreviewRecorder-BAFy4TUf.css    1.83 kB │ gzip:   0.67 kB
+dist/assets/GameCrown-BzEoivrQ.css                2.32 kB │ gzip:   0.77 kB
+dist/assets/You-BXLpl9D9.css                      2.84 kB │ gzip:   0.95 kB
+dist/assets/Download-CdEqNyD3.css                 2.87 kB │ gzip:   0.87 kB
+dist/assets/robot-shop-RIlYiuDF.css               6.20 kB │ gzip:   1.73 kB
+dist/assets/Shop-D_RAj26g.css                     6.37 kB │ gzip:   1.93 kB
+dist/assets/auth-4ImkmYkh.css                     6.68 kB │ gzip:   1.83 kB
+dist/assets/GameDetail-C_LIoOZ8.css               8.22 kB │ gzip:   2.14 kB
+dist/assets/PlayerCardShare-DDLwz1x_.css          8.76 kB │ gzip:   2.16 kB
+dist/assets/Feed-DbqhnQ2G.css                    11.82 kB │ gzip:   3.14 kB
+dist/assets/GamePlayer-ogAe-Kho.css              13.55 kB │ gzip:   3.52 kB
+dist/assets/Quests-DBWIRIlC.css                  22.22 kB │ gzip:   4.64 kB
+dist/assets/Social-Cf7YZUQ0.css                  31.22 kB │ gzip:   6.19 kB
+dist/assets/Connect-BO0ukwVV.css                 35.47 kB │ gzip:   6.85 kB
+dist/assets/index-CwPnbnvR.css                  121.15 kB │ gzip:  25.68 kB
+dist/assets/robot-expression-COWprgoO.js          0.14 kB │ gzip:   0.14 kB
+dist/assets/feed-crown-CfUXjWaZ.js                0.65 kB │ gzip:   0.42 kB
+dist/assets/rolldown-runtime-hePW80VL.js          0.71 kB │ gzip:   0.42 kB
+dist/assets/GameCrown-Dmlujuh7.js                 1.25 kB │ gzip:   0.60 kB
+dist/assets/score-contracts-BOfRy2Jz.js           2.08 kB │ gzip:   0.91 kB
+dist/assets/leaderboard-Da9RmIHH.js               2.43 kB │ gzip:   1.33 kB
+dist/assets/Download-CbxFPMTi.js                  2.97 kB │ gzip:   1.14 kB
+dist/assets/profile-card-art-CGTWvWLN.js          3.54 kB │ gzip:   1.80 kB
+dist/assets/PlayerCardShare-Bs2tOV45.js           5.05 kB │ gzip:   2.17 kB
+dist/assets/robot-catalog-CtXmd3TK.js             5.32 kB │ gzip:   2.57 kB
+dist/assets/gifenc-D9RKotU2.js                    8.98 kB │ gzip:   3.93 kB
+dist/assets/GameDetail-Bbjz1htW.js                9.42 kB │ gzip:   3.74 kB
+dist/assets/Shop-DqTj50z4.js                     12.50 kB │ gzip:   4.55 kB
+dist/assets/stage-Cl6ai_fj.js                    13.14 kB │ gzip:   5.04 kB
+dist/assets/Feed-srU3Bt88.js                     13.22 kB │ gzip:   5.02 kB
+dist/assets/You-CgBIx2lD.js                      14.15 kB │ gzip:   5.11 kB
+dist/assets/face2d-D1uManK_.js                   14.99 kB │ gzip:   6.45 kB
+dist/assets/robot-shop-Cgyh7Q9k.js               17.24 kB │ gzip:   4.73 kB
+dist/assets/Quests-nuuKPjiN.js                   22.20 kB │ gzip:   7.09 kB
+dist/assets/browser-CCrYwriZ.js                  23.47 kB │ gzip:   8.86 kB
+dist/assets/ui-DpKMQqaH.js                       26.60 kB │ gzip:  10.38 kB
+dist/assets/preload-helper-qcTvh7xW.js           34.71 kB │ gzip:   9.46 kB
+dist/assets/Social-Cw_c_SVw.js                   37.33 kB │ gzip:  11.67 kB
+dist/assets/hero-scene-BwdLmmgV.js               47.21 kB │ gzip:  16.16 kB
+dist/assets/robots-DafO3Wa0.js                   48.34 kB │ gzip:  16.43 kB
+dist/assets/body-stage-4iezSh9q.js               51.32 kB │ gzip:  16.22 kB
+dist/assets/GamePlayer-FOnHrfOH.js               57.19 kB │ gzip:  19.68 kB
+dist/assets/ManualPreviewRecorder-KPU8zzPE.js    57.75 kB │ gzip:  19.28 kB
+dist/assets/Connect-D-ZtaLaR.js                  61.84 kB │ gzip:  20.09 kB
+dist/assets/auth-D5Abug07.js                    248.99 kB │ gzip:  66.13 kB
+dist/assets/index-CorABXMP.js                   276.20 kB │ gzip:  89.35 kB
+dist/assets/three-r128-BCs59F5m.js              610.29 kB │ gzip: 151.59 kB
+dist/assets/live-loop-CKepQS0i.js               699.88 kB │ gzip: 182.88 kB
+
+✓ built in 674ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Generated 388 HTTP-200 game routes.

@@ -3,6 +3,7 @@ import {supabase,syncSession,result,safeSignOut,verifySession,onInvalidSession,g
 import {createSessionResolver,pendingAuthReturn} from './lib/session-contracts.js';
 import {BUILD_IDEA_KEY} from './lib/build-draft.js';
 import {oauthCallbackUrl} from './lib/pairing-contracts.js';
+import {claimDeviceSaves} from './lib/persist-runtime.js';
 import {gameAuthReturnRoute,clearGameAuthReturn,saveGameAuthReturn,consumeGameAuthReturn} from './lib/auth-game-return.js';
 import {Button,Modal,Notice} from './components/ui.jsx';
 import {Icon} from './components/Icon.jsx';
@@ -44,6 +45,7 @@ export function AuthProvider({children}){
   return()=>{alive=false;resolver.cancel();removeInvalid();subscription.unsubscribe();window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',focus);};
  },[]);
  useEffect(()=>{let alive=true;setProfile(null);if(session?.user?.id)result(supabase.from('profiles').select('id,username,display_name,avatar_url,bio,slop_look,profile_banner_id').eq('id',session.user.id).maybeSingle()).then(p=>{if(alive)setProfile(p);}).catch(()=>{});return()=>{alive=false;};},[session?.user?.id,profileVersion]);
+ useEffect(()=>{if(ready&&session?.user&&!session.user.is_anonymous)void claimDeviceSaves().catch(()=>{});},[ready,session?.user?.id]);
  useEffect(()=>{
   if(!session||session.user.is_anonymous)return;
   setLogin(false);

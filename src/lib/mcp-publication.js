@@ -1,6 +1,6 @@
 import {asOwner,result,getSession,mcpRequest,request} from './supabase.js';
 import {SlopError,UUID,DIGEST,trustedEntry} from './contracts.js';
-import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
+import {bundleIdentity,mime,sha256,fileBytes,fileValue,normalizeBundleFiles} from './bundle-contracts.js';
 import {reserve,uploadMedia} from './creator.js';
 import {validCaptureDimensions,validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
@@ -15,17 +15,17 @@ async function gameState(client,owner,p){const game=await result(client.from('ga
 
 async function sourceFiles(client,slug,expected){
  const queue=[''],paths=[];let directories=0;const prefix=slug+'/1.0.0/';
- while(queue.length){assertCurrent(expected);if(++directories>96)throw new SlopError('invalid_response');const directory=queue.shift();const rows=await result(client.storage.from('game-drafts').list(prefix+directory,{limit:100,sortBy:{column:'name',order:'asc'}}));
-  if(rows.length>=100)throw new SlopError('invalid_response');for(const row of rows){const path=directory+row.name;if(!directory&&['covers','previews'].includes(row.name))continue;if(!/^[A-Za-z0-9_.-]+$/.test(row.name)||row.name.includes('..'))throw new SlopError('invalid_response');if(row.id==null){queue.push(path+'/');continue;}if(!/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:html|js|css|json|svg|txt)$/.test(path)||paths.length>=64)throw new SlopError('invalid_response');paths.push(path);}
+ while(queue.length){assertCurrent(expected);if(++directories>2000)throw new SlopError('invalid_response');const directory=queue.shift();const rows=await result(client.storage.from('game-drafts').list(prefix+directory,{limit:1000,sortBy:{column:'name',order:'asc'}}));
+  if(rows.length>=1000)throw new SlopError('invalid_response');for(const row of rows){const path=directory+row.name;if(!directory&&['covers','previews'].includes(row.name))continue;if(!/^[A-Za-z0-9_.-]+$/.test(row.name)||row.name.includes('..'))throw new SlopError('invalid_response');if(row.id==null){queue.push(path+'/');continue;}if(!/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:html|js|css|json|svg|txt|glb|bin|jpg|webp|ktx2|ogg)$/.test(path)||paths.length>=400)throw new SlopError('invalid_response');paths.push(path);}
  }
- const files={};let total=0;for(const path of paths.sort()){assertCurrent(expected);const blob=await result(client.storage.from('game-drafts').download(prefix+path));if(!blob.size||blob.size>512000||(total+=blob.size)>2000000)throw new SlopError('invalid_response');files[path]=new TextDecoder('utf-8',{fatal:true}).decode(await blob.arrayBuffer());}
- assertCurrent(expected);return files;
+ const files={};let total=0;for(const path of paths.sort()){assertCurrent(expected);const blob=await result(client.storage.from('game-drafts').download(prefix+path));if(!blob.size||blob.size>8_000_000||(total+=blob.size)>50_000_000)throw new SlopError('invalid_response');files[path]=fileValue(path,new Uint8Array(await blob.arrayBuffer()));}
+ assertCurrent(expected);return normalizeBundleFiles(files);
 }
 export async function inspectMcpPublication(preview){
  const expected=getSession();if(!validPreview(preview,expected?.user.id))throw new SlopError('account_changed');
  return asOwner(async(owner,client)=>{const game=await gameState(client,owner,preview);assertCurrent(expected);const receipt=await mcpPublicationReceipt(game,preview);assertCurrent(expected);if(receipt)return {receipt};if(game.status!=='draft')throw new Error('This game is no longer an editable private draft.');
   const latest=await mcpRequest('slop-mcp','/drafts');assertCurrent(expected);const current=latest.submissions?.find(s=>s.submission_id===preview.submission_id);if(!current||current.status!=='ready'||current.digest!==preview.digest||current.slug!==preview.slug||current.game_id!==preview.game_id)throw new Error('The draft changed. Reopen the latest version from your inbox.');
-  const files=await sourceFiles(client,preview.slug,expected),identity=await bundleIdentity(files);assertCurrent(expected);if(identity.digest!==preview.digest)throw new Error('The game files changed. Reopen and playtest this version again.');const runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html']);if(runtimeError)throw new Error(runtimeError);return {files,identity,game};
+  const files=await sourceFiles(client,preview.slug,expected),identity=await bundleIdentity(files);assertCurrent(expected);if(identity.digest!==preview.digest)throw new Error('The game files changed. Reopen and playtest this version again.');const runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html'],{persistent:identity.persistent});if(runtimeError)throw new Error(runtimeError);return {files,identity,game};
  });
 }
 export async function prepareMcpPublication({preview,title,tagline,cover,gif,frameCount,width,height,onStage}){
@@ -108,9 +108,9 @@ export async function submitMcpUpdate({preview,target,title,tagline,cover,gif,fr
   onStage?.('Preparing your update…');
   await result(client.from('games').update({name:title.trim(),description:tagline.trim(),prompt:'Created with a connected coding app',html:files['index.html']}).eq('id',live.id).eq('owner_id',owner).in('status',['draft','private']).select('id').single());assertCurrent(expected);
   const entries=Object.entries(files);
-  const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:new TextEncoder().encode(body).length,content_type:mime(path)})));assertCurrent(expected);
+  const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:fileBytes(path,body).length,content_type:mime(path)})));assertCurrent(expected);
   onStage?.('Uploading the new version…');
-  for(let i=0;i<entries.length;i+=4){assertCurrent(expected);await Promise.all(entries.slice(i,i+4).map(([path,body])=>result(client.storage.from('game-drafts').upload(`${slug}/1.0.0/${path}`,new TextEncoder().encode(body),{contentType:mime(path),metadata,upsert:true,cacheControl:'0'}))));}
+  for(let i=0;i<entries.length;i+=4){assertCurrent(expected);await Promise.all(entries.slice(i,i+4).map(([path,body])=>result(client.storage.from('game-drafts').upload(`${slug}/1.0.0/${path}`,fileBytes(path,body),{contentType:mime(path),metadata,upsert:true,cacheControl:'0'}))));}
   assertCurrent(expected);
   const verified=await request('game-bundle','/',{ownerReceipt:false,body:{action:'preview',slug,version:'1.0.0',expected_bundle_digest:identity.digest,expected_bundle_manifest:identity.manifest}});
   if(verified.ok!==true||!trustedEntry(verified.url,{preview:true,slug}))throw new SlopError('invalid_response');assertCurrent(expected);

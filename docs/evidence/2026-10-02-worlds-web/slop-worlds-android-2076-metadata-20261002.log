@@ -1,0 +1,11 @@
+✔ shared Android release metadata names the verified 2076 APK (0.289ms)
+✔ download page and artifact manifest agree without changing ad gates (0.053625ms)
+✔ hero and download page use the shared release rather than stale APK constants (5.08525ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 43.15325

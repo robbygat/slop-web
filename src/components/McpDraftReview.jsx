@@ -49,6 +49,11 @@ export function McpDraftReview({preview,onClose,onPublished}){
   if(!['webCaptureResult','webCaptureError'].includes(e.type)||e.request!==pending.current?.request)return;
   const p=pending.current;clearTimeout(p.timer);pending.current=null;e.type==='webCaptureError'?p.reject(new Error(e.message)):p.resolve(e);
  }
+ async function close(){
+  if(busy||publishing.current)return;
+  try{await player.current?.flush();if(!alive.current)return;if(receiptRef.current)onPublished({...receiptRef.current,videoPending:receiptRef.current.status==='published'});else onClose();}
+  catch(error){if(alive.current)setError(error);}
+ }
  async function publish(){
   if(publishing.current)return;publishing.current=true;setBusy(true);setError(null);
   try{
@@ -77,10 +82,10 @@ export function McpDraftReview({preview,onClose,onPublished}){
   finally{publishing.current=false;if(alive.current)setBusy(false);}
  }
  const status=busy?stage:receipt?.status==='published'?'Your game is live. Retry saving its video preview.':!ready?'Starting your game…':clipReady?'Clip ready. Publish whenever you like.':clip.frames>=CLIP_FRAMES?'Keep playing. Slop needs a moment where something moves.':'Play for a few seconds. Slop is capturing your clip.';
- return <Modal title={update?`Update ${update.name}`:preview.name||'Your game'} onClose={()=>{if(!busy){if(receiptRef.current)onPublished({...receiptRef.current,videoPending:receiptRef.current.status==='published'});else onClose();}}} className="mcp-playtest-modal">
+ return <Modal title={update?`Update ${update.name}`:preview.name||'Your game'} onClose={close} className="mcp-playtest-modal">
   <ol className="publish-progress" aria-label="Publication progress"><li className={ready?'complete':'current'}><b>01</b> Play your game</li><li className={clipReady?'complete':ready?'current':''}><b>02</b> Capture a preview</li><li className={receipt?'complete':clipReady?'current':''}><b>03</b> {receipt?.status==='pending_review'?'In review':receipt?'Game saved':'Publish'}</li></ol>
   <div className={`mcp-playtest-layout ${preview.target_platform==='desktop'?'is-desktop':''}`}>
-   <GamePlayer ref={player} url={preview.preview_url} game={previewGameForTarget(preview.target_platform||'mobile')} stageAspect={captureStageAspect(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
+   <GamePlayer ref={player} url={preview.preview_url} game={{...previewGameForTarget(preview.target_platform||'mobile'),id:`preview-${preview.digest}`,root_game_slug:`preview-${preview.digest}`,persistent:preview.persistent===true,bundle_manifest:preview.bundle_manifest}} stageAspect={captureStageAspect(preview.target_platform||'mobile')} preview title={preview.name} onEvent={event}/>
    <div className="mcp-publication">
     <div className="mcp-publish-head"><span className="mcp-target-chip">{mcpTargetLabel(preview.target_platform)}</span><span className="fine">Version {preview.revision}</span></div>
     <label>Title<input value={title} onChange={e=>setTitle(e.target.value)} maxLength={80} disabled={busy||!!receipt}/></label>

@@ -10,13 +10,55 @@ requires the owner to enable Auto-publish for that connection, or to review and
 submit a draft in Slop. Connections cannot spend coins, buy assets, or change your account. Your agent never
 receives your Slop password, account session, or private preview URL.
 
+## Slop Worlds (0.6.0 candidate)
+
+This source/package adds persistent-v1 support. The package, web host, mobile host
+and bundle authority must be rolled out together before a World can be published.
+Local validation does not establish that the live service supports this version.
+
+Call `slop_game_template({persistent:true,target_platform:"cross-platform"})`.
+Keep its composed `slop.js` unchanged: it includes the Creator surface API and
+the canonical persistence/asset runtime. Arcade still uses unchanged creator-v1.
+
+- Await `Slop.persist({version,run,profile,migrate(old,fromVersion,scope)})`
+  before first-frame `Slop.ready()`. Run/profile migrate independently.
+- Mutate the returned live objects, then `save.commit()`; call
+  `save.checkpoint(label)` at room/floor transitions. `run.__label` appears in
+  the platform-owned Continue sheet. Never draw your own Continue/start UI.
+- `await Slop.persist.newRun()` clears only run; profile survives.
+  A genuine `Slop.finished(score)` first checkpoints the ended run/profile.
+  Saves and game-authored scores do not authorize rewards.
+- Budgets are decoded decimal bytes: 50,000,000 total, 8,000,000 per file,
+  400 files including platform metadata, and 5,000,000 first load. Arcade
+  remains 2,000,000 / 512,000 / 64 including metadata.
+- `slop.spec.json` must contain `persistent:true` and `first_load:[...]`
+  listing index.html plus the complete static HTML/CSS/module boot closure
+  and any early assets. A flag without an executable Slop.persist call is dropped.
+- Text is a string. Allowed World binary files (.glb .bin .jpg .webp .ktx2 .ogg)
+  use `{encoding:"base64",data:"canonical base64"}`. Hashes and limits use
+  decoded bytes, not the larger JSON/base64 transport. The request also has a
+  separate 70,000,000-byte raw JSON ceiling; pathological escaping can reach
+  that transport limit before the decoded bundle limit.
+- `await Slop.asset("zones/forge.glb")` returns `{url,arrayBuffer()}` from the
+  game's exact verified release only. Before ready, the path must be in
+  first_load. The host caches content hashes and evicts least-recently-played
+  release assets at 500 MB; it never evicts player save records.
+- `await Slop.three()` / `await Slop.loadGLTF("model.glb")` support bundled
+  self-contained GLB. External resources and unsupported compressed decoders
+  are rejected. KTX2 bytes are supported, not an advertised GLTF KTX2 decoder.
+- Never use localStorage, sessionStorage, IndexedDB or external fetch in game
+  code. The existing opaque sandbox/CSP stays unchanged.
+- Device commits precede ACKs and cloud sync. Explicit in-app closes await a
+  final flush; browser/OS termination can only preserve the last durable
+  checkpoint. Real hard-kill/offline/cross-device acceptance is a separate gate.
+
 ## Connect your coding agent
 
 Install Node.js 22.12 or later. The versioned package is hosted by Slop; there is
 no npm registry package to guess. It contains only the local adapter and its
 pinned runtime dependencies are resolved by npm.
 
-Upgrading an existing connection: update its package URL to `slop-game-mcp-0.5.2.tgz`
+Upgrading an existing connection: update its package URL to `slop-game-mcp-0.6.0.tgz`
 and restart the coding app’s MCP server. Keep the saved Slop credential; no new
 pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 
@@ -25,7 +67,7 @@ pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -34,7 +76,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -54,7 +96,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -72,7 +114,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -95,7 +137,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.5.2.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz",
         "slop-mcp"
       ]
     }
@@ -184,9 +226,11 @@ rules to the agent with the template.
 
 Keep `project_id` stable, increment integer `revision`, and use a new
 `request_id` for each new revision. Reuse a request ID only for an identical
-retry. Include `index.html`; use relative file paths. Bundles are self-contained
-text: HTML, JavaScript, CSS, JSON, SVG, and TXT. Maximum 64 files, 512 KB per file,
-and 2 MB total. Paid Store asset manifests, archives and binary uploads are not
+retry. Include `index.html`; use relative file paths. Arcade bundles remain
+self-contained text: HTML, JavaScript, CSS, JSON, SVG, and TXT, with a maximum
+64 files, 512,000 bytes per file and 2,000,000 total. Validated Slop Worlds use
+the larger decoded-byte budget and restricted binary descriptors described
+above. Paid Store asset manifests, archives and arbitrary binaries are not
 supported by this adapter.
 
 Source remains private. The service verifies your Slop session, reserves each
@@ -237,8 +281,15 @@ security checks. The Edge endpoint permits only owner routes from the exact
 `https://slop.game` browser origin. It validates user JWTs itself; opaque local
 agent tokens require gateway JWT verification to stay disabled.
 
-Deploy only the `slop-mcp` Edge function. The existing MCP migration is already
-live. **Do not bulk push migrations:** mobile and web migration histories differ.
+The historical Arcade MCP schema is already live. Worlds additionally requires
+the separately guarded `20261002130000_persistent_bundle_admission.sql` rollout
+from the mobile authority repository, followed by the matching `game-bundle`
+and `slop-mcp` functions. Do not infer those capabilities from this local package.
+The save migration `20261002120000` is already recorded and must not be replayed.
+Deploy only the exact reviewed function trees, preserving the downloaded live
+rollback sources. **Do not bulk push migrations or deploy/prune all functions:**
+mobile and web migration histories differ. Full-size 50 MB Edge memory acceptance
+and the guarded rehearsal/postflight are required before deploying this candidate.
 Modern Supabase publishable/secret key maps take precedence over legacy keys;
 server secrets stay in server-only API headers. Rollback first disables the
 feature/endpoint, then revokes bridge entry points with [rollback.sql](rollback.sql).

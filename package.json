@@ -9,6 +9,7 @@
     "start": "vite --host 127.0.0.1",
     "build": "vite build && node tools/postbuild-routes.mjs",
     "preview": "vite preview --host 127.0.0.1",
+    "qa:worlds": "node tools/worlds-acceptance/serve.mjs",
     "test": "node --test test/*.test.mjs",
     "test:mcp": "npm --prefix mcp test",
     "check": "npm run test && npm run test:mcp && npm run build"
@@ -26,6 +27,8 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "fake-indexeddb": "6.2.5",
+    "linkedom": "0.18.12",
     "vite": "8.3.0"
   }
 }
