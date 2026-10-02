@@ -3,7 +3,7 @@ import {loadDocument,acceptPlayerEvent} from '../lib/player.js';
 import {gamePlayFormat} from '../lib/game-play-format.js';
 import {gamePlatform,reviewedDesktopGame} from '../lib/game-platforms.js';
 import {canonicalGameUrl} from '../lib/game-links.js';
-import {scoreRun} from '../lib/leaderboard.js';
+import {scoreRun,loadPersonalBest} from '../lib/leaderboard.js';
 import {validRunScore} from '../lib/score-contracts.js';
 import {scoreSavedEvent} from '../lib/score-saved-event.js';
 import {getSession} from '../lib/supabase.js';
@@ -15,11 +15,11 @@ import {Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import './player.css';
 export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
- const {profile}=useAuth();
+ const {profile,user,signIn}=useAuth();
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),keyboard=useRef(null),focusAtStart=useRef(theater);callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
- const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
+ const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[baseline,setBaseline]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
  const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
  const[desktopLayout,setDesktopLayout]=useState(()=>matchMedia('(min-width:761px) and (hover:hover) and (pointer:fine)').matches),[viewChoice,setViewChoice]=useState(null);
  const[pointerMode,setPointerMode]=useState(false),[pointerLocked,setPointerLocked]=useState(false),[pointerError,setPointerError]=useState('');
@@ -31,7 +31,34 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const send=message=>{if(['pause','restart','hostReleaseKeys'].includes(message.type))keyboard.current?.release();frame.current?.contentWindow?.postMessage(JSON.stringify(message),'*');};
  const focusFrame=target=>{frame.current?.focus({preventScroll:true});target?.postMessage(JSON.stringify({type:'hostFocus'}),'*');target?.focus();};
  const focusGame=()=>{if(!state.current.paused&&!state.current.board&&state.current.finished===null&&!state.current.waitingStart&&!document.hidden)focusFrame(frame.current?.contentWindow);};
- function newRun(interacted){const session=getSession();return {score:0,ended:false,interacted,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview?scoreRun(game.slug):null};}
+ function newRun(interacted){
+  const session=getSession(),owner=session?.user&&!session.user.is_anonymous?session.user.id:null;
+  const current={score:0,ended:false,interacted,baseline:null,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview?scoreRun(game.slug):null};
+  // Let the previous round's in-flight save settle before taking this baseline.
+  // Gameplay and this round's eventual submission never wait for this read.
+  if(game&&!preview&&owner)Promise.resolve(run.current?.saveRequest).catch(()=>{}).then(()=>loadPersonalBest(game.slug,owner)).then(value=>{if(!current.ended)current.baseline={...value,userId:owner};},()=>{});
+  return current;
+ }
+ function saveRound(current,retry=false){
+  if(run.current!==current||!current.save)return;
+  if(current.saving)return;
+  current.saving=true;
+  setSave({state:'saving'});
+  // Only a read completed before game-over can establish a previous best.
+  // An instant round still saves immediately, without inventing a comparison.
+  setBaseline(current.baseline);
+  current.saveRequest=retry?current.save.retry():current.save.finish(current.score);
+  current.saveRequest.then(receipt=>{
+   if(run.current!==current)return;
+   const savedEvent=scoreSavedEvent(receipt,current.scoreContext,getSession());
+   if(receipt.state==='saved'&&!savedEvent)return;
+   setSave(receipt);
+   // Emitted only after the server receipt passed owner/game/request checks.
+   if(savedEvent)callbacks.current?.(savedEvent);
+  },error=>{if(run.current===current)setSave({state:'failed',retryable:!['account_changed','authentication_required','invalid_response'].includes(error?.code),errorCode:error?.code});}).finally(()=>{current.saving=false;});
+ }
+ function retrySave(){const current=run.current;if(current?.ended&&current.interacted&&current.save)saveRound(current,true);}
+ async function signInForNextRound(){await exitExpanded();signIn({gameSlug:game?.slug});}
  useEffect(()=>{
   const bridge=createHostKeyboardBridge({getContext:()=>{const current=state.current;return {frame:frame.current?.contentWindow,
     enabled:current.ready&&!current.error&&!current.desktopRequired&&!current.paused&&current.finished===null&&!current.board&&!current.waitingStart&&!document.hidden&&!restartGate.current.pending,
@@ -63,7 +90,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   keyboard.current?.release();
   if(desktopRequired){run.current=null;setDoc(null);setReady(false);setError(null);return;}
   const controller=new AbortController();const current=newRun(!requireInteraction||replayIntent.current);run.current=current;replayIntent.current=false;
-  setDoc(null);setError(null);setReady(false);setPointerLocked(false);setPointerError('');setFinished(null);setSave(null);setBoard(false);setWaitingStart(false);initialized.current=false;
+  setDoc(null);setError(null);setReady(false);setPointerLocked(false);setPointerError('');setFinished(null);setSave(null);setBaseline(null);setBoard(false);setWaitingStart(false);initialized.current=false;
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview)setDoc(verifiedDocument.current.value);
@@ -91,14 +118,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
     // as the player's result.
     if(requireInteraction&&!current.interacted){current.ended=true;setReady(true);setWaitingStart(true);send({type:'pause'});return;}
     current.ended=true;current.score=score;setReady(true);setFinished(score);setBoard(false);send({type:'pause'});
-    if(current.save&&current.interacted)current.save.finish(score).then(receipt=>{
-     if(run.current!==current)return;
-     const savedEvent=scoreSavedEvent(receipt,current.scoreContext,getSession());
-     if(receipt.state==='saved'&&!savedEvent)return;
-     setSave(receipt);
-     // Emitted only after the server receipt passed owner/game/request checks.
-     if(savedEvent)callbacks.current?.(savedEvent);
-    },()=>{if(run.current===current)setSave({state:'failed'});});
+    if(current.save&&current.interacted)saveRound(current);
     else if(current.save)setSave({state:'idle'});
     else setSave({state:preview?'preview':'guest'});
    }
@@ -137,7 +157,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    if(frame.current?.contentWindow!==source||run.current!==current)return;
    run.current=newRun(true);
    state.current={...state.current,finished:null,board:false};
-   setFinished(null);setSave(null);setBoard(false);setError(null);setReady(true);
+   setFinished(null);setSave(null);setBaseline(null);setBoard(false);setError(null);setReady(true);
    send({type:'mute',on:state.current.muted});send({type:document.hidden||state.current.paused?'pause':'resume'});focusGame();
   }});
   if(request)send({type:'restart',request});
@@ -156,8 +176,8 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    {previewVideo&&!error&&!ready&&<PlayerPoster key={previewVideo.poster} poster={previewVideo.poster}/>}
    {!ready&&!error&&<div className="player-boot-status" role="status"><i aria-hidden="true"/><span>Opening game…</span></div>}
    {error&&<div className="player-error"><Notice error={error} onRetry={()=>{focusAtStart.current=true;verifiedDocument.current=null;setRestart(v=>v+1);}}/></div>}
-   {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} look={profile?.slop_look} onReplay={replay}/>}
-   {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
+   {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} baseline={baseline?.userId===user?.id?baseline:null} look={profile?.slop_look} onReplay={replay} onRetrySave={retrySave} onSignIn={signInForNextRound} viewerId={user?.id}/>}
+   {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0} viewerId={user?.id}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
   <div className="player-controls"><div className="player-control-context">{canChangeView&&<div className="player-view-modes" role="group" aria-label="Game display"><button type="button" aria-pressed={!wideView} onClick={()=>changeView('original')} title="Use the game's original shape">Original</button><button type="button" aria-pressed={wideView} onClick={()=>changeView('wide')} title="Use a wider desktop playfield">Wide</button></div>}{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':desktopHint||title}</span>}</div><div>

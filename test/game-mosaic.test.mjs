@@ -25,6 +25,13 @@ test('explicit portrait previews remain portrait even for a desktop target',()=>
   assert.equal(landscapeGame({supported_platforms:['desktop']}),true);
   assert.equal(landscapeGame({supported_platforms:['mobile','desktop']}),false);
 });
+test('cross-play games share mobile cards and preview dimensions',async()=>{
+  const {gameFormat}=await import('../src/lib/game-format.js');
+  const mobile=phone('phone'),crossPlay={...mobile,id:'both',supported_platforms:['mobile','desktop']};
+  assert.equal(landscapeGame(crossPlay),false);
+  assert.deepEqual(gameFormat(crossPlay),gameFormat(mobile));
+  assert.deepEqual(gameMosaic([mobile,crossPlay,desktop('desktop')]).filter(g=>!landscapeGame(g)),[mobile,crossPlay]);
+});
 test('newest keeps chronological order and features Kickflip once without disturbing other games',()=>{
  const games=[phone('new-1'),desktop('new-2'),phone('new-3'),desktop('new-4'),{...phone('coast'),name:'Kickflip Coast'},phone('older')];
  assert.deepEqual(gameMosaic(games,{preserveOrder:true}),games);

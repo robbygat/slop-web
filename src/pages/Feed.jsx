@@ -14,14 +14,16 @@ import {Icon} from '../components/Icon.jsx';
 import ActivityLink from '../components/ActivityLink.jsx';
 import GameCrown from '../components/GameCrown.jsx';
 import GamePreview from '../components/GamePreview.jsx';
+import {useBrowsePreferences} from '../components/useBrowsePreferences.js';
 import {GameDetail} from './Play.jsx';
 import './feed.css';
 
 export default function Feed(){
  const {user,requireAuth}=useAuth();
- const [initial]=useState(readFeedReturn);
+ const {platform,setPlatform,order,setOrder}=useBrowsePreferences();
+ const [initial]=useState(()=>readFeedReturn({platform,order}));
  const [filters,setFilters]=useState(false);
- const [order,setOrder]=useState(initial?.order||'newest'),[platform,setPlatform]=useState(initial?.platform||'all'),[games,setGames]=useState(initial?.games||[]),[active,setActive]=useState(initial?.active||null);
+ const [games,setGames]=useState(initial?.games||[]),[active,setActive]=useState(initial?.active||null);
  const [loading,setLoading]=useState(!initial),[error,setError]=useState(null),[selected,setSelected]=useState(null),[discussion,setDiscussion]=useState(false);
  const [titleEntrance,setTitleEntrance]=useState(()=>nextFeedTitleEntrance(null,initial?.active));
  useLayoutEffect(()=>{setTitleEntrance(previous=>nextFeedTitleEntrance(previous,active));},[active]);
@@ -73,7 +75,7 @@ export default function Feed(){
  const selectedIndex=games.findIndex(g=>g.id===selected?.id);
  return <div className="reels-page">
   <h1 className="sr-only">Play</h1>
-  <header className="reels-toolbar"><a className="reels-back" href="#/home" aria-label="Back to Home" title="Back to Home"><Icon name="back" size={19}/><span>Back</span></a><div className="reels-order" role="group" aria-label="Game feed"><button aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Newest</button><span aria-hidden="true"/><button aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>For You</button></div><div className="reels-tools"><ActivityLink ownerId={user?.id}/><button className="reels-filter" aria-label={`Game preferences: ${platform==='all'?'all games':platform+' games'}`} aria-haspopup="dialog" onClick={()=>setFilters(true)}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M4 7h7m5 0h4M4 17h3m5 0h8"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>{platform!=='all'&&<i/>}</button></div></header>
+  <header className="reels-toolbar"><a className="reels-back" href="#/home" aria-label="Back to Home" title="Back to Home"><Icon name="back" size={19}/><span>Back</span></a><div className="reels-order" role="group" aria-label="Game feed"><button aria-pressed={order==='newest'} onClick={()=>setOrder('newest')}>Newest</button><span aria-hidden="true"/><button aria-pressed={order==='popular'} onClick={()=>setOrder('popular')}>Popular</button></div><div className="reels-tools"><ActivityLink ownerId={user?.id}/><button className="reels-filter" aria-label={`Game preferences: ${platform==='all'?'all games':platform+' games'}`} aria-haspopup="dialog" onClick={()=>setFilters(true)}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M4 7h7m5 0h4M4 17h3m5 0h8"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>{platform!=='all'&&<i/>}</button></div></header>
   {actionError&&<div className="reels-error"><Notice error={actionError}/></div>}
   <div className="reel-stream" ref={stream} tabIndex={0} aria-label="Swipe games, use arrow keys to browse, or Enter to play" onKeyDown={e=>{if(e.target.closest('button,a,input,textarea')||selected)return;if(e.key==='Enter'){e.preventDefault();const game=games.find(g=>g.id===active);if(game)open(game);return;}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();move(e.key==='ArrowDown'?1:-1);}}}>
    {games.map(game=>{const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],wide=gameFormat(game).orientation==='landscape';return <article className={`reel ${wide?'reel-wide':''}`} key={game.id} data-game={game.id} data-title-entrance={live&&titleEntrance?.gameId===game.id?titleEntrance.variant:undefined} ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} aria-label={game.name}>
@@ -88,7 +90,7 @@ export default function Feed(){
    <div className="reels-end">{loading?<Loading label="Finding your next game…"/>:error?<Notice error={error} onRetry={()=>more(!games.length)}/>:!games.length?<p>No games in this format yet.</p>:hasMore.current?<button className="button" onClick={()=>more()}>Find more games</button>:<><h2>All caught up.</h2><a className="button" href="#/home">Back to the arcade</a></>}</div>
   </div>
   <div className="reel-navigation"><button aria-label="Previous game" disabled={index<=0} onClick={()=>move(-1)}>↑</button><button aria-label="Next game" disabled={index>=games.length-1} onClick={()=>move(1)}>↓</button></div>
-  {filters&&<Modal title="Your For You" onClose={()=>setFilters(false)} className="feed-preferences"><p>What do you want to play?</p><div role="group" aria-label="Game platform">{[['all','All games','A little of everything.','play'],['mobile','Mobile games','Phone games, including cross-play.','connect'],['desktop','Desktop games','Computer games, including cross-play.','code'],['cross-play','Cross-play','Play on your phone or computer.','play']].map(([id,label,description,icon])=><button key={id} aria-pressed={platform===id} onClick={()=>{setPlatform(id);setFilters(false);}}><Icon name={icon}/><span><strong>{label}</strong><small>{description}</small></span>{platform===id&&<Icon name="check" size={18}/>}</button>)}</div></Modal>}
+  {filters&&<Modal title="Game preferences" onClose={()=>setFilters(false)} className="feed-preferences"><p>What do you want to play?</p><div role="group" aria-label="Game platform">{[['all','All games','A little of everything.','play'],['mobile','Mobile games','Phone games, playable here too.','connect'],['desktop','Desktop games','Games made for your computer.','code']].map(([id,label,description,icon])=><button key={id} aria-pressed={platform===id} onClick={()=>{setPlatform(id);setFilters(false);}}><Icon name={icon}/><span><strong>{label}</strong><small>{description}</small></span>{platform===id&&<Icon name="check" size={18}/>}</button>)}</div></Modal>}
   {selected&&<GameDetail game={selected} backLabel="Back to Play" onPrevious={selectedIndex>0?()=>setSelected(games[selectedIndex-1]):undefined} onNext={selectedIndex<games.length-1?()=>setSelected(games[selectedIndex+1]):undefined} discussionOnly={discussion} onClose={()=>{setSelected(null);crownSync.current?.refresh({force:true});}}/>}
  </div>;
 }

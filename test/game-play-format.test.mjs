@@ -11,22 +11,30 @@ const audited=Object.freeze({supported_platforms:Object.freeze(['desktop']),prev
 const portrait={orientation:'portrait',playerAspect:9/19.5};
 const wide={orientation:'landscape',playerAspect:16/9};
 
-test('cross-play defaults to a wide live desktop viewport while phones retain their original viewport',()=>{
-  assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true}),wide);
+test('cross-play and mobile games keep the same portrait playfield on desktop and phones',()=>{
+  assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true}),portrait);
   assert.deepEqual(gamePlayFormat(crossPlay),portrait);
   assert.deepEqual(gamePlayFormat(crossPlay,{mode:'wide'}),portrait);
   assert.deepEqual(gamePlayFormat(phone,{desktop:true}),portrait);
   assert.deepEqual(gamePlayFormat(),portrait);
   assert.deepEqual(gamePlayFormat(null),portrait);
 });
-test('desktop Original and Wide choices are explicit and do not change catalog preview dimensions',()=>{
+test('mobile games cannot be widened by desktop view choices or stale selections',()=>{
   const preview=gameFormat(crossPlay);
-  assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true,mode:'original'}),portrait);
-  assert.deepEqual(gamePlayFormat(phone,{desktop:true,mode:'wide'}),wide);
-  assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true,mode:'unknown'}),wide);
+  for(const game of [phone,crossPlay])for(const mode of ['auto','original','wide','unknown']){
+    assert.deepEqual(gamePlayFormat(game,{desktop:true,mode}),portrait);
+  }
   assert.deepEqual(gameFormat(crossPlay),preview);
   assert.equal(preview.aspect,9/16);
   assert.equal(preview.orientation,'portrait');
+});
+test('desktop-only games still allow an explicit wide view without changing their recording',()=>{
+  const game={supported_platforms:['desktop'],preview_width:800,preview_height:600};
+  const original={orientation:'landscape',playerAspect:4/3};
+  for(const mode of ['auto','original','unknown'])assert.deepEqual(gamePlayFormat(game,{desktop:true,mode}),original);
+  assert.deepEqual(gamePlayFormat(game,{desktop:true,mode:'wide'}),wide);
+  assert.deepEqual(gamePlayFormat(game,{mode:'wide'}),original);
+  assert.equal(gameFormat(game).aspect,4/3);
 });
 test('already landscape and square originals keep their authored aspect in automatic mode',()=>{
   const landscape={...crossPlay,preview_width:800,preview_height:600};
@@ -47,15 +55,16 @@ test('locked capture stages take precedence over desktop choices and fixed game 
   assert.deepEqual(gamePlayFormat(phone,{stageAspect:16/9}),wide);
 });
 test('invalid stage overrides cannot produce invalid iframe dimensions',()=>{
-  for(const stageAspect of [0,-1,NaN,Infinity,-Infinity,'16/9',null,undefined])assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true,stageAspect}),wide);
+  for(const stageAspect of [0,-1,NaN,Infinity,-Infinity,'16/9',null,undefined])assert.deepEqual(gamePlayFormat(crossPlay,{desktop:true,stageAspect}),portrait);
 });
 
-test('reviewed phone-first releases open wide on desktop without promoting future releases or changing phone play',()=>{
+test('mouse-compatible phone releases retain mobile framing and capture dimensions',()=>{
   for(const review of REVIEWED_DESKTOP_RELEASES){
     const game={...phone,status:'published',published_bundle_path:review.root,bundle_version:review.version};
-    assert.deepEqual(gamePlayFormat(game,{desktop:true}),wide);
+    assert.deepEqual(gamePlayFormat(game,{desktop:true}),portrait);
     assert.deepEqual(gamePlayFormat(game),portrait);
     assert.deepEqual(gamePlayFormat(game,{desktop:true,mode:'original'}),portrait);
+    assert.deepEqual(gamePlayFormat(game,{desktop:true,mode:'wide'}),portrait);
     assert.deepEqual(gamePlayFormat({...game,bundle_version:'2.0.0'},{desktop:true}),portrait);
     assert.deepEqual(gamePlayFormat(game,{desktop:true,stageAspect:9/16}),{orientation:'portrait',playerAspect:9/16});
   }

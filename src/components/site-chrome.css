@@ -50,3 +50,97 @@ html:has(.is-playing),body:has(.is-playing){overflow:hidden;scrollbar-gutter:aut
 .site-masthead .theme-menu>button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 @media(min-width:761px){.masthead-navigation .nav-item{color:var(--masthead-soft)}.masthead-navigation .nav-item.active,.masthead-navigation .nav-item:hover{color:var(--masthead-ink)}.masthead-navigation .nav-item.active:after{background:var(--masthead-ink)}.masthead-navigation .nav-item:focus-visible{outline-color:var(--masthead-ink)}}
 @media(max-width:760px){.site-masthead .theme-menu{position:fixed;top:calc(var(--site-chrome-height) + 8px);right:max(12px,4vw,env(safe-area-inset-right,0px));left:auto}}
+
+/* Keep controls readable through the tablet transition; only spacing compresses.
+   The phone dock keeps its own sizing below 761px. */
+@media (min-width:761px) {
+  #root .site-masthead {
+    gap:clamp(16px,2vw,32px);
+    padding-inline:max(4vw,calc((100% - 1680px) / 2));
+  }
+
+  .site-masthead .masthead-brand {
+    font-size:clamp(24px,1.25vw,28px);
+    white-space:nowrap;
+  }
+
+  .site-masthead .masthead-brand>svg {
+    width:30px;
+    height:34px;
+  }
+
+  .masthead-navigation>nav {
+    gap:clamp(6px,calc((100vw - 960px) * .1),24px);
+  }
+
+  .masthead-navigation .nav-item {
+    min-height:48px;
+    padding:10px clamp(5px,calc((100vw - 900px) * .04),12px);
+    border-radius:10px;
+  }
+
+  .masthead-navigation .nav-label {
+    font-size:clamp(16px,.8vw,18px);
+    line-height:24px;
+  }
+
+  .masthead-navigation .nav-item.active:after {
+    left:12px;
+    right:12px;
+    bottom:3px;
+  }
+
+  .masthead-navigation .nav-item:hover {
+    background:var(--masthead-hover);
+  }
+
+  #root .site-masthead .masthead-actions {
+    gap:clamp(6px,.6vw,12px);
+  }
+
+  .site-masthead .masthead-theme,
+  .site-masthead .activity-link,
+  .site-masthead .masthead-shop,
+  .site-masthead .masthead-avatar {
+    width:48px;
+    height:48px;
+  }
+
+  .site-masthead .masthead-theme {
+    padding:0;
+  }
+
+  .site-masthead .theme-trigger>svg,
+  .site-masthead .activity-link>svg,
+  .site-masthead .masthead-shop>svg {
+    width:clamp(22px,1.1vw,26px);
+    height:clamp(22px,1.1vw,26px);
+  }
+
+  .site-masthead .masthead-actions>.button {
+    min-height:48px;
+    padding:12px 20px;
+    font-size:clamp(14px,.75vw,16px);
+    white-space:nowrap;
+  }
+}
+
+/* Fit smaller laptops on one row without shrinking their navigation labels. */
+@media (min-width:961px) and (max-width:1050px) {
+  #root .site-masthead {
+    grid-template-columns:auto minmax(300px,1fr) auto;
+    min-height:72px;
+    padding-block:10px;
+  }
+
+  .masthead-navigation {
+    grid-column:auto;
+    grid-row:auto;
+    width:auto;
+  }
+}
+
+@media (min-width:761px) and (max-width:960px) {
+  #root .site-masthead { gap:0 18px; }
+  .masthead-navigation>nav { gap:clamp(20px,4vw,32px); }
+}

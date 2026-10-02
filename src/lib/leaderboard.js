@@ -1,7 +1,8 @@
 import {supabase,result,asOwner,getSession} from './supabase.js';
-import {SLUG,SlopError} from './contracts.js';
+import {SLUG,UUID,SlopError} from './contracts.js';
 import {createScoreRun,parseLeaderboard} from './score-contracts.js';
 import {parseFeedCrown} from './feed-crown.js';
+import {parsePersonalBest,parsePlayerStanding} from './player-standing.js';
 export async function loadLeaderboard(slug) {
   if(!SLUG.test(slug))throw new SlopError('invalid_response');
   try {
@@ -9,6 +10,20 @@ export async function loadLeaderboard(slug) {
     if(rows.length)return rows;
   } catch(error) {if(!['PGRST202','42883'].includes(error.code))throw error;}
   return parseLeaderboard(await result(supabase.rpc('top_scores',{p_game:slug,p_limit:10})));
+}
+export async function loadPersonalBest(slug,viewerId) {
+  if(!SLUG.test(slug)||!UUID.test(viewerId))throw new SlopError('invalid_response');
+  return asOwner(async(owner,client)=>{
+    if(owner!==viewerId)throw new SlopError('account_changed');
+    return parsePersonalBest(await result(client.rpc('my_game_personal_best',{p_game:slug}).abortSignal(AbortSignal.timeout(6000))));
+  });
+}
+export async function loadPlayerStanding(slug,viewerId,authority) {
+  if(!SLUG.test(slug)||!UUID.test(viewerId))throw new SlopError('invalid_response');
+  return asOwner(async(owner,client)=>{
+    if(owner!==viewerId)throw new SlopError('account_changed');
+    return parsePlayerStanding(await result(client.rpc('my_game_standing',{p_game:slug}).abortSignal(AbortSignal.timeout(6000))),{game:slug,viewerId,authority});
+  });
 }
 // Use the same authoritative display-crown selection as the mobile feed.
 export async function loadFeedCrown(slug) {
