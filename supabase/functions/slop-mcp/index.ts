@@ -43,7 +43,22 @@ const knownCodes = new Set([
   "lease_expired",
   "media_invalid",
   "target_unavailable",
+  "invalid_bundle",
 ]);
+function reportDraftFailure(body: unknown, status: number | null, result: unknown, timeoutMs: number, elapsedMs: number) {
+  if ((body as {p_action?: string} | undefined)?.p_action !== "send_draft") return;
+  const code = (result as {code?: string} | null)?.code;
+  // Deliberately omit input, DB messages, request/response headers, URLs and
+  // identifiers. This diagnoses the SQL-vs-network boundary without logging
+  // game source, tokens, account information or signed storage URLs.
+  console.warn(JSON.stringify({
+    event: "mcp_draft_upstream_failure",
+    status,
+    sql_code: ["57014", "22023", "23514", "22003", "PGRST003"].includes(code ?? "") ? code : null,
+    timeout_ms: timeoutMs,
+    elapsed_ms: Math.max(0, Math.round(elapsedMs)),
+  }));
+}
 async function request(
   path: string,
   token: string | null,
@@ -55,7 +70,9 @@ async function request(
   streamJson = false,
   streamResponse = false,
 ) {
-  const response = await fetch(`${base}${path}`, {
+  const started = performance.now();
+  let response;
+  try { response = await fetch(`${base}${path}`, {
     method,
     redirect: "error",
     headers: {
@@ -66,9 +83,22 @@ async function request(
     },
     body: body == null ? undefined : streamJson ? jsonBodyStream(body) : JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
-  });
+  }); } catch (error) {
+    if (path === "/rest/v1/rpc/mcp_service" && (body as {p_action?: string} | undefined)?.p_action === "send_draft") {
+      reportDraftFailure(body, null, null, timeoutMs, performance.now()-started);
+      // The transaction outcome is unknown; callers must inspect receipts or
+      // replay the exact identity, never automatically create a new revision.
+      throw new BridgeError("upstream_unavailable", 503);
+    }
+    throw error;
+  }
   const result = await (streamResponse ? readJsonStream(response.body) : response.json()).catch(() => null);
+  if (result === null && path === "/rest/v1/rpc/mcp_service" && (body as {p_action?: string} | undefined)?.p_action === "send_draft") {
+    reportDraftFailure(body, response.status, null, timeoutMs, performance.now()-started);
+    throw new BridgeError("upstream_unavailable", 503);
+  }
   if (!response.ok) {
+    if (path === "/rest/v1/rpc/mcp_service") reportDraftFailure(body, response.status, result, timeoutMs, performance.now()-started);
     if (path === "/functions/v1/game-bundle" &&
       (body as { action?: string } | undefined)?.action === "preview" &&
       response.status === 409 && result?.error === "uploaded draft snapshot changed") {
@@ -78,7 +108,7 @@ async function request(
     if (code) {
       throw new BridgeError(
         code,
-        response.status === 401 || response.status === 403
+        code === "invalid_bundle" ? 400 : response.status === 401 || response.status === 403
           ? 403
           : code === "rate_limited"
           ? 429
@@ -99,7 +129,7 @@ const deps = {
     request("/rest/v1/rpc/mcp_service", service.startsWith("sb_secret_") ? null : service, "POST", {
       p_action: action,
       p: input,
-    }, {}, service, 30_000, action === "send_draft"),
+    }, {}, service, action === "send_draft" && (input as {persistent?: boolean})?.persistent === true ? 100_000 : 30_000, action === "send_draft"),
   phone: (token: string, action: string, input: unknown) =>
     request("/rest/v1/rpc/mcp_phone", token, "POST", {
       p_action: action,

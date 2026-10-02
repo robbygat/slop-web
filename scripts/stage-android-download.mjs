@@ -154,15 +154,16 @@ export async function stageAndroidDownload({release, manifest, outDir = 'dist', 
 
 async function main() {
   const options = {};
-  const names = new Map([['--cache-dir', 'cacheDir'], ['--source-file', 'sourceFile'], ['--out-dir', 'outDir']]);
+  const names = new Map([['--cache-dir', 'cacheDir'], ['--source-file', 'sourceFile'], ['--out-dir', 'outDir'], ['--metadata-dir', 'metadataDir']]);
   for (let i = 2; i < process.argv.length; i += 2) {
     const key = names.get(process.argv[i]);
-    if (!key || !process.argv[i + 1] || options[key]) throw new Error('Use --cache-dir, --source-file or --out-dir with one value each');
+    if (!key || !process.argv[i + 1] || options[key]) throw new Error('Use --cache-dir, --source-file, --out-dir or --metadata-dir with one value each');
     options[key] = process.argv[i + 1];
   }
   const root = fileURLToPath(new URL('../', import.meta.url));
+  const metadata = options.metadataDir ? resolve(options.metadataDir) : join(root, 'public/downloads');
   const [release, manifest] = await Promise.all(['android-release.json', 'android-build-manifest.json'].map(
-    async file => JSON.parse(await readFile(join(root, 'public/downloads', file), 'utf8'))));
+    async file => JSON.parse(await readFile(join(metadata, file), 'utf8'))));
   const result = await stageAndroidDownload({release, manifest, ...options});
   console.log(`Verified first-party APK: ${result.file} (${result.bytes} bytes, SHA-256 ${result.sha256})`);
 }

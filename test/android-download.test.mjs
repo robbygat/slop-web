@@ -7,14 +7,14 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const release = JSON.parse(await read('public/downloads/android-release.json'));
 const manifest = JSON.parse(await read('public/downloads/android-build-manifest.json'));
 
-test('shared Android release metadata names the verified 2076 APK', () => {
-  assert.equal(release.build, 2076);
+test('shared Android release metadata names the verified 2077 APK', () => {
+  assert.equal(release.build, 2077);
   assert.equal(release.package, 'game.slop.api');
   assert.equal(release.version, '3.7.7');
-  assert.equal(release.file, 'Slop-3.7.7-build-2076-universal.apk');
+  assert.equal(release.file, 'Slop-3.7.7-build-2077-universal.apk');
   assert.equal(release.url, `https://slop.game/downloads/${release.file}`);
-  assert.equal(manifest.sourceUrl, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/${release.file}`);
-  assert.equal(release.sha256, '609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab');
+  assert.equal(manifest.sourceUrl, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2077/${release.file}`);
+  assert.equal(release.sha256, 'a041ed8f6e73b95eda0ea70f71edd2177fd6cf96452161f961fa749fd3a19e7b');
 });
 
 test('download page and artifact manifest agree without changing ad gates', () => {
@@ -43,7 +43,7 @@ test('hero and download page use the shared release rather than stale APK consta
 });
 
 test('freshness check bypasses browser cache and accepts a newer first-party release', async () => {
-  const newer={...release,build:2077,file:'Slop-3.7.7-build-2077-universal.apk',url:'https://slop.game/downloads/Slop-3.7.7-build-2077-universal.apk'};
+  const newer={...release,build:2078,file:'Slop-3.7.7-build-2078-universal.apk',url:'https://slop.game/downloads/Slop-3.7.7-build-2078-universal.apk'};
   const result=await latestAndroidRelease(release,async(url,options)=>{
     assert.equal(url,'/downloads/android-release.json');
     assert.equal(options.cache,'no-store');
@@ -66,4 +66,15 @@ test('Pages verifies and stages the APK only after the site build and before upl
   assert.ok(flow.indexOf('node scripts/stage-android-download.mjs')<flow.indexOf('actions/upload-pages-artifact@'));
   assert.match(flow,/actions\/cache@[a-f0-9]{40}/);
   assert.match(flow,/hashFiles\('public\/downloads\/android-build-manifest\.json'\)/);
+  assert.match(flow,/--metadata-dir public\/downloads\/archive\/2076/);
+});
+
+test('the previous first-party APK remains pinned for staging after upgrade', async () => {
+  const archived = JSON.parse(await read('public/downloads/archive/2076/android-release.json'));
+  const archiveManifest = JSON.parse(await read('public/downloads/archive/2076/android-build-manifest.json'));
+  const {validateAndroidMetadata} = await import('../scripts/stage-android-download.mjs');
+  const validated = validateAndroidMetadata(archived, archiveManifest);
+  assert.equal(validated.file, 'Slop-3.7.7-build-2076-universal.apk');
+  assert.equal(validated.sha256, '609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab');
+  assert.equal(validated.bytes, 184841937);
 });
