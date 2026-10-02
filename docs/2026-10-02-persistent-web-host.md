@@ -36,24 +36,24 @@ acceptance claim. Owner checkout is unchanged. Worktree:
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
-| persistent-v1.js | 450831 | 621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996 |
+| persistent-v1.js | 452194 | dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 |
 | creator-v1.js | 9612 | cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f |
 | Host Three r128 | 603445 | 9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2 |
 | Shared admission rules | — | 009da2747502dd69811a28a818b3f1b1d85f25c74e5e599162a7f54daaf361ec |
-| Shared runtime policy | — | ed6c31804cfcbc37d9640e9303fe8e6824e1fa030d8e0c0b38559ef226661c75 |
+| Shared runtime policy | — | cf34ec6e4b840b18568d2bdfce216d805bbd4a82c006aca6c4b1b358251b2ca9 |
 
 The new `public/downloads/slop-game-mcp-0.6.0.tgz` is a **local candidate**;
 no package/public URL was published by this task.
 Its SHA-256 is
-`4a69c1b0a3bbebb966972d09bfce11ce532cdb6b37cfaf1413a03f279e86fdbd`
-(174,730 bytes). The archive contains all eleven expected files, including the
+`3d9ec7ecb83258434f5f85065f572bdfef6ea15b6fecf86c4b172fa641971b83`
+(175,049 bytes). The archive contains all eleven expected files, including the
 shared runtime policy; its extracted runtime/rules/policy hashes match the source.
-Package build log: `/private/tmp/slop-worlds-package-release-final-20261002.log`.
+Package build log: `/private/tmp/slop-worlds-package-checkpoint-final-20261002.log`.
 The package is not a substitute for deploying its compatible authority paths.
 
 ## Evidence and remaining gates
 
-- Final full Node web suite: 383 passed,
+- Final full Node web suite: 384 passed,
   6 pre-existing browser/video checks skipped,
   including the clean and dirty local-counter/cloud-base regression cases.
 - Final MCP suite: 98 passed, 2 skipped. Template has real persistence gating; packaged
@@ -63,13 +63,23 @@ The package is not a substitute for deploying its compatible authority paths.
   uses fake-indexeddb; it is not a hours-long browser or OS force-kill test.
 - Production Vite build passed with 388 public catalog routes. Existing large
   chunk warning remains; World-only Three is a separate dynamic platform chunk.
-  `/private/tmp/slop-worlds-build-release-final-20261002.log` records the successful
+  `/private/tmp/slop-worlds-build-checkpoint-final-20261002.log` records the successful
   read-only public catalog fetch. The first sandboxed route fetch failed and was
   not treated as a successful build. This final build includes the browser close,
-  explicit-ready and cached-CSS corrections below.
-- Final test logs: `/private/tmp/slop-worlds-web-release-final-20261002.log`,
-  `/private/tmp/slop-worlds-mcp-release-final-bounded-20261002.log` and
-  `/private/tmp/slop-worlds-edge-check-final-bounded-20261002.log` (Deno check passed).
+  explicit-ready, cached-CSS and checkpoint-barrier corrections below.
+- Final test logs: `/private/tmp/slop-worlds-web-checkpoint-final-20261002.log`,
+  `/private/tmp/slop-worlds-mcp-checkpoint-final-20261002.log` and
+  `/private/tmp/slop-worlds-edge-checkpoint-final-20261002.log` (Deno check passed).
+- The final runtime advances from `621bd084…` (450,831 bytes) to `dc6d666c…`
+  (452,194 bytes). A genuine held checkpoint ACK reproduced two stale ordinary
+  writes with the old runtime. The unchanged actual SDK→typed host→IndexedDB
+  regression now retains newer run/profile edits until that durable ACK has
+  updated both revisions, then saves them exactly once. A missing checkpoint
+  ACK rejects after 30 seconds and fences automatic retries; it does not imply
+  the checkpoint failed durably. Explicit later operations remain possible.
+  All 39 host/SDK integration checks pass with inert services. RED/GREEN and
+  integration logs are copied into the evidence directory under
+  `slop-worlds-sdk-checkpoint-{barrier-red,barrier-green,integration-final}-20261002.log`.
 - Final narrow correction: unloaded JS no longer grants capability; quoted and
   unquoted HTML dependencies, inline styles and posters count toward boot;
   unsupported srcset is rejected. Worlds reserve `covers/` and `previews/` for
@@ -131,7 +141,8 @@ The package is not a substitute for deploying its compatible authority paths.
   live private-preview token or a cloud/account acceptance result.
 - The repeatable equivalent is preserved under `tools/worlds-acceptance/`:
   `npm run qa:worlds` starts the loopback-only host on port 5193. Generated module
-  readback confirmed the inert auth/RPC aliases and the exact 450,831-byte SDK;
+  baseline readback confirmed the inert auth/RPC aliases and the then-current
+  450,831-byte SDK;
   fixture digest `82a68ae76de4691fe33fea9cd5e60ed48c3aa5578f5ef8b9cf3e863a0b23d824`.
   Its separate port has separate browser storage. The previously observed values
   below belong to the original 5192 fixture, not an unobserved new-port run.
@@ -141,6 +152,10 @@ The package is not a substitute for deploying its compatible authority paths.
   forbidden backend calls. New run reset run to `{}` while preserving profile 3;
   a host page reload still showed run `{}` / profile 3 at revision 7. The offline
   toggle is a session-local fixture control, not a full browser-network outage.
+  This Browser observation used the previous `621bd084…` runtime. The later
+  checkpoint fix has actual SDK/host/IndexedDB test evidence above, not a fresh
+  Browser/native acceptance claim. Restart the local QA host to generate a
+  fixture with the current runtime before repeating Browser acceptance.
 - Cached boot follow-up preserves `<link media>` and valid unquoted stylesheet
   imports while rejecting unsupported srcset rather than leaving a network
   dependency. Both failure cases reproduced RED, then all nine boot/cache tests
@@ -153,6 +168,8 @@ The package is not a substitute for deploying its compatible authority paths.
   the indexed fallback. Process RSS peaks were 298,008,576 / 337,952,768 bytes;
   RSS is not silently presented as the smaller isolate metric. These are local
   benchmarks, not observed deployed Edge acceptance. No forced GC was used.
+  They used the previous `621bd084…` runtime; transport/reader source is unchanged,
+  but these measurements are not relabeled as a fresh final-runtime benchmark.
   The prior failure is preserved in
   `/private/tmp/slop-worlds-handler-memory-baseline-red.json` (its mixed-process
   baseline limitation is recorded there); final measurements are

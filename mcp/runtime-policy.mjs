@@ -1,7 +1,7 @@
 // Matches the unchanged creator-v1.js shipped in slop-mobile and the MCP package.
 export const MCP_RUNTIME_SHA256='cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f';
-export const MCP_PERSISTENT_RUNTIME_SHA256='621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996';
-export const MCP_PERSISTENT_RUNTIME_BYTES=450831;
+export const MCP_PERSISTENT_RUNTIME_SHA256='dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6';
+export const MCP_PERSISTENT_RUNTIME_BYTES=452194;
 export const MCP_RUNTIME_ERROR='Ask your coding app to call slop_game_template, keep its slop.js unchanged, and send a new revision that loads it before your game code.';
 function persistentBootOrder(html){
  // Classic, synchronous SDK first. Deferred/module/async SDK tags cannot

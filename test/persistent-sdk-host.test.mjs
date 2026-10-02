@@ -93,3 +93,36 @@ test('real SDK rejects stale post-flush writes, adopts safe counters and waits f
  assert.ok(later.every(e=>e.revision===1),'explicit later save uses the verified durable counters');
  assert.equal((await p.store.read('device','world','run')).data.floor,18);
 });
+test('real SDK checkpoint barrier retains newer edits until the genuine durable host ACK',async t=>{
+ const p=await player(t),deliver=p.session.send,held=[],errors=[];
+ p.session.send=message=>{
+  if(message.error)errors.push(message);
+  if(message.action==='checkpoint'&&!message.error)held.push(message);
+  else deliver(message);
+ };
+ p.sdk.run('window.save.run.floor=17;window.save.profile.gold=5;');
+ const checkpoint=p.sdk.run('window.save.checkpoint("Room 17")');
+ try{
+  await p.drain();
+  assert.equal(held.length,1);
+  assert.deepEqual(held[0].revision,{run:1,profile:1});
+  assert.equal((await p.store.read('device','world','run')).data.floor,17);
+  p.sdk.run('window.save.run.floor=18;window.save.profile.gold=6;window.save.commit();');
+  p.sdk.advance(2100);await p.drain();
+  assert.equal(p.messages.filter(event=>event.type==='persist-write').length,0,
+   'ordinary writes must wait while their own checkpoint ACK is held');
+  assert.equal(errors.length,0);
+  deliver(held.shift());await checkpoint;
+  p.sdk.advance(2100);await p.drain();
+  const writes=p.messages.filter(event=>event.type==='persist-write');
+  assert.equal(writes.length,2);
+  assert.ok(writes.every(event=>event.revision===1));
+  assert.equal((await p.store.read('device','world','run')).data.floor,18);
+  assert.equal((await p.store.read('device','world','profile')).data.gold,6);
+  assert.deepEqual(p.session.revisions(),{run:2,profile:2});
+  assert.equal(errors.length,0);
+ }finally{
+  // Settle the genuine held request even on RED before fixture disposal.
+  held.splice(0).forEach(deliver);await checkpoint.catch(()=>{});
+ }
+});

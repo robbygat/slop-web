@@ -1,0 +1,49 @@
+✔ actual IndexedDB survives host recreation and restores both scope versions and label (8.074209ms)
+✔ ACK occurs only after device transaction resolves, never before durable write (0.966958ms)
+✔ ordered barrier accepts prior ACK revision but competing tab cannot overwrite current row (2.467625ms)
+✔ UTF8 limits count actual bytes and invalid JSON/bridge messages are rejected (0.984333ms)
+✔ new run clears only run, keeps profile, and fresh host can begin after tombstone (4.627167ms)
+✔ finished checkpoint keeps meta progression and late pause cannot resurrect ended run (1.165875ms)
+✔ newrun generation rejects already queued prior-run checkpoints before barrier rebasing (1.071167ms)
+✔ duplicate requests acknowledge one committed revision even queued together (0.501375ms)
+✔ host flush correlates response, waits checkpoint commit, timeout never claims save (0.71775ms)
+✔ default host timers preserve the browser global receiver through close flush (0.761917ms)
+✔ stale write after this document platform flush rejects and offers exact safe revision resync only (1.668917ms)
+✔ unrecorded stale checkpoint or scope revision never receives resync permission (1.064375ms)
+✔ recorded flush cannot authorize resync after competing tab changes either durable scope (2.227042ms)
+✔ recorded flush cannot authorize resync while either scope has a cloud conflict (1.653583ms)
+✔ same-counter replacement of durable content is not this document flush drift (3.39225ms)
+✔ recorded flush is retired by New run generation and same-owner account ABA (1.44375ms)
+✔ owner ABA during resync durable verification cannot send a late safe marker (0.944333ms)
+✔ cloud coalesces per scope and writes no more than once every two seconds (2.785459ms)
+✔ offline queue survives reload and reconnect syncs the same local copy (1.738834ms)
+✔ cloud conflict preserves device copy and requires explicit choice before replacing progress (2.275416ms)
+✔ high local counters never outrank newer canonical cloud base revisions (0.754333ms)
+✔ newer cloud hydration invalidates an older live tab even when its local counter exceeds cloud (1.60525ms)
+✔ unchanged cloud content retains local counter and metadata-only refresh does not create a dirty save (1.258709ms)
+✔ cloud read delayed behind a competing-tab write preserves the newer local row (1.595167ms)
+✔ dirty high local counter/base2 keeps both copies against cloud3, never silently rebases (2.974416ms)
+✔ late cloud result cannot acknowledge or reconcile after account ABA epoch (0.935291ms)
+✔ corrupt current row falls back to last good history while retaining other scope (1.146375ms)
+✔ separate accounts and game lineage keys never see each other’s saves (0.573375ms)
+✔ guest claim keeps originals and losing recovery copy, confirms each scope once (1.566667ms)
+✔ guest claim late account switch cannot mark device progress claimed (0.885458ms)
+✔ unconfirmed or throttled guest transfer never consumes the local claim (1.125708ms)
+✔ genuine new guest progress after a claimed snapshot becomes eligible for its own later transfer (1.028791ms)
+✔ 300 deterministic close/reopen cycles retain exact run/profile and only five history rows per scope (172.319625ms)
+✔ packaged composed SDK commits through typed host to IndexedDB and real flush restores on recreation (25.023292ms)
+✔ World host engine has the exact mobile SRI pin and real r128 GLTF loader (6.981417ms)
+✔ SDK newRun waits for host durability, preserves profile and subsequent writes use new generation (8.004458ms)
+✔ host New run restart adopts the durable tombstone revision before authored callbacks (4.403583ms)
+Slop.persist: The save revision is not current.
+Slop.persist: The save revision is not current.
+✔ real SDK rejects stale post-flush writes, adopts safe counters and waits for an explicit later save (7.397417ms)
+✔ real SDK checkpoint barrier retains newer edits until the genuine durable host ACK (4.816708ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 296.799416

@@ -46,15 +46,15 @@
       {
         "path": "supabase/functions/slop-mcp/runtime-policy.mjs",
         "bytes": 3523,
-        "sha256": "ed6c31804cfcbc37d9640e9303fe8e6824e1fa030d8e0c0b38559ef226661c75"
+        "sha256": "cf34ec6e4b840b18568d2bdfce216d805bbd4a82c006aca6c4b1b358251b2ca9"
       }
     ]
   },
   "artifacts": [
     {
       "path": "mcp/runtime/persistent-v1.js",
-      "bytes": 450831,
-      "sha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"
+      "bytes": 452194,
+      "sha256": "dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6"
     },
     {
       "path": "mcp/runtime/creator-v1.js",
@@ -69,7 +69,7 @@
     {
       "path": "mcp/runtime-policy.mjs",
       "bytes": 3523,
-      "sha256": "ed6c31804cfcbc37d9640e9303fe8e6824e1fa030d8e0c0b38559ef226661c75"
+      "sha256": "cf34ec6e4b840b18568d2bdfce216d805bbd4a82c006aca6c4b1b358251b2ca9"
     },
     {
       "path": "src/lib/vendor/three-r128.js",
@@ -78,8 +78,8 @@
     },
     {
       "path": "public/downloads/slop-game-mcp-0.6.0.tgz",
-      "bytes": 174730,
-      "sha256": "4a69c1b0a3bbebb966972d09bfce11ce532cdb6b37cfaf1413a03f279e86fdbd"
+      "bytes": 175049,
+      "sha256": "3d9ec7ecb83258434f5f85065f572bdfef6ea15b6fecf86c4b172fa641971b83"
     },
     {
       "path": "public/downloads/android-release.json",
@@ -94,7 +94,7 @@
   ],
   "checks": {
     "web": {
-      "pass": 383,
+      "pass": 384,
       "skip": 6,
       "fail": 0
     },
@@ -122,8 +122,17 @@
       "limitations": [
         "No real account/cloud/native acceptance",
         "Asset toggle is not whole browser network outage",
-        "No full-site cold offline bootstrap"
-      ]
+        "No full-site cold offline bootstrap",
+        "Observed before the dc6 checkpoint barrier runtime update; not a fresh Browser acceptance of that update"
+      ],
+      "runtimeSha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"
+    },
+    "checkpointBarrier": {
+      "runtimeSha256": "dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6",
+      "red": "Original 621 runtime sent two stale ordinary writes while genuine checkpoint ACK was held",
+      "green": "Unchanged actual SDK/typed host/IndexedDB test passes; retained edits are saved only after durable ACK revision adoption",
+      "integrationPass": 39,
+      "networkWrites": 0
     }
   },
   "evidence": [
@@ -180,6 +189,54 @@
       "file": "slop-worlds-json-scalar-unicode-green.json",
       "bytes": 375,
       "sha256": "6d3711d06c54627709a253d0fcbe0ba93684ca7c5e969dea81e919a3d426af17"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-web-checkpoint-final-20261002.log",
+      "file": "slop-worlds-web-checkpoint-final-20261002.log",
+      "bytes": 37557,
+      "sha256": "e1d1bbd66f8d322c3e129b48adc13bfd2bd895b9dffc32474c8a3fd2bc9e20c2"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-mcp-checkpoint-final-20261002.log",
+      "file": "slop-worlds-mcp-checkpoint-final-20261002.log",
+      "bytes": 10272,
+      "sha256": "b00ca03ab6d02f7177514c8f3065dcd5e54d4cbf55dcf48c57107017fe91c161"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-edge-checkpoint-final-20261002.log",
+      "file": "slop-worlds-edge-checkpoint-final-20261002.log",
+      "bytes": 46,
+      "sha256": "21495fb5a66bd7b1dafb92cb5ae26bdebc1a61544d37209bc365a39170aee964"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-build-checkpoint-final-20261002.log",
+      "file": "slop-worlds-build-checkpoint-final-20261002.log",
+      "bytes": 4457,
+      "sha256": "0848096ceafbb3b58c4894d3c2da214f58d37da1505d64dae639efe893aa0edf"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-package-checkpoint-final-20261002.log",
+      "file": "slop-worlds-package-checkpoint-final-20261002.log",
+      "bytes": 512,
+      "sha256": "daaba45c02694afd61e1d4feed6f78e34f7073b8d5e0169f50ecef31a3d448ff"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-sdk-checkpoint-barrier-red-20261002.log",
+      "file": "slop-worlds-sdk-checkpoint-barrier-red-20261002.log",
+      "bytes": 1153,
+      "sha256": "1ae4c88172046a1ee64dae33ebd521d673b471aa30e784442c000dc5af9401a5"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-sdk-checkpoint-barrier-green-20261002.log",
+      "file": "slop-worlds-sdk-checkpoint-barrier-green-20261002.log",
+      "bytes": 215,
+      "sha256": "3ae0adb7b9ae8dafea0be402efa5e35d6115c3810234028e1ec34c423a27b737"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-sdk-checkpoint-integration-final-20261002.log",
+      "file": "slop-worlds-sdk-checkpoint-integration-final-20261002.log",
+      "bytes": 4109,
+      "sha256": "088a16b36b1126f14df4f958be3f5354efe107a2bf3926a3d710962cc820338b"
     }
   ],
   "android": {
@@ -188,5 +245,6 @@
     "sha256": "f514166f5297589d8b216fff233ebde5e5c061d556dbc0034fd806d311ae7db4",
     "evidence": "Root independently downloaded the public asset and confirmed exact hash, aapt2 identity and v2 signature before PR handoff; no upload by this branch",
     "oldArtifactsPreserved": true
-  }
+  },
+  "benchmarkRuntimeSha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"
 }

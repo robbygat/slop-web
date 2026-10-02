@@ -4337,8 +4337,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   // Native teardown can read this synchronously instead of racing a queued
   // postMessage after disposing its WebView. The host persists locally first.
   g.__slopPersistFlush = persistSnapshot;
+  function persistCheckpointPending(p) {
+    return Object.keys(p.pending).some(function (request) {
+      var pending = p.pending[request];
+      return pending.action === "checkpoint" && pending.epoch === p.epoch;
+    });
+  }
   function persistSchedule() {
     if (!PERSIST || !PERSIST.loaded || PERSIST.timer || PERSIST.newRunPromise) return;
+    if (persistCheckpointPending(PERSIST)) return;
     if (!(PERSIST.dirty.run && !PERSIST.retryBlocked.run) &&
         !(PERSIST.dirty.profile && !PERSIST.retryBlocked.profile)) return;
     PERSIST.timer = setTimeout(function () {
@@ -4349,6 +4356,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function persistWrites() {
     var p = PERSIST;
     if (!p || !p.loaded || p.newRunPromise) return;
+    // A checkpoint can durably advance both counters before its ACK reaches
+    // this document. Keep later live edits dirty until every current-generation
+    // checkpoint settles, then write against the adopted durable revisions.
+    if (persistCheckpointPending(p)) return;
     // Validate both scopes first: a broken object never becomes a partial save.
     var snapshot = persistSnapshot();
     if (!snapshot) return;
@@ -4481,11 +4492,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     var pending = message.request != null ? p.pending[message.request] : null;
     if (pending) {
       delete p.pending[message.request];
+      if (pending.timer) clearTimeout(pending.timer);
       if (message.error) {
         // Reject first. A valid resync receipt still does not make the failed
         // checkpoint or clear durable, and must never reset either live scope.
         pending.reject(new Error(String(message.error)));
         persistErrorAck(p, message, pending);
+        if (pending.epoch === p.epoch) persistSchedule();
         return;
       }
       if (pending.epoch !== p.epoch) {
@@ -4506,6 +4519,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           ? persistRevision(rev) : Math.max(p.revision[scope], persistRevision(rev));
       });
       pending.resolve(p.save);
+      persistSchedule();
       return;
     }
     if (message.generation != null && message.generation !== p.epoch) return;
@@ -4569,7 +4583,19 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           return new Promise(function (resolve, reject) {
             p.retryBlocked.run = false;
             p.retryBlocked.profile = false;
-            p.pending[request] = { action: "checkpoint", epoch: p.epoch, resolve: resolve, reject: reject };
+            var pending = { action: "checkpoint", epoch: p.epoch, resolve: resolve, reject: reject };
+            p.pending[request] = pending;
+            pending.timer = setTimeout(function () {
+              if (p.pending[request] !== pending) return;
+              delete p.pending[request];
+              // Timeout gives no durability proof. Reject the caller and keep
+              // autosaves fenced rather than replaying an old revision blindly.
+              // A later explicit checkpoint/commit/close may ask the host again.
+              if (pending.epoch === p.epoch) {
+                p.retryBlocked.run = true; p.retryBlocked.profile = true;
+              }
+              reject(new Error("Checkpoint host acknowledgement timed out"));
+            }, 30000);
             post(snapshot);
           });
         }
