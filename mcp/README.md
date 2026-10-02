@@ -10,7 +10,7 @@ requires the owner to enable Auto-publish for that connection, or to review and
 submit a draft in Slop. Connections cannot spend coins, buy assets, or change your account. Your agent never
 receives your Slop password, account session, or private preview URL.
 
-## Slop Worlds (0.6.0 candidate)
+## Slop Worlds (0.6.1)
 
 This source/package adds persistent-v1 support. The package, web host, mobile host
 and bundle authority must be rolled out together before a World can be published.
@@ -58,7 +58,7 @@ Install Node.js 22.12 or later. The versioned package is hosted by Slop; there i
 no npm registry package to guess. It contains only the local adapter and its
 pinned runtime dependencies are resolved by npm.
 
-Upgrading an existing connection: update its package URL to `slop-game-mcp-0.6.0.tgz`
+Upgrading an existing connection: update its package URL to `slop-game-mcp-0.6.1.tgz`
 and restart the coding app’s MCP server. Keep the saved Slop credential; no new
 pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 
@@ -67,7 +67,7 @@ pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -76,7 +76,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -96,7 +96,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -114,7 +114,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -137,7 +137,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.6.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz",
         "slop-mcp"
       ]
     }
@@ -188,6 +188,21 @@ days unless revoked sooner. Publishing is a separate Slop action.
 
 Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
 `slop_check_bundle`, `slop_send_draft`, `slop_publish`, `slop_draft_status`, and `slop_disconnect`.
+
+### Large World draft delivery
+
+World draft uploads, or draft requests over 2 MB of JSON, have a bounded
+120-second bridge timeout. Ordinary calls retain 30 seconds. This does not
+extend the hosted function's 150-second request limit or any bundle budget.
+The calling MCP client also needs a tool-call timeout of at least 150 seconds
+for these uploads; a 60-second STDIO call timeout can stop waiting first.
+Startup/connection timeouts are separate from tool-call timeouts.
+
+After a timeout, network loss or server 5xx, delivery may have committed even
+if the receipt was lost. Do not automatically resend. Call `slop_draft_status`
+and inspect the same project/revision; if no receipt exists, retry only the
+identical files, `project_id`, `revision` and `request_id`. Never change the
+request identity to get around an uncertain result.
 
 ### Auto-publish (no browser)
 

@@ -168,6 +168,30 @@ const HINTS = {
   service_unavailable: "Slop is temporarily unavailable. Retry shortly.",
   upstream_unavailable: "Slop is temporarily unavailable. Retry shortly.",
 };
+const DRAFT_RECOVERY =
+  "Do not resend automatically. Call slop_draft_status and check this project_id and revision first. " +
+  "If no receipt exists, retry only the identical files, project_id, revision and request_id; do not create a new request_id.";
+
+function requestTimeout(path, body, serialized) {
+  if (path !== "/agent/drafts" || body == null) return 30_000;
+  const bytes = Buffer.byteLength(serialized, "utf8");
+  // Timing is not admission: the server still validates runtime, decoded
+  // budgets and auth. Never extend an already-over-limit 70 MB wire request.
+  if (bytes > 70_000_000) return 30_000;
+  if (bytes > 2_000_000) return 120_000;
+  try {
+    if (JSON.parse(body.files?.["slop.spec.json"])?.persistent === true) return 120_000;
+  } catch { /* Malformed specs retain the ordinary timeout and server checks. */ }
+  return 30_000;
+}
+
+function unknownDraftOutcome(reason) {
+  const error = new Error(`Slop draft delivery outcome is unknown (${reason}). ${DRAFT_RECOVERY}`);
+  error.code = "draft_outcome_unknown";
+  error.outcomeUnknown = true;
+  return error;
+}
+
 export class SlopBridge {
   constructor({ base, credentials, fetcher = fetch }) {
     this.base = bridgeUrl(base);
@@ -175,29 +199,43 @@ export class SlopBridge {
     this.fetcher = fetcher;
   }
   async request(path, token, body) {
-    const response = await this.fetcher(`${this.base}${path}`, {
-      method: body == null ? "GET" : "POST",
-      redirect: "error",
-      credentials: "omit",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(body == null ? {} : { "content-type": "application/json" }),
-      },
-      body: body == null ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
+    const serialized = body == null ? undefined : JSON.stringify(body);
+    const sendingDraft = path === "/agent/drafts" && body != null;
+    let response;
+    try {
+      response = await this.fetcher(`${this.base}${path}`, {
+        method: body == null ? "GET" : "POST",
+        redirect: "error",
+        credentials: "omit",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(body == null ? {} : { "content-type": "application/json" }),
+        },
+        body: serialized,
+        signal: AbortSignal.timeout(requestTimeout(path, body, serialized)),
+      });
+    } catch (error) {
+      if (!sendingDraft) throw error;
+      // A lost response is not proof the server did not commit. Do not expose
+      // raw fetch errors (which can include URLs), retry or replace identity.
+      throw unknownDraftOutcome(
+        error?.name === "TimeoutError" || error?.name === "AbortError" ? "request timed out" : "network failure",
+      );
+    }
     const result = await response.json().catch(() => null);
     if (!response.ok) {
       const code =
         typeof result?.code === "string" && /^[a-z_]{1,60}$/.test(result.code)
           ? result.code
           : "service_unavailable";
-      const error = new Error(
-        `Slop request failed: ${code}` + (HINTS[code] ? `. ${HINTS[code]}` : ""),
-      );
+      const uncertain = sendingDraft && (response.status >= 500 || response.status === 408);
+      const hint = uncertain ? DRAFT_RECOVERY : HINTS[code];
+      const error = new Error(`Slop request failed: ${code}` + (hint ? `. ${hint}` : ""));
       error.code = code;
+      if (uncertain) error.outcomeUnknown = true;
       throw error;
     }
+    if (sendingDraft && result === null) throw unknownDraftOutcome("unreadable receipt");
     return result;
   }
   async config() {

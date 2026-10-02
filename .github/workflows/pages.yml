@@ -72,6 +72,8 @@ jobs:
           key: slop-android-v1-${{ hashFiles('public/downloads/android-build-manifest.json') }}
       - name: Stage the verified first-party APK download
         run: node scripts/stage-android-download.mjs --cache-dir "$RUNNER_TEMP/slop-apk-cache"
+      - name: Preserve the previous direct APK download
+        run: node scripts/stage-android-download.mjs --metadata-dir public/downloads/archive/2076 --cache-dir "$RUNNER_TEMP/slop-apk-cache"
       - name: Read GitHub Pages configuration
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Upload the site

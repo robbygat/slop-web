@@ -1,0 +1,10 @@
+{
+  "url": "https://slop.game/downloads/Slop-3.7.7-build-2076-universal.apk",
+  "sourceUrl": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/Slop-3.7.7-build-2076-universal.apk",
+  "file": "Slop-3.7.7-build-2076-universal.apk",
+  "version": "3.7.7",
+  "versionCode": 2076,
+  "bytes": 184841937,
+  "sha256": "609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab",
+  "package": "game.slop.api"
+}
