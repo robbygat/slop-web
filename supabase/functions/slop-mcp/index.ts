@@ -45,8 +45,7 @@ const knownCodes = new Set([
   "target_unavailable",
   "invalid_bundle",
 ]);
-function reportDraftFailure(body: unknown, status: number | null, result: unknown, timeoutMs: number, elapsedMs: number) {
-  if ((body as {p_action?: string} | undefined)?.p_action !== "send_draft") return;
+function reportDraftFailure(status: number | null, result: unknown, timeoutMs: number, elapsedMs: number) {
   const code = (result as {code?: string} | null)?.code;
   // Deliberately omit input, DB messages, request/response headers, URLs and
   // identifiers. This diagnoses the SQL-vs-network boundary without logging
@@ -71,6 +70,9 @@ async function request(
   streamResponse = false,
 ) {
   const started = performance.now();
+  const draftSubmission = path === "/rest/v1/rpc/mcp_world_submit" ||
+    (path === "/rest/v1/rpc/mcp_service" &&
+      (body as {p_action?: string} | undefined)?.p_action === "send_draft");
   let response;
   try { response = await fetch(`${base}${path}`, {
     method,
@@ -84,8 +86,8 @@ async function request(
     body: body == null ? undefined : streamJson ? jsonBodyStream(body) : JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
   }); } catch (error) {
-    if (path === "/rest/v1/rpc/mcp_service" && (body as {p_action?: string} | undefined)?.p_action === "send_draft") {
-      reportDraftFailure(body, null, null, timeoutMs, performance.now()-started);
+    if (draftSubmission) {
+      reportDraftFailure(null, null, timeoutMs, performance.now()-started);
       // The transaction outcome is unknown; callers must inspect receipts or
       // replay the exact identity, never automatically create a new revision.
       throw new BridgeError("upstream_unavailable", 503);
@@ -93,12 +95,12 @@ async function request(
     throw error;
   }
   const result = await (streamResponse ? readJsonStream(response.body) : response.json()).catch(() => null);
-  if (result === null && path === "/rest/v1/rpc/mcp_service" && (body as {p_action?: string} | undefined)?.p_action === "send_draft") {
-    reportDraftFailure(body, response.status, null, timeoutMs, performance.now()-started);
+  if (result === null && draftSubmission) {
+    reportDraftFailure(response.status, null, timeoutMs, performance.now()-started);
     throw new BridgeError("upstream_unavailable", 503);
   }
   if (!response.ok) {
-    if (path === "/rest/v1/rpc/mcp_service") reportDraftFailure(body, response.status, result, timeoutMs, performance.now()-started);
+    if (draftSubmission) reportDraftFailure(response.status, result, timeoutMs, performance.now()-started);
     if (path === "/functions/v1/game-bundle" &&
       (body as { action?: string } | undefined)?.action === "preview" &&
       response.status === 409 && result?.error === "uploaded draft snapshot changed") {
@@ -125,11 +127,17 @@ async function request(
   return result;
 }
 const deps = {
-  service: (action: string, input: unknown) =>
-    request("/rest/v1/rpc/mcp_service", service.startsWith("sb_secret_") ? null : service, "POST", {
-      p_action: action,
-      p: input,
-    }, {}, service, action === "send_draft" && (input as {persistent?: boolean})?.persistent === true ? 100_000 : 30_000, action === "send_draft"),
+  service: (action: string, input: unknown) => {
+    // The handler derives persistent from the validated bundle, not a caller
+    // hint. Only that send action reaches the bounded 60s PostgREST RPC; the
+    // existing service still enforces all auth, quota and idempotency rules.
+    const worldDraft = action === "send_draft" &&
+      (input as {persistent?: boolean})?.persistent === true;
+    return request(worldDraft ? "/rest/v1/rpc/mcp_world_submit" : "/rest/v1/rpc/mcp_service",
+      service.startsWith("sb_secret_") ? null : service, "POST",
+      worldDraft ? {p: input} : {p_action: action, p: input}, {}, service,
+      worldDraft ? 100_000 : 30_000, action === "send_draft");
+  },
   phone: (token: string, action: string, input: unknown) =>
     request("/rest/v1/rpc/mcp_phone", token, "POST", {
       p_action: action,
