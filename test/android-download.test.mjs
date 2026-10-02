@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {latestAndroidRelease} from '../src/lib/android-release.js';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const release = JSON.parse(await read('public/downloads/android-release.json'));
@@ -11,7 +12,8 @@ test('shared Android release metadata names the verified 2076 APK', () => {
   assert.equal(release.package, 'game.slop.api');
   assert.equal(release.version, '3.7.7');
   assert.equal(release.file, 'Slop-3.7.7-build-2076-universal.apk');
-  assert.equal(release.url, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/${release.file}`);
+  assert.equal(release.url, `https://slop.game/downloads/${release.file}`);
+  assert.equal(manifest.sourceUrl, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/${release.file}`);
   assert.equal(release.sha256, '609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab');
 });
 
@@ -31,8 +33,37 @@ test('hero and download page use the shared release rather than stale APK consta
     read('src/components/Hero.jsx'), read('src/components/DownloadLinks.jsx'), read('src/pages/Download.jsx'),
   ]);
   assert.match(hero, /<DownloadLinks compact\s*\/?>/);
-  assert.match(links, /import androidRelease from ['"]\.\.\/\.\.\/public\/downloads\/android-release\.json['"]/);
+  assert.match(links, /useAndroidRelease/);
   assert.match(links, /href=\{androidRelease\.url\}/);
-  assert.match(download, /fetch\(['"]\/downloads\/android-release\.json['"]\)/);
-  assert.match(download, /href=\{release\.data\.url\}/);
+  assert.match(download, /useAndroidRelease/);
+  assert.match(download, /href=\{release\.url\}/);
+  assert.match(download, /Build \{release\.build\}/);
+  assert.match(links, /download=\{androidRelease\.file\}/);
+  assert.doesNotMatch(links, /href=.*github\.com/);
+});
+
+test('freshness check bypasses browser cache and accepts a newer first-party release', async () => {
+  const newer={...release,build:2077,file:'Slop-3.7.7-build-2077-universal.apk',url:'https://slop.game/downloads/Slop-3.7.7-build-2077-universal.apk'};
+  const result=await latestAndroidRelease(release,async(url,options)=>{
+    assert.equal(url,'/downloads/android-release.json');
+    assert.equal(options.cache,'no-store');
+    return {ok:true,json:async()=>newer};
+  });
+  assert.equal(result,newer);
+});
+
+test('failed, stale or foreign release metadata never replaces the bundled verified download', async () => {
+  const bad=[null,{}, {...release,build:2074}, {...release,url:'https://github.com/other/file.apk'}, {...release,package:'other'}, {...release,sha256:'wrong'}, {...release,file:'../old.apk'}];
+  for(const value of bad)assert.equal(await latestAndroidRelease(release,async()=>({ok:true,json:async()=>value})),release);
+  assert.equal(await latestAndroidRelease(release,async()=>{throw Error('offline');}),release);
+  assert.equal(await latestAndroidRelease(release,async()=>({ok:false})),release);
+  assert.equal(await latestAndroidRelease(release,async()=>({ok:true,json:async()=>{throw Error('bad json');}})),release);
+});
+
+test('Pages verifies and stages the APK only after the site build and before upload', async () => {
+  const flow=await read('.github/workflows/pages.yml');
+  assert.ok(flow.indexOf('run: npm run build')<flow.indexOf('node scripts/stage-android-download.mjs'));
+  assert.ok(flow.indexOf('node scripts/stage-android-download.mjs')<flow.indexOf('actions/upload-pages-artifact@'));
+  assert.match(flow,/actions\/cache@[a-f0-9]{40}/);
+  assert.match(flow,/hashFiles\('public\/downloads\/android-build-manifest\.json'\)/);
 });
