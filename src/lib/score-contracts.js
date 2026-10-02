@@ -27,22 +27,30 @@ export function parseScoreReceipt(value, expected) {
 export function createScoreRun({game, getSession, submit, requestId=crypto.randomUUID()}) {
   const captured=getSession();
   const owner=captured?.user?.is_anonymous ? null : captured?.user?.id;
-  let completion;
+  let completion,finishedScore,failed=false;
+  function attempt(){
+    failed=false;
+    completion=(async()=>{
+      if (!validRunScore(finishedScore) || !SLUG.test(game)) throw new SlopError('invalid_response');
+      if (!owner) return {state:'guest',score:finishedScore};
+      const assertOwner=()=>{const current=getSession();if(current?.user?.id!==owner || current?.epoch!==captured.epoch)throw new SlopError('account_changed');};
+      assertOwner();
+      const expected={owner,game,score:finishedScore,requestId};
+      const receipt=await submit(expected);assertOwner();
+      return parseScoreReceipt(receipt,expected);
+    })().catch(error=>{failed=true;throw error;});
+    return completion;
+  }
   return {
     owner,
     finish(score) {
       if (completion) return completion;
-      completion=(async()=>{
-        if (!validRunScore(score) || !SLUG.test(game)) throw new SlopError('invalid_response');
-        if (!owner) return {state:'guest',score};
-        const assertOwner=()=>{const current=getSession();if(current?.user?.id!==owner || current?.epoch!==captured.epoch)throw new SlopError('account_changed');};
-        assertOwner();
-        const expected={owner,game,score,requestId};
-        const receipt=await submit(expected);assertOwner();
-        return parseScoreReceipt(receipt,expected);
-      })();
-      return completion;
+      finishedScore=score;
+      return attempt();
     },
+    // Explicit retries keep the original score, owner and idempotency key.
+    // Repeated clicks share the in-flight request; successful runs never resubmit.
+    retry(){return failed?attempt():completion??Promise.reject(new SlopError('invalid_response'));},
   };
 }
 export function parseLeaderboard(rows, fallback='community_unverified') {

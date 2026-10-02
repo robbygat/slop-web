@@ -5,11 +5,11 @@ import {gamePlatform,webGamePlatform} from '../src/lib/game-platforms.js';
 
 const published=review=>({name:review.name,status:'published',supported_platforms:['mobile'],published_bundle_path:review.root,bundle_version:review.version});
 
-test('reviewed desktop support applies only to the two exact published release versions',()=>{
+test('reviewed desktop control hints preserve mobile catalog classification',()=>{
  assert.equal(REVIEWED_DESKTOP_RELEASES.length,2);
  for(const review of REVIEWED_DESKTOP_RELEASES){
   const game=published(review);assert.equal(reviewedDesktopGame(game),review);assert.ok(review.hint.length>0);
-  assert.equal(gamePlatform(game),'mobile');assert.equal(webGamePlatform(game),'cross-play');
+  assert.equal(gamePlatform(game),'mobile');assert.equal(webGamePlatform(game),'mobile');
  }
 });
 test('new releases and versions cannot inherit a prior compatibility review',()=>{
@@ -20,7 +20,7 @@ test('new releases and versions cannot inherit a prior compatibility review',()=
   }
  }
 });
-test('draft, private, missing-status and missing-mobile records are never promoted',()=>{
+test('draft, private, missing-status and missing-mobile records receive no reviewed hints',()=>{
  for(const review of REVIEWED_DESKTOP_RELEASES){
   const game=published(review);
   for(const change of [{status:'draft'},{status:'private'},{status:null},{supported_platforms:[]},{supported_platforms:null},{supported_platforms:['desktop']}])assert.equal(reviewedDesktopGame({...game,...change}),null);
@@ -32,7 +32,7 @@ test('titles, slugs, portrait recordings and aspect ratios are not desktop evide
   assert.equal(reviewedDesktopGame({name:review.name,slug:review.root.split('/').at(-1),status:'published',supported_platforms:['mobile'],bundle_version:review.version,preview_width:1280,preview_height:720}),null);
   assert.equal(reviewedDesktopGame({...published(review),name:'Changed title',slug:'changed-title'}),review);
  }
- assert.equal(webGamePlatform({status:'published',supported_platforms:['mobile','desktop']}),'cross-play');
+ assert.equal(webGamePlatform({status:'published',supported_platforms:['mobile','desktop']}),'mobile');
  assert.equal(webGamePlatform({status:'published',supported_platforms:['desktop']}),'desktop');
 });
 test('server review clauses enforce the same publication, device and exact release criteria',()=>{

@@ -31,3 +31,26 @@ test('late receipts, invalid scores and forged verification labels do not become
  const expected={owner,game:'night-drift',requestId,score:42};assert.throws(()=>parseScoreReceipt({...receipt(expected),score_authority:'verified_receipt'},expected));
  assert.equal(parseLeaderboard([{username:'player',score:7}])[0].authority,'community_unverified');
 });
+
+test('explicit save retry retains the completed score and submission ID after a lost receipt',async()=>{
+ const submitted=[];let release;
+ const run=createScoreRun({game:'night-drift',getSession:()=>session,requestId,submit:async expected=>{
+  submitted.push(expected);
+  if(submitted.length===1)throw new Error('response lost');
+  await new Promise(resolve=>{release=resolve;});return receipt(expected);
+ }});
+ await assert.rejects(run.finish(42));
+ await assert.rejects(run.finish(999));assert.equal(submitted.length,1);
+ const retry=run.retry();assert.equal(run.retry(),retry);assert.equal(run.finish(999),retry);
+ release();assert.equal((await retry).score,42);
+ assert.deepEqual(submitted,[{owner,game:'night-drift',score:42,requestId},{owner,game:'night-drift',score:42,requestId}]);
+ assert.equal(run.retry(),retry);assert.equal(submitted.length,2);
+});
+
+test('retry cannot move an old score to a different account, including switching away and back',async()=>{
+ let current=session,calls=0;
+ const run=createScoreRun({game:'night-drift',getSession:()=>current,submit:async()=>{calls++;throw new Error('offline');}});
+ await assert.rejects(run.finish(42));
+ current={...session,epoch:3};
+ await assert.rejects(run.retry(),error=>error.code==='account_changed');assert.equal(calls,1);
+});

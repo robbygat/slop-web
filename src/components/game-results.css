@@ -1,0 +1,147 @@
+/* Adapt to the playfield, so phone games stay compact on large monitors. */
+.game-player .player-surface .player-frame { container:game-results / inline-size; }
+.game-over-game,.leaderboard-columns { display:none; }
+.game-leaderboard { display:flex;flex-direction:column; }
+.game-leaderboard .leaderboard-heading,.game-leaderboard .leaderboard-note { flex:none; }
+.game-leaderboard ol { min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin; }
+.game-leaderboard.compact li:nth-child(n+4) { display:none; }
+.game-leaderboard .leaderboard-state { flex:1;min-height:0;height:auto;padding:16px 4px; }
+.leaderboard-state>strong { font-size:14px; }
+.leaderboard-empty-icon { display:grid;place-items:center;margin-bottom:6px;color:#8a6b20; }
+.leaderboard-you { display:inline-block;margin-left:6px;font-size:9px;font-weight:600; }
+.leaderboard-loading { width:22px;height:22px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:leaderboard-spin 1s linear infinite;opacity:.65; }
+.game-over-summary .game-save-action { margin-top:8px;min-height:36px;padding:7px 12px;font-size:11px; }
+.game-score-context { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px; }
+.game-result-stat { display:flex;flex-direction:column;gap:3px;min-width:0;font-variant-numeric:tabular-nums; }
+.game-result-stat>span { font-size:10px;opacity:.75; }
+.game-result-stat>strong { font-size:17px;line-height:1.25;overflow-wrap:anywhere; }
+.game-result-stat>small { font-size:9px;line-height:1.4; }
+.game-result-stat button,.leaderboard-personal button { padding:4px 0;background:none;border:0;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left; }
+.game-result-stat button { font-size:10px; }
+.leaderboard-personal { flex:none;display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 8px;border-top:1px solid currentColor;background:#c5f56412;border-radius:8px;font-size:11px;font-variant-numeric:tabular-nums; }
+.leaderboard-personal-label { flex:1;min-width:0;font-weight:650; }
+.leaderboard-personal small { display:block;margin-top:2px;font-size:9px;font-weight:400;opacity:.75; }
+.leaderboard-personal-rank { font-weight:700; }
+.leaderboard-personal>strong { margin-left:auto;font-size:13px; }
+.leaderboard-personal>button { margin-left:auto; }
+@keyframes leaderboard-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .leaderboard-loading { animation:none; } }
+@container game-results (max-width:679px) {
+  .game-player.landscape .game-over-overlay { overflow-y:auto; }
+  .game-player.landscape .game-over-card { min-height:460px; }
+}
+
+@container game-results (min-width:680px) {
+  .game-player .player-frame :is(.game-over-overlay,.player-board-overlay) {
+    background:radial-gradient(ellipse at 5% 0%,#c5f5640c,transparent 52%),#101b17f7;
+    color:#f4f7ec;
+    overflow:auto;
+    scrollbar-width:thin;
+  }
+
+  .game-player .game-over-overlay { display:grid;place-items:safe center; }
+
+  .game-over-overlay .game-over-card {
+    width:min(100%,1280px);
+    max-width:none;
+    height:100%;
+    min-height:540px;
+    max-height:780px;
+    grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+    grid-template-rows:minmax(0,1fr) auto auto;
+    gap:16px clamp(28px,5cqw,72px);
+    padding:clamp(24px,4cqw,64px);
+    text-align:left;
+    overflow:visible;
+  }
+
+  .game-over-card .game-over-summary {
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:16px;
+    min-height:0;
+  }
+  .game-over-card .game-over-summary>.game-over-slop { width:56px;height:56px;flex-basis:56px; }
+  .game-over-summary>div { width:100%; }
+  .game-over-summary .game-over-game { display:block;margin:0 0 10px;color:#a9b9ab;font-size:clamp(12px,1.2cqw,15px);line-height:1.4;overflow-wrap:anywhere; }
+  .game-over-card .game-over-summary h2 { margin:0;font-size:clamp(32px,3.6cqw,48px);line-height:1.05;letter-spacing:-.045em;color:#f4f7ec; }
+  .game-over-summary .game-over-score { display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:20px; }
+  .game-player .game-over-summary .game-over-score>span { color:#adbbaf;font-size:13px;font-weight:500; }
+  .game-over-summary .game-over-score>strong { color:#c5f564;font-size:clamp(56px,7.4cqw,100px);line-height:1;letter-spacing:-.065em;font-weight:650;font-variant-numeric:tabular-nums; }
+  .game-over-summary .game-over-score.is-long-score>strong { font-size:clamp(40px,5.4cqw,72px); }
+  .game-over-card .game-over-summary .game-save-status { margin:18px 0 0;max-width:32ch;min-height:20px;color:#adbbaf;font-size:13px;line-height:1.6; }
+  .game-over-summary .game-save-status[data-state=saved] { color:#c5f564; }
+  .game-over-summary .game-save-status[data-state=failed] { color:#f9b69e; }
+  .game-player .game-over-summary .game-save-action { min-height:42px;margin-top:12px;padding:10px 16px;font-size:13px;border:1px solid #b6d1bb45;background:#ffffff08;color:#e8f4dd;border-radius:10px; }
+  .game-player .game-over-summary .game-save-action:hover { background:#c5f56418; }
+  .game-score-context { gap:16px;margin-top:20px;padding-top:18px;border-top:1px solid #b6d1bb25; }
+  .game-result-stat { gap:5px; }
+  .game-result-stat>span { color:#adbbaf;opacity:1;font-size:12px; }
+  .game-result-stat>strong { font-size:clamp(19px,2.3cqw,28px);letter-spacing:-.025em;color:#f4f7ec; }
+  .game-result-stat>small { font-size:11px;color:#adbbaf; }
+  .game-result-stat>small.is-new-best { color:#c5f564; }
+  .game-result-stat button { font-size:12px; }
+  .game-player .game-leaderboard .leaderboard-personal { margin-top:14px;padding:14px 12px;gap:14px;border:1px solid #c5f56455;background:#c5f5640c;font-size:13px;color:#d7f79f;border-radius:12px; }
+  .leaderboard-personal small { font-size:10px; }
+  .leaderboard-personal>strong { font-size:19px; }
+
+  .game-player .game-over-overlay .game-over-card>.button {
+    grid-column:1;grid-row:3;
+    max-width:340px;
+    min-height:56px;
+    padding:15px 24px;
+    font-size:17px;
+    border-radius:14px;
+    background:#c5f564;
+    border-color:#c5f564;
+    color:#17231d;
+  }
+  .game-over-overlay .game-over-card>.button:hover { background:#d7ff89;border-color:#d7ff89;transform:none; }
+  .game-over-overlay .game-over-card>.button:focus-visible { outline:3px solid #f4f7ec;outline-offset:4px; }
+  .game-over-card .game-over-crown-note { grid-column:1;grid-row:2;justify-content:flex-start;color:#c5f564;font-size:13px;line-height:1.5; }
+
+  .game-over-overlay .game-over-card>.game-leaderboard { grid-column:2;grid-row:1 / 4; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .game-leaderboard {
+    background:#192720;
+    border:1px solid #b6d1bb24;
+    border-radius:20px;
+    padding:clamp(18px,2.2cqw,30px);
+    color:#f4f7ec;
+    min-height:0;
+  }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-heading { gap:16px;margin-bottom:22px; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-heading h3 { font-size:clamp(20px,2cqw,26px);letter-spacing:-.035em;line-height:1.2; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-heading>span { flex:none;font-size:11px;color:#b0c0b2;border:1px solid #b6d1bb24;border-radius:99px;padding:6px 10px; }
+  .leaderboard-columns { display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:14px;padding:0 12px 12px;color:#90a695;font-size:11px;border-bottom:1px solid #b6d1bb1a; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard ol { flex:1;display:block;margin:6px -10px 0;padding:0 10px;scrollbar-color:#516653 transparent; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard ol:focus-visible { outline:2px solid #c5f564;outline-offset:2px;border-radius:8px; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard li,
+  .game-over-overlay .game-leaderboard.compact li:nth-child(n+4) { display:flex;min-height:58px;gap:12px;padding:8px 10px;border-bottom:1px solid #b6d1bb14; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-rank { width:24px;font-size:13px;color:#8fa995; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-rank.is-crown { color:#c5f564; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard .slop { width:36px;height:36px; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-name { font-size:14px;font-weight:500; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-name small { font-size:10px;color:#b9d991; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard li>strong { font-size:clamp(14px,1.6cqw,19px);font-weight:600;white-space:nowrap; }
+  :is(.game-over-overlay,.player-board-overlay) .game-leaderboard li.is-you { background:#c5f56410;border-radius:10px;color:#d7f79f; }
+  .leaderboard-you { font-size:10px;color:#c5f564; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-note { margin:14px 0 0;font-size:10px;line-height:1.5;color:#9db1a1; }
+  .game-player :is(.game-over-overlay,.player-board-overlay) .leaderboard-state { color:#a9bdad;font-size:13px;line-height:1.6;gap:12px;padding:24px 10px; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-state>strong { color:#edf3e6;font-size:20px;letter-spacing:-.025em; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-state>p { max-width:28ch; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-empty-icon { width:76px;height:76px;margin-bottom:10px;border:1px solid #c5f56435;border-radius:50%;background:#c5f56409;color:#c5f564; }
+  :is(.game-over-overlay,.player-board-overlay) .leaderboard-state>.button { margin-top:8px;min-height:44px;background:#c5f564;color:#17231d;border-color:#c5f564;font-size:13px; }
+  .game-over-overlay .crown-takeover { background:#101b17f7;color:#f4f7ec; }
+  .game-over-overlay .crown-takeover>span { color:#b6c8b8; }
+
+  .game-player .player-board-overlay { padding:clamp(24px,4cqw,54px);gap:20px; }
+  .player-board-overlay>.player-board-top,
+  .player-board-overlay>.game-leaderboard,
+  .player-board-overlay>.button { width:min(100%,920px);margin-inline:auto; }
+  .player-board-overlay .player-board-top h2 { font-size:32px;letter-spacing:-.035em; }
+  .player-board-overlay .player-board-top>.icon-button { background:#ffffff10;color:#f4f7ec;border-color:#b6d1bb30; }
+  .game-player .player-frame .player-board-overlay>.button { min-height:48px;background:#c5f564;color:#17231d;border-color:#c5f564;font-size:15px; }
+}

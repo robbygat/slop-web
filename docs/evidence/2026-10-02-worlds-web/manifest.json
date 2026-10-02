@@ -94,12 +94,12 @@
   ],
   "checks": {
     "web": {
-      "pass": 384,
+      "pass": 421,
       "skip": 6,
       "fail": 0
     },
     "mcp": {
-      "pass": 98,
+      "pass": 105,
       "skip": 2,
       "fail": 0
     },
@@ -255,6 +255,24 @@
       "file": "slop-worlds-build-2076-final-20261002.log",
       "bytes": 4457,
       "sha256": "8fb7d5daec3b0996619a8ccef58323753e51445fe7e4c4ade45e91b4f4d89559"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-merged-main-web-20261002.log",
+      "file": "slop-worlds-merged-main-web-20261002.log",
+      "bytes": 40770,
+      "sha256": "1e7e9050fad507d99c4ac5bc4cd3a64e8c5452fabf1315d8bb59fba40eceaee0"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-merged-main-mcp-20261002.log",
+      "file": "slop-worlds-merged-main-mcp-20261002.log",
+      "bytes": 10870,
+      "sha256": "cc06e264e0947b891949cc682aac5aba3b1785708f3b770d51b4e18086cd636a"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-merged-main-build-20261002.log",
+      "file": "slop-worlds-merged-main-build-20261002.log",
+      "bytes": 4457,
+      "sha256": "10c0873d7b6696590b16ef0b0bad7d00b55ce3fda6cefab9707b3f71b58ac0bf"
     }
   ],
   "android": {
@@ -264,5 +282,6 @@
     "evidence": "Root independently downloaded public build 2076 and confirmed exact hash/bytes, aapt2 identity, no AD_ID and matching v2 signature; no upload by this branch",
     "oldArtifactsPreserved": true
   },
-  "benchmarkRuntimeSha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"
+  "benchmarkRuntimeSha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996",
+  "integratedMain": "0af869329b3d77c3cf28ac260caacbad777fcfde"
 }

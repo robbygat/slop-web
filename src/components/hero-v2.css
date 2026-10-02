@@ -81,3 +81,17 @@
 .slop-hero-downloads .download-pair>a:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 .slop-hero-downloads .download-pair svg{width:14px;height:16px;fill:currentColor;flex:none}
 .slop-hero-downloads .download-pair>a:last-child svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* Leave a preview of the games in the first screen on desktop, including laptops.
+   Height-aware type and spacing keep the headline and downloads together. */
+@media (min-width:901px) {
+  .slop-hero {
+    min-height:min(600px,calc(100svh - 330px));
+    padding:clamp(28px,5svh,56px) 5vw;
+    margin-bottom:clamp(32px,3.5vw,48px);
+  }
+
+  .slop-hero h1 { font-size:clamp(64px,min(8.6vw,12svh),136px); }
+  .slop-hero-lede { margin-top:24px; }
+  .slop-hero-entry { margin-top:24px; }
+}

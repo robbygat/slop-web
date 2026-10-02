@@ -2,9 +2,10 @@
 export function createFeedReturnStore({now=Date.now,maxAgeMs=300000,maxGames=96}={}){
  let saved=null;
  return {
-  read(){if(!saved||now()-saved.at>maxAgeMs){saved=null;return null;}return {...saved,games:[...saved.games]};},
+  read(preferences){if(!saved||now()-saved.at>maxAgeMs){saved=null;return null;}if(preferences&&(saved.order!==preferences.order||saved.platform!==preferences.platform))return null;return {...saved,games:[...saved.games]};},
   write({order,platform,games,active,next}){
-   if(!['newest','popular'].includes(order)||!['all','mobile','desktop','cross-play'].includes(platform)||!Array.isArray(games)||!games.length)return false;
+   if(platform==='cross-play'||platform==='cross-platform')platform='mobile';
+   if(!['newest','popular'].includes(order)||!['all','mobile','desktop'].includes(platform)||!Array.isArray(games)||!games.length)return false;
    const index=games.findIndex(game=>game.id===active);if(index<0)return false;
    const start=games.length>maxGames?Math.max(0,Math.min(index-24,games.length-maxGames)):0;
    const window=games.slice(start,start+maxGames),last=window.at(-1),truncated=start+window.length<games.length;
@@ -14,5 +15,5 @@ export function createFeedReturnStore({now=Date.now,maxAgeMs=300000,maxGames=96}
  };
 }
 const feedReturn=createFeedReturnStore();
-export const readFeedReturn=()=>feedReturn.read();
+export const readFeedReturn=preferences=>feedReturn.read(preferences);
 export const writeFeedReturn=context=>feedReturn.write(context);

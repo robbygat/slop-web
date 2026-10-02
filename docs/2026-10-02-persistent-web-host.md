@@ -4,6 +4,10 @@ This is an implementation/test checkpoint, not a public deployment or native
 acceptance claim. Owner checkout is unchanged. Worktree:
 `/private/tmp/slop-web-persistent-20261002.I8zHz1/worktree`, branch
 `codex/persistent-web-host-20261002`, based on main `717b666c`.
+Before final review, main advanced to `0af869329b3d77c3cf28ac260caacbad777fcfde`.
+It is merged into this isolated branch, retaining its browse preferences,
+OAuth game return, personal-best read and result/retry presentation alongside
+Worlds device-claim, Continue and persistence guards. No owner checkout changed.
 
 ## Implemented
 
@@ -53,10 +57,10 @@ The package is not a substitute for deploying its compatible authority paths.
 
 ## Evidence and remaining gates
 
-- Final full Node web suite: 384 passed,
+- Final combined Node web suite after integrating current main: 421 passed,
   6 pre-existing browser/video checks skipped,
   including the clean and dirty local-counter/cloud-base regression cases.
-- Final MCP suite: 98 passed, 2 skipped. Template has real persistence gating; packaged
+- Final combined MCP suite: 105 passed, 2 skipped. Template has real persistence gating; packaged
   SDK→typed host→IndexedDB tests prove awaited durable reset/flush/recreation and
   actual pinned r128 GLTF-loader availability, not a native codec/UI claim.
 - Deterministic 300 close/reopen cycles preserve exact run/profile/history. This
@@ -219,3 +223,9 @@ After the 2076 metadata update, its three focused checks and the full web suite
 388 routes. Final logs are copied as `slop-worlds-android-2076-metadata-20261002.log`,
 `slop-worlds-web-2076-final-20261002.log` and
 `slop-worlds-build-2076-final-20261002.log` in the evidence directory.
+The subsequent current-main integration passed 421 web checks (6 skipped),
+105 MCP checks (2 skipped) and the 388-route production build. Those logs are
+copied as `slop-worlds-merged-main-{web,mcp,build}-20261002.log`. The generated
+runtime, packaged SDK and every Edge closure byte remain unchanged from the
+approved final checkpoint pin. Incoming main's existing migration is retained
+as source only; this merge does not execute it.
