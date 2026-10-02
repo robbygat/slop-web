@@ -1,8 +1,8 @@
 {
-  "file": "Slop-3.7.7-build-2075-universal.apk",
-  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2075/Slop-3.7.7-build-2075-universal.apk",
+  "file": "Slop-3.7.7-build-2076-universal.apk",
+  "url": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2076/Slop-3.7.7-build-2076-universal.apk",
   "version": "3.7.7",
-  "versionCode": 2075,
+  "versionCode": 2076,
   "package": "game.slop.api",
   "architectures": [
     "arm64-v8a",
@@ -11,8 +11,8 @@
   ],
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 184841277,
-  "sha256": "f514166f5297589d8b216fff233ebde5e5c061d556dbc0034fd806d311ae7db4",
+  "bytes": 184841937,
+  "sha256": "609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab",
   "adsEnabled": false,
   "AD_ID_permission": false,
   "signingCertificateSha256": "4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab",
@@ -22,8 +22,8 @@
   },
   "verification": {
     "archive": "aapt2 package/version/SDK and all three ABIs verified; SHA-256 matches the fresh release APK",
-    "signature": "APK Signature Scheme v2 verified; certificate matches the preserved website build 2074",
-    "assets": "Packaged persistent-v1 runtime byte-matches SHA-256 621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996",
+    "signature": "APK Signature Scheme v2 verified; certificate matches preserved builds 2074 and 2075",
+    "assets": "Packaged persistent-v1 runtime byte-matches SHA-256 dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 (452194 bytes)",
     "permissions": "Both ENABLE_ADS and PREVIEW_ADS disabled; aapt2 permission inspection finds no AD_ID permission"
   },
   "limitations": [

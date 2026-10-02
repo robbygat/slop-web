@@ -1,7 +1,7 @@
 {
   "version": 1,
   "date": "2026-10-02",
-  "scope": "Frozen local Worlds web candidate plus approved build 2075 download metadata; no deployment or game publication by this branch",
+  "scope": "Frozen local Worlds web candidate plus approved and public-download-verified build 2076 metadata; no deployment or game publication by this branch",
   "base": "717b666c9dcca8a6f94d20c07084a45b87549d82",
   "branch": "codex/persistent-web-host-20261002",
   "edge": {
@@ -84,12 +84,12 @@
     {
       "path": "public/downloads/android-release.json",
       "bytes": 553,
-      "sha256": "b0d2ef9a27d0820acea9bb1da03a2ef1aa6de1607125999ffd0534b7c14e7184"
+      "sha256": "58d784f1bccd1f2cb096992368a044379df7f65307c80b18b6cad2cecb18e6d2"
     },
     {
       "path": "public/downloads/android-build-manifest.json",
-      "bytes": 1340,
-      "sha256": "786730d04caa1968b462a343cbedd1232b4f7b10b6cfa9e9d956a19a903c49b4"
+      "bytes": 1353,
+      "sha256": "1b843e163cc7844630c9f2e87bf92c2b9d16a8882e6e8da00ede0884746c20f5"
     }
   ],
   "checks": {
@@ -237,13 +237,31 @@
       "file": "slop-worlds-sdk-checkpoint-integration-final-20261002.log",
       "bytes": 4109,
       "sha256": "088a16b36b1126f14df4f958be3f5354efe107a2bf3926a3d710962cc820338b"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-android-2076-metadata-20261002.log",
+      "file": "slop-worlds-android-2076-metadata-20261002.log",
+      "bytes": 366,
+      "sha256": "6533a324027657423c8b1e75f472fdf588a6735026e4b219c9d04b888242ab04"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-web-2076-final-20261002.log",
+      "file": "slop-worlds-web-2076-final-20261002.log",
+      "bytes": 37549,
+      "sha256": "2d979f0b8ee3a620deee2aa347352e8cb7cab8bb4e2d4d7747284714a1d84cc1"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-build-2076-final-20261002.log",
+      "file": "slop-worlds-build-2076-final-20261002.log",
+      "bytes": 4457,
+      "sha256": "8fb7d5daec3b0996619a8ccef58323753e51445fe7e4c4ade45e91b4f4d89559"
     }
   ],
   "android": {
-    "build": 2075,
-    "bytes": 184841277,
-    "sha256": "f514166f5297589d8b216fff233ebde5e5c061d556dbc0034fd806d311ae7db4",
-    "evidence": "Root independently downloaded the public asset and confirmed exact hash, aapt2 identity and v2 signature before PR handoff; no upload by this branch",
+    "build": 2076,
+    "bytes": 184841937,
+    "sha256": "609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab",
+    "evidence": "Root independently downloaded public build 2076 and confirmed exact hash/bytes, aapt2 identity, no AD_ID and matching v2 signature; no upload by this branch",
     "oldArtifactsPreserved": true
   },
   "benchmarkRuntimeSha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"

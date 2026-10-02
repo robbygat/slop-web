@@ -211,6 +211,11 @@ No game content, publication, live follows/accounts, paid media, ads configurati
 or mobile save storage changed in this web worktree.
 
 The only additional download change is the explicitly approved shared Android
-2075 metadata, documented in `docs/release/2026-10-02-android-2075.md`. Root
+2076 metadata, documented in `docs/release/2026-10-02-android-2076.md`. Root
 independently downloaded the public release and confirmed its exact hash,
 package/version and matching signature. Older artifacts remain untouched.
+After the 2076 metadata update, its three focused checks and the full web suite
+(384 passed / 6 skipped) passed again, and the production build generated all
+388 routes. Final logs are copied as `slop-worlds-android-2076-metadata-20261002.log`,
+`slop-worlds-web-2076-final-20261002.log` and
+`slop-worlds-build-2076-final-20261002.log` in the evidence directory.
