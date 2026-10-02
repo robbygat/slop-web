@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
 import {gameTemplate} from '../mcp/game-template.mjs';
 import {recorderManifest,recorderFileBytes} from '../scripts/mcp-publisher/world-recorder.mjs';
-import {repairSelection,loadRepairBundle,repairOneVideo,boundedResponseBytes,uploadRepairVideo} from '../scripts/mcp-publisher/repair-video.mjs';
+import {repairSelection,loadRepairBundle,repairOneVideo,boundedResponseBytes,uploadRepairVideo,repairDiagnostic,runRepairCli,RepairFailure} from '../scripts/mcp-publisher/repair-video.mjs';
 import {ApiHealthFailure} from '../scripts/mcp-publisher/safety.mjs';
+import {VideoFailure} from '../scripts/mcp-publisher/video.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const digest=manifest=>hash([...manifest].sort((a,b)=>a.path.localeCompare(b.path)).map(file=>`${file.path}:${file.bytes}:${file.sha256}`).join('\n'));
@@ -106,4 +109,55 @@ test('CLI is finite, pinned to normal OIDC media upload, with no republish or br
  const source=await readFile(new URL('../scripts/mcp-publisher/repair-video.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(source,/\/publisher\/claim|\/publisher\/videos\/claim|\/finish|service_role|SUPABASE_SERVICE|send_draft/);
  assert.match(source,/ACTIONS_ID_TOKEN_REQUEST_URL/);assert.match(source,/release_key:receipt\.release_root/);assert.match(source,/if\(await checkCurrent\(\)\)return true/);
+});
+test('repair progress identifies the last operation without source or identity in the events',async()=>{
+ const f=fixture(),stages=[];
+ await repairOneVideo(f.selection,{readGame:async()=>f.row,fetchImpl:f.fetchImpl,record:async()=>clip,upload:async({key})=>{f.row.preview_video=[videoRow(f.row,f.selection.releaseRoot,key)];return true;},progress:stage=>stages.push(stage)});
+ assert.deepEqual(stages,['catalog','source','recording','revalidate','attach','postflight','complete']);
+ const stopped=[];f.row.preview_video=null;
+ await assert.rejects(repairOneVideo(f.selection,{readGame:async()=>f.row,fetchImpl:f.fetchImpl,record:async()=>{throw new VideoFailure('boot_error');},upload:unused,progress:stage=>stopped.push(stage)}));
+ assert.deepEqual(stopped,['catalog','source','recording']);
+});
+test('diagnostics preserve fixed recorder codes but redact arbitrary errors and Chrome stderr',()=>{
+ for(const code of ['not_ready','boot_error','clock_unavailable','blank_canvas','no_motion','runtime_invalid','world_manifest_required','unstable_gameplay'])assert.equal(repairDiagnostic(new VideoFailure(code),'recording').code,code);
+ assert.equal(repairDiagnostic(new RepairFailure('repair_asset_integrity'),'source').code,'repair_asset_integrity');
+ assert.equal(repairDiagnostic(new ApiHealthFailure(),'attach').code,'api_unhealthy');
+ for(const error of [new VideoFailure('PRIVATE_SOURCE_SENTINEL'),new RepairFailure('PRIVATE_SOURCE_SENTINEL'),new Error('PRIVATE_SOURCE_SENTINEL'),Object.assign(new Error('PRIVATE_SOURCE_SENTINEL'),{name:'PRIVATE_SOURCE_SENTINEL'}),new Error('Chrome did not start: PRIVATE_SOURCE_SENTINEL')]){
+  assert.doesNotMatch(JSON.stringify(repairDiagnostic(error,'PRIVATE_SOURCE_SENTINEL')),/PRIVATE_SOURCE_SENTINEL/);
+ }
+ assert.deepEqual(repairDiagnostic(new Error('Chrome did not start: private/path: No usable sandbox! secret'), 'recording'),{stage:'recording',code:'chrome_start_failed',error:'Error',cause:'sandbox_unavailable'});
+ assert.equal(repairDiagnostic(new Error('Chrome did not start: error while loading shared libraries: private.so'),'recording').cause,'missing_dependency');
+ assert.equal(repairDiagnostic(new Error('Chrome did not start: Cannot allocate memory private detail'),'recording').cause,'resource_unavailable');
+ assert.equal(repairDiagnostic(new Error('Chrome did not start: private stderr'),'recording').cause,'unknown');
+ assert.equal(repairDiagnostic(Object.assign(new Error('private path'),{code:'ENOENT'}),'recording').cause,'missing_file');
+ assert.equal(repairDiagnostic(Object.assign(new Error('private path'),{code:'EPERM'}),'recording').cause,'access_denied');
+ assert.equal(repairDiagnostic(new DOMException('private URL','TimeoutError'),'source').code,'operation_timeout');
+});
+test('CLI flushes ordered, bounded progress and error output before exiting once',async()=>{
+ const lines=[],exits=[];
+ await runRepairCli({run:async progress=>{progress('recording');progress('PRIVATE_SOURCE_SENTINEL');throw new VideoFailure('no_motion');},write:async line=>{await Promise.resolve();lines.push(line);},exit:code=>{assert.equal(lines.length,3);exits.push(code);}});
+ assert.deepEqual(exits,[1]);assert.doesNotMatch(lines.join('\n'),/PRIVATE_SOURCE_SENTINEL/);
+ assert.deepEqual(lines.map(line=>JSON.parse(line.slice('video repair: '.length)).stage),['selection','recording','recording']);
+ assert.equal(JSON.parse(lines.at(-1).slice('video repair: '.length)).code,'no_motion');
+ const success=[];await runRepairCli({run:async()=>({status:'already_ready'}),write:async line=>success.push(line),exit:code=>assert.equal(code,0)});
+ assert.match(success.at(-1),/already_ready/);
+});
+test('CLI terminates on success and error even with an outstanding recorder-style handle',async()=>{
+ const moduleUrl=new URL('../scripts/mcp-publisher/repair-video.mjs',import.meta.url).href;
+ for(const failure of [false,true]){
+  const code=`import {runRepairCli} from ${JSON.stringify(moduleUrl)};setInterval(()=>{},1000);await runRepairCli({run:async progress=>{progress('recording');${failure?"throw new Error('Chrome did not start: PRIVATE_SOURCE_SENTINEL');":"return {status:'already_ready'};"}}});`;
+  try{
+   const result=await promisify(execFile)(process.execPath,['--input-type=module','-e',code],{timeout:5000,maxBuffer:10000});
+   assert.equal(failure,false);assert.match(result.stdout,/already_ready/);
+  }catch(error){assert.equal(failure,true);assert.equal(error.killed,false);assert.equal(error.code,1);assert.match(error.stdout,/chrome_start_failed/);assert.doesNotMatch(error.stdout+error.stderr,/PRIVATE_SOURCE_SENTINEL/);}
+ }
+});
+test('CLI still exits when diagnostic output fails',async()=>{
+ const exits=[];await runRepairCli({run:async()=>({status:'already_ready'}),write:async()=>{throw Error('closed output');},exit:code=>exits.push(code)});assert.deepEqual(exits,[1]);
+});
+test('importing the repair library neither runs the CLI nor terminates its caller',async()=>{
+ const moduleUrl=new URL('../scripts/mcp-publisher/repair-video.mjs',import.meta.url).href;
+ await assert.rejects(promisify(execFile)(process.execPath,['--input-type=module','-e',`import ${JSON.stringify(moduleUrl)};console.log('importer-alive');setInterval(()=>{},1000);`],{timeout:750,maxBuffer:10000}),error=>{
+  assert.equal(error.killed,true);assert.equal(error.signal,'SIGTERM');assert.equal(error.stdout.trim(),'importer-alive');assert.equal(error.stderr,'');return true;
+ });
 });

@@ -9,6 +9,7 @@ import {PERSISTENT_BUDGET} from '../../mcp/bundle-rules.mjs';
 import {attachPublishedVideo} from './completion.mjs';
 import {recorderWorldConfig,recorderManifest} from './world-recorder.mjs';
 import {checkApiHealth,ApiHealthFailure,PUBLISHABLE_KEY} from './safety.mjs';
+import {VideoFailure} from './video.mjs';
 
 const API='https://api.slop.game/functions/v1/slop-mcp';
 const STORAGE='https://api.slop.game/storage/v1/object/public/games/';
@@ -17,6 +18,39 @@ const BINARY=/\.(?:glb|bin|jpg|webp|ktx2|ogg)$/;
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export class RepairFailure extends Error {constructor(code){super(code);this.code=code;}}
 const fail=code=>{throw new RepairFailure(code);};
+const STAGES=new Set(['selection','catalog','source','recording','revalidate','attach','postflight','complete']);
+const REPAIR_CODES=new Set(['repair_selection_invalid','repair_release_changed','repair_source_mismatch','repair_fetch_failed','repair_asset_size','repair_bundle_bounds','repair_asset_integrity','repair_text_invalid','repair_runtime_invalid','repair_attachment_failed','repair_receipt_missing','repair_catalog_invalid','repair_oidc_unavailable']);
+const VIDEO_CODES=new Set(['runtime_invalid','world_manifest_required','not_ready','boot_error','clock_unavailable','recorder_error','blank_canvas','no_motion','unstable_gameplay']);
+// The repository/workflow logs are public. Never expose arbitrary messages,
+// stacks, Chrome stderr, request URLs, game text or environment values.
+export function repairDiagnostic(error,stage){
+ let code='recorder_error',cause='unknown';
+ if(error instanceof RepairFailure&&REPAIR_CODES.has(error.code))code=error.code;
+ else if(error instanceof ApiHealthFailure)code='api_unhealthy';
+ else if(error instanceof VideoFailure&&VIDEO_CODES.has(error.code))code=error.code;
+ else if(error instanceof Error&&error.message.startsWith('Chrome did not start:')){
+  code='chrome_start_failed';
+  if(/No usable sandbox|sandbox.*(?:denied|not permitted)|Running as root without --no-sandbox/i.test(error.message))cause='sandbox_unavailable';
+  else if(/error while loading shared libraries|cannot open shared object/i.test(error.message))cause='missing_dependency';
+  else if(/Cannot allocate memory|Resource temporarily unavailable|Too many open files|No space left/i.test(error.message))cause='resource_unavailable';
+ }else if(error?.name==='TimeoutError'||error?.name==='AbortError')code='operation_timeout';
+ else if(['ENOENT','EACCES','EPERM','ENOMEM','EMFILE'].includes(error?.code)){
+  code='recorder_environment';cause={ENOENT:'missing_file',EACCES:'access_denied',EPERM:'access_denied',ENOMEM:'resource_unavailable',EMFILE:'resource_unavailable'}[error.code];
+ }
+ const name=['Error','TypeError','RangeError','SyntaxError','TimeoutError','AbortError'].includes(error?.name)?error.name:'Error';
+ return {stage:STAGES.has(stage)?stage:'selection',code,error:name,cause};
+}
+export async function runRepairCli({run,write=line=>new Promise((resolve,reject)=>process.stdout.write(`${line}\n`,error=>error?reject(error):resolve())),exit=code=>process.exit(code)}){
+ let stage='selection',status=0,output=Promise.resolve();
+ const emit=value=>{output=output.then(()=>write(`video repair: ${JSON.stringify(value)}`));};
+ const progress=value=>{if(STAGES.has(value)){stage=value;emit({stage});}};
+ try{progress(stage);const result=await run(progress);emit(result);}
+ catch(error){status=1;emit(repairDiagnostic(error,stage));}
+ // recordVideo can fail before its cleanup scope (e.g. Chrome cannot start),
+ // leaving its local HTTP server open. Flush bounded logs, then terminate this
+ // one-shot CLI, as the ordinary publisher does. Imports never exit the caller.
+ try{await output;}catch{status=1;}finally{exit(status);}
+}
 
 export function repairSelection({slug,sourceDigest,releaseRoot}={}){
  if(typeof slug!=='string'||!/^mcp-[a-f0-9]{32}$/.test(slug)||!DIGEST.test(sourceDigest||'')||
@@ -75,10 +109,13 @@ export async function loadRepairBundle(row,selection,{fetchImpl=fetch}={}){
 
 // All dependencies are injectable for offline tests. The default CLI wires only
 // public reads, the existing recorder and the normal OIDC media endpoint.
-export async function repairOneVideo(input,{readGame,fetchImpl,record,upload,delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
- const selection=repairSelection(input),row=await readGame(selection.slug),initial=await attest(row,selection);
+export async function repairOneVideo(input,{readGame,fetchImpl,record,upload,delay=ms=>new Promise(resolve=>setTimeout(resolve,ms)),progress=()=>{}}){
+ const selection=repairSelection(input);progress('catalog');
+ const row=await readGame(selection.slug),initial=await attest(row,selection);
  if(currentVideo(row,selection))return {status:'already_ready'};
+ progress('source');
  const bundle=await loadRepairBundle(row,selection,{fetchImpl}),diagnostics={};
+ progress('recording');
  const clip=await record({files:bundle.files},{target:bundle.target,diagnostics,seed:parseInt(row.id.replaceAll('-','').slice(0,8),16)||1});
  const key=hash(clip.video).slice(0,32);
  const readPinned=async()=>{
@@ -87,8 +124,10 @@ export async function repairOneVideo(input,{readGame,fetchImpl,record,upload,del
   return latest;
  };
  // Refuse release drift before requesting any authority or media write.
+ progress('revalidate');
  const latest=await readPinned();
  if(currentVideo(latest,selection))return {status:'already_ready'};
+ progress('attach');
  const attached=await attachPublishedVideo({slug:selection.slug,sourceDigest:selection.sourceDigest,
   readGame:readPinned,delay,
   upload:async receipt=>{
@@ -97,8 +136,10 @@ export async function repairOneVideo(input,{readGame,fetchImpl,record,upload,del
    return upload({receipt,clip,key,checkCurrent:async()=>currentVideo(await readPinned(),selection)});
   }});
  if(!attached)fail('repair_attachment_failed');
+ progress('postflight');
  const observed=await readPinned();
  if(!currentVideo(observed,selection))fail('repair_receipt_missing');
+ progress('complete');
  return {status:'attached',files:bundle.count,bytes:bundle.bytes,width:clip.width,height:clip.height,durationMs:clip.durationMs,videoBytes:clip.video.length,
   frames:diagnostics.frames,moving:diagnostics.moving,lit:diagnostics.lit,errors:diagnostics.errors};
 }
@@ -136,13 +177,9 @@ export async function uploadRepairVideo({receipt,clip,key,checkCurrent},{health=
  return true;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
- try{
+ await runRepairCli({run:async progress=>{
   const {recordVideo}=await import('./video.mjs');
-  const result=await repairOneVideo({slug:process.env.SLOP_REPAIR_SLUG,sourceDigest:process.env.SLOP_REPAIR_SOURCE_DIGEST,releaseRoot:process.env.SLOP_REPAIR_RELEASE_ROOT},
-   {readGame:publicGame,record:recordVideo,upload:uploadRepairVideo});
-  console.log(`video repair: ${JSON.stringify(result)}`);
- }catch(error){
-  const code=error instanceof RepairFailure?error.code:error instanceof ApiHealthFailure?'api_unhealthy':'recorder_error';
-  console.log(`video repair: ${code}`);process.exitCode=1;
- }
+  return repairOneVideo({slug:process.env.SLOP_REPAIR_SLUG,sourceDigest:process.env.SLOP_REPAIR_SOURCE_DIGEST,releaseRoot:process.env.SLOP_REPAIR_RELEASE_ROOT},
+   {readGame:publicGame,record:recordVideo,upload:uploadRepairVideo,progress});
+ }});
 }
