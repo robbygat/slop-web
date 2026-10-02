@@ -4,7 +4,6 @@
 // the parent page the game cannot reach. Only 127.0.0.1 and the one three.js
 // build the real player allows may load. Nothing here logs source or media.
 import http from "node:http";
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -12,6 +11,7 @@ import { launchChrome } from "./cdp.mjs";
 import { installGameStorage } from "../../src/lib/player-storage.js";
 import { mcpRuntimeProblem } from "../../src/lib/mcp-runtime.js";
 import { mcpTargetFromFiles } from "../../src/lib/mcp-platform.js";
+import {recorderManifest,recorderFileBytes,recorderWorldConfig,worldRecorderBundle,worldEngineScript,scriptJson,worldMobileInputFrame,worldCaptureProblem} from './world-recorder.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -37,13 +37,6 @@ async function bundle() {
   return captureBundle;
 }
 
-function manifestOf(files) {
-  return Object.keys(files).sort().map((path) => {
-    const bytes = Buffer.from(files[path], "utf8");
-    return { path: `1.0.0/${path}`, bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") };
-  });
-}
-
 // Capture timing. Recording lasts at least `seconds`; a slow scene (heavy
 // three.js under CPU-rendered WebGL) keeps playing up to `maxSeconds` until the
 // ring holds enough distinct frames for a clip. A game that never changes still
@@ -55,13 +48,16 @@ const WARMUP_FRAMES = 8, WARMUP_FPS = 1.5, WARMUP_MS = 20000, ENOUGH_FRAMES = 24
 
 export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeconds = 70, diagnostics = {} } = {}) {
   if (!files?.["index.html"]) throw new RecorderFailure("runtime_invalid");
-  if (mcpRuntimeProblem(manifestOf(files), files["index.html"])) throw new RecorderFailure("runtime_invalid");
+  let world;
+  try {world=recorderWorldConfig(files);}catch {throw new RecorderFailure('runtime_invalid');}
+  if (mcpRuntimeProblem(recorderManifest(files), files["index.html"],{persistent:!!world})) throw new RecorderFailure("runtime_invalid");
   let target;
   try { target = mcpTargetFromFiles(files); } catch { throw new RecorderFailure("runtime_invalid"); }
   const desktop = target === "desktop";
   const [W, H] = desktop ? [1280, 720] : [360, 640];
   const bootstrap = await readFile(join(root, "src/lib/player-bootstrap.js"), "utf8");
   const recorder = await bundle();
+  const worldHost=world?await worldRecorderBundle():'',worldEngine=await worldEngineScript(world);
 
   let port = 0;
   const base = () => `http://127.0.0.1:${port}/game/`;
@@ -74,24 +70,25 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
   // for no visible gain in a 360x640 clip, so the recorder asks for none.
   let softGL = false;
   const noMsaa = "try{const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(typeof t==='string'&&/webgl/i.test(t))a={...(a&&typeof a==='object'?a:{}),antialias:false};return g.call(this,t,a);};}catch{}";
-  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${bootstrap}</script>`;
+  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${bootstrap}</script>${worldEngine}`;
   // The viewport meta matters: under mobile emulation a page without one lays
   // out 980px wide and is zoomed out, so the 360px game frame would shrink to
   // a corner and nearly every synthetic touch would land outside it.
   const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#101215;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style>
-<script>${recorder}</script></head><body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
-<script>(()=>{const f=document.getElementById('game');window.__events=[];addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(m&&typeof m.type==='string'){if(m.type==='webCaptureResult'||m.type==='webCaptureError'){(window.__pending?.[m.request])?.(m);return;}window.__events.push({type:m.type,at:performance.now()});}});
+<script>${recorder}</script>${world?`<script>${worldHost}</script>`:''}</head><body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
+<script>(async()=>{const f=document.getElementById('game');window.__events=[];addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(m&&typeof m.type==='string'){if(${!!world}&&m.type==='ready'&&m.source==='document')return;if(m.type==='webCaptureResult'||m.type==='webCaptureError'){(window.__pending?.[m.request])?.(m);return;}window.__events.push({type:m.type,at:performance.now()});}});
       window.__capture=()=>new Promise((resolve)=>{const request='r'+Math.random().toString(36).slice(2);const t=setTimeout(()=>{delete window.__pending[request];resolve(null)},15000);window.__pending=window.__pending||{};window.__pending[request]=m=>{clearTimeout(t);delete window.__pending[request];resolve(m.type==='webCaptureResult'?m:null)};f.contentWindow.postMessage(JSON.stringify({type:'webCapture',request}),'*');});
       window.__ring=SlopRecorder.createClipRing();
       // Lay the frame out before the game loads: a game whose first script runs
       // in a not-yet-sized frame reads innerWidth 0 and can keep a 1x1 canvas.
-      void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></body></html>`;
+      ${world?`window.__worldHost=await SlopWorldRecorder.installWorldRecorder(f,${scriptJson(world)});`:''}
+      void f.getBoundingClientRect().width;f.src='/game/index.html';})().catch(()=>window.__events.push({type:'loadError',at:performance.now()}));</script></body></html>`;
   const server = http.createServer((req, res) => {
     const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     if (path === "/host.html") { res.writeHead(200, { "content-type": MIME.html, "cache-control": "no-store" }); return res.end(host); }
     const rel = path.startsWith("/game/") ? path.slice(6) : null;
     if (!rel || !Object.hasOwn(files, rel)) { res.writeHead(404); return res.end(); }
-    let body = files[rel];
+    let body = rel==='index.html'?files[rel]:recorderFileBytes(rel,files[rel]);
     const headers = { "content-type": MIME[rel.split(".").pop()] ?? "application/octet-stream", "cache-control": "no-store" };
     if (rel === "index.html") {
       body = /<head[^>]*>/i.test(body) ? body.replace(/<head[^>]*>/i, (m) => m + inject()) : inject() + body;
@@ -117,7 +114,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     // Block everything that is not this local server or the one allowed CDN build.
     await s.send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     s.on("Fetch.requestPaused", (p) => {
-      const allowed = p.request.url.startsWith(origin) || p.request.url === THREE;
+      const allowed = p.request.url.startsWith(origin) || (!world&&p.request.url === THREE);
       s.send(allowed ? "Fetch.continueRequest" : "Fetch.failRequest",
         allowed ? { requestId: p.requestId } : { requestId: p.requestId, errorReason: "BlockedByClient" }).catch(() => {});
     });
@@ -150,6 +147,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     // Like the website's publish playtest, a game that never announces ready
     // is still recorded; it fails only if nothing usable is captured below.
     const announced = events.includes("ready");
+    if(world&&!announced)throw new RecorderFailure('not_ready');
     await sleep(600);
     // Heavy scenes announce ready before shaders compile and the first real
     // frames land. Wait until the player's rAF counter has advanced a few
@@ -190,8 +188,14 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     // captures, so games that read the pointer once per (slow) frame still see
     // the finger down and moving, not a swipe that began and ended in between.
     let drag = null;
+    let worldInputFrame=-1;
     const touch = (type, x, y) => s.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
     const input = async (i) => {
+      if(world&&!desktop){
+        const through=Math.round(i*.12*30);
+        for(;worldInputFrame<through;worldInputFrame++)for(const event of worldMobileInputFrame(worldInputFrame+1,{width:W,height:H})){await touch(event.type,event.x,event.y);drag=event.type==='touchEnd'?null:{world:true};}
+        return;
+      }
       if (!desktop) {
         if (drag) {
           if (drag.left-- > 0) {
@@ -259,6 +263,7 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     diagnostics.seconds = Math.round((Date.now() - began) / 1000);
     diagnostics.rafs = await evaluate("window.__rafs??null");
     diagnostics.errors = (await evaluate("window.__events.filter(e=>e.type==='webGameError').length"));
+    if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new RecorderFailure(problem,problem==='recorder_error');}
     if (!captured) throw new RecorderFailure(announced ? "blank_canvas" : diagnostics.errors ? "boot_error" : "not_ready", !diagnostics.errors);
     if (!lit) throw new RecorderFailure("blank_canvas");
     const result = await evaluate(`(async()=>{const picked=SlopRecorder.clipWindow(window.__ring.frames());if(!picked)return{error:'no_motion'};
@@ -267,9 +272,11 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
       return{gif:b64(rec.gif),cover:b64(rec.cover),frameCount:rec.frameCount,frames:info.frames,width:rec.width,height:rec.height};})()`);
     if (result?.error) throw new RecorderFailure(result.error, result.error !== "capture_too_large");
     const gif = Buffer.from(result.gif, "base64"), cover = Buffer.from(result.cover, "base64");
+    if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new RecorderFailure(problem,problem==='recorder_error');}
     return { target, gif, cover, frameCount: result.frameCount, width: result.width, height: result.height };
   } finally {
     playing = false;
+    if(world)await evaluate('window.__worldHost?.dispose()').catch(()=>{});
     await chrome.close();
     server.close();
   }

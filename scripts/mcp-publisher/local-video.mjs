@@ -7,7 +7,7 @@ let source;
 if (/^https:/.test(src)) source = { baseUrl: src };
 else {
   const files = {};
-  const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (/\.(html|js|css|json|svg|txt)$/.test(n)) files[relative(src, p)] = readFileSync(p, "utf8"); } };
+  const walk = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walk(p); else if (/\.(html|js|css|json|svg|txt)$/.test(n)) files[relative(src, p)] = readFileSync(p, "utf8"); else if(/\.(glb|bin|jpg|webp|ktx2|ogg)$/.test(n))files[relative(src,p)]={encoding:'base64',data:readFileSync(p).toString('base64')}; } };
   walk(src); source = { files };
 }
 const diagnostics = {}, started = Date.now();
