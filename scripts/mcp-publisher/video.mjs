@@ -22,6 +22,7 @@ import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-i
 import { installRecorderClock } from "./clock.js";
 import { installRecorderInput, mobileInputFrame } from "./input.mjs";
 import { authoredInputTitle, identifyGameInput, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput, gameInputSimulationSteps } from "./game-input.mjs";
+import {recorderFileBytes,recorderWorldConfig,hasWorldMarker,worldRecorderBundle,worldEngineScript,scriptJson,worldMobileInputFrame,worldCaptureProblem} from './world-recorder.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -155,6 +156,12 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
 
   // A reviewed control revision opts in; changed games retain generic inputs.
   const authoredHtml = fromFiles ? source.files['index.html'] : (await fetchRemote('index.html'))?.toString('utf8');
+  // A remote URL alone does not prove a World asset manifest. Fail closed;
+  // first publication always supplies the complete admitted source bundle.
+  if(!fromFiles&&hasWorldMarker(authoredHtml))throw new VideoFailure('world_manifest_required');
+  let world;
+  try{world=fromFiles?recorderWorldConfig(source.files):null;}catch{throw new VideoFailure('runtime_invalid');}
+  const worldHost=world?await worldRecorderBundle():'',worldEngine=await worldEngineScript(world);
   const authoredGame = authoredInputTitle(authoredHtml) ? (fromFiles ? source.files['game.js'] : (await fetchRemote('game.js'))?.toString('utf8')) : null;
   const knownInput = !desktop ? identifyGameInput(authoredHtml, authoredGame) : null;
   let port = 0;
@@ -166,11 +173,12 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
     "object-src 'none'", "frame-src 'none'", "form-action 'none'", `base-uri ${base()}`].join("; ");
   let softGL = false;
   const noMsaa = "try{const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,a){if(typeof t==='string'&&/webgl/i.test(t))a={...(a&&typeof a==='object'?a:{}),antialias:false};return g.call(this,t,a);};}catch{}";
-  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n(${installGameObservation.toString()})(${readRecorderGame.toString()});\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>`;
-  const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#000;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style></head>
+  const inject = () => `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>(${installRecorderClock.toString()})();\n(${installRecorderInput.toString()})();\n(${installGameObservation.toString()})(${readRecorderGame.toString()});\n${softGL ? noMsaa + "\n" : ""}window.__slopPreviewCapture=true;\n(${installGameStorage.toString()})();\n${legacy ? `(${installLegacyKeyboard.toString()})(${JSON.stringify(legacy)});\n` : ""}${bootstrap}</script>${worldEngine}`;
+  const host = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#000;overflow:hidden}iframe{border:0;width:${W}px;height:${H}px;display:block}</style>${world?`<script>${worldHost}</script>`:''}</head>
 <body><iframe id="game" sandbox="allow-scripts allow-pointer-lock" allow="autoplay; gamepad" referrerpolicy="no-referrer"></iframe>
-<script>(()=>{const f=document.getElementById('game');window.__events=[];window.__score=0;window.__errors=[];window.__controls=[];window.__acks=new Map();window.__observations=new Map();
+<script>(async()=>{const f=document.getElementById('game');window.__events=[];window.__score=0;window.__errors=[];window.__controls=[];window.__acks=new Map();window.__observations=new Map();
 addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='string'||e.data.length>750000)return;let m;try{m=JSON.parse(e.data)}catch{return}if(!m||typeof m.type!=='string')return;
+ if(${!!world}&&m.type==='ready'&&m.source==='document')return;
  if(m.type==='webGameError'&&window.__errors.length<12)window.__errors.push(String(m.message||'').slice(0,800));
  if(m.type==='slopRecorderObservation'){const resolve=window.__observations.get(m.seq);if(resolve){window.__observations.delete(m.seq);resolve(m.observation);}return;}
  if(m.type==='slopRecorderControlsResult'){window.__controls=m.points;return;}
@@ -180,7 +188,8 @@ addEventListener('message',e=>{if(e.source!==f.contentWindow||typeof e.data!=='s
 let seq=0;window.__clock=(op,dt)=>new Promise(resolve=>{const s=++seq;const t=setTimeout(()=>{window.__acks.delete(s);resolve(false)},20000);window.__acks.set(s,()=>{clearTimeout(t);resolve(true)});f.contentWindow.postMessage(JSON.stringify({type:'slopClock',op,dt,seq:s}),'*');});
 let observationSeq=0;window.__observe=kind=>new Promise(resolve=>{const seq=++observationSeq,timer=setTimeout(()=>{window.__observations.delete(seq);resolve(null)},1500);window.__observations.set(seq,value=>{clearTimeout(timer);resolve(value)});f.contentWindow.postMessage(JSON.stringify({type:'slopRecorderObserve',kind,seq}),'*');});
 window.__send=m=>f.contentWindow.postMessage(JSON.stringify(m),'*');
-void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></body></html>`;
+${world?`window.__worldHost=await SlopWorldRecorder.installWorldRecorder(f,${scriptJson(world)});`:''}
+void f.getBoundingClientRect().width;f.src='/game/index.html';})().catch(()=>window.__events.push({type:'loadError',at:performance.now()}));</script></body></html>`;
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -189,7 +198,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
       const rel = path.startsWith("/game/") ? path.slice(6) : null;
       if (!rel || !safeRelative(rel) || req.method !== "GET") { res.writeHead(404); return res.end(); }
       let body;
-      if (fromFiles) body = Object.hasOwn(source.files, rel) ? Buffer.from(source.files[rel], "utf8") : null;
+      if (fromFiles) body = Object.hasOwn(source.files, rel) ? recorderFileBytes(rel,source.files[rel]) : null;
       else body = await fetchRemote(rel);
       if (!body) { res.writeHead(404); return res.end(); }
       // Sandboxed game frames have an opaque origin; local ES module imports
@@ -221,7 +230,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
   try {
     await s.send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     s.on("Fetch.requestPaused", (p) => {
-      const allowed = p.request.url.startsWith(origin) || p.request.url === THREE;
+      const allowed = p.request.url.startsWith(origin) || (!world&&p.request.url === THREE);
       s.send(allowed ? "Fetch.continueRequest" : "Fetch.failRequest",
         allowed ? { requestId: p.requestId } : { requestId: p.requestId, errorReason: "BlockedByClient" }).catch(() => {});
     });
@@ -246,6 +255,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     }
     if (events.includes("loadError")) throw new VideoFailure("boot_error");
     diagnostics.ready = events.includes("ready");
+    if(world&&!diagnostics.ready)throw new VideoFailure('not_ready');
     if (process.env.SLOP_VIDEO_DEBUG) console.error(`video: booted ${Date.now() - start} ms, ready ${diagnostics.ready}`);
     // Let first textures/shaders settle in real time, then take the clock.
     await sleep(softGL ? 2500 : 1200);
@@ -276,7 +286,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
           progress.last = gameInputProgress(observation);
           progress.bestScore = Math.max(progress.bestScore, observation?.score || 0);
         }
-        const events = controller ? controller.next(runFrame++, observation) : mobileInputFrame(frame, { width: W, height: H, fps: FPS });
+        const events = controller ? controller.next(runFrame++, observation) : world?worldMobileInputFrame(frame,{width:W,height:H}):mobileInputFrame(frame, { width: W, height: H, fps: FPS });
         if (controller && Array.isArray(diagnostics.inputTrace) && diagnostics.inputTrace.length < 900) diagnostics.inputTrace.push({ frame, x: observation?.x, ...(knownInput==='trig'?{ground:observation?.ground,bottom:observation?.bottom,obstacle:observation?.obstacle}:{}), events });
         for (const event of events) {
           await touch(event.type, event.x, event.y);
@@ -310,7 +320,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     };
     // A short game may already have ended while textures/shaders settled.
     // Restart through the normal host lifecycle before collecting its clip.
-    await evaluate("window.__score=0;window.__send({type:'mute',on:true});window.__send({type:'restart',request:'video-start'})");
+    await evaluate(`window.__score=0;window.__send({type:'mute',on:true});${world?"window.__worldHost.restart('video-start')":"window.__send({type:'restart',request:'video-start'})"}`);
     await activateStart();
     if (desktop && !controlClicks) await click(W / 2, H * 0.6);
 
@@ -321,7 +331,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
         progress.first = gameInputProgress(observation);
       }
     }
-    diagnostics.inputPolicy = controller ? knownInput : 'generic';
+    diagnostics.inputPolicy = controller ? knownInput : world?.inputPolicy||'generic';
     if (controller) diagnostics.gameplay = progress;
 
     // Settle a few virtual frames (games often spawn on their first update),
@@ -348,7 +358,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
         if (controller && i >= settle) throw new VideoFailure('unstable_gameplay');
         restarts++;
         if (controller) { for (const event of controller.reset()) await touch(event.type); touching = false; runFrame = 0; }
-        await evaluate(`window.__send({type:'restart',request:'video-${restarts}'})`);
+        await evaluate(world?`window.__worldHost.restart('video-${restarts}')`:`window.__send({type:'restart',request:'video-${restarts}'})`);
       }
       if (i < settle) continue;
       const { data } = await s.send("Page.captureScreenshot", { format: "jpeg", quality: 94, captureBeyondViewport: false, optimizeForSpeed: true });
@@ -374,17 +384,20 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})();</script></bo
     diagnostics.controlClicks = controlClicks;
     diagnostics.stepMs = Math.round(stepMs / Math.max(1, settle + total));
     diagnostics.errors = await evaluate("window.__events.filter(e=>e.type==='webGameError').length");
+    if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new VideoFailure(problem,problem==='recorder_error');}
     const stats = await motionStats(dir, frames);
     diagnostics.moving = stats.moving; diagnostics.lit = stats.lit;
     if (stats.lit < frames * 0.5) throw new VideoFailure("blank_canvas");
     if (stats.moving < frames * 0.15) throw new VideoFailure("no_motion");
     const encoded = await encodeLoop(dir, frames, { width: OW, height: OH });
+    if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new VideoFailure(problem,problem==='recorder_error');}
     diagnostics.crf = encoded.crf;
     return {
       target, video: encoded.video, poster: encoded.poster, width: OW, height: OH,
       durationMs: Math.round((encoded.frames / FPS) * 1000), fps: FPS,
     };
   } finally {
+    if(world)await evaluate('window.__worldHost?.dispose()').catch(()=>{});
     if (process.env.SLOP_VIDEO_DEBUG) diagnostics.gameErrors = await evaluate("window.__errors || []").catch(() => []);
     await chrome.close();
     server.close();

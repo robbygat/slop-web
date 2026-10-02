@@ -1,5 +1,17 @@
 # APK2077 and bounded Worlds upload transport
 
+## Live follow-up (supersedes the initial upload blocker below)
+
+- PR62 and Pages36979906868 completed. A full download from `https://slop.game/downloads/Slop-3.7.7-build-2077-universal.apk` returned 200 with zero redirects and the exact size/hash below; the fresh browser download page displays build2077. The2076 first-party URL remains available.
+- The database's normal 8-second statement limit was insufficient for the complete World admission operation. Additive migration `20261002200000_worlds_upload_rpc_timeout` adds only a service-role-only, SECURITY INVOKER `mcp_world_submit(jsonb)` with a60-second transaction budget. It accepts only a validated persistent draft and calls the unchanged `mcp_service('send_draft', p)`. Ordinary role limits, permissions, quotas, immutable request identity and bundle caps remain unchanged.
+- The guarded rollback rehearsal, independent unchanged-state check, exact apply, independent postflight and official migration-history repair all passed. Wrapper definition MD5 `a08d8cd14ce1b628c712ba241bcc1e96`; migration SHA-256 `dabf3f326dca5003f6ba80697b9099ad2977ad3a9f9fac21e7c26082825f4182`.
+- The new Edge adapter independently downloaded byte-for-byte across all8 files; index SHA-256 `2e5e6c711523de88182ab387095c629c3a387552056ebfbdc51dc8cf79896316`.
+- The real7,853,821-byte high-entropy private fixture now returns a matching receipt in23.43 seconds. The actual reviewed Knight Crawler bundle also returned a matching private receipt:7,850,467 bytes in28.37 seconds. Neither upload is a public release; the synthetic fixture must never be published.
+- 42 additional PostgreSQL checks and122 MCP tests pass, with2 Windows-only skips. Maximum50MB HTTP throughput remains unverified; the tested full-size first World is7.85MB.
+- The World-aware preview recorder is now implemented and independently reviewed. It uses the actual isolated persistence/asset host, exact SDK admission, verified decoded-byte manifests and bounded ordinary touch inputs. It fails closed on missing/corrupt assets, late runtime errors and pending transfers, before and after encoding. Ordinary Arcade behavior and server permissions are unchanged.
+- Final actual Knight Crawler captures passed: H.264 720×1280, 30 fps, 7 seconds, 220/222 moving frames and zero errors; matching GIF/cover capture passed. All 28 requested assets were verified, with no pending requests. Captures used local macOS Chrome, not Linux CI or native-device acceptance. The first publication still must pass the normal production recorder and publisher; no blank-preview or publication bypass is permitted. Remote-URL-only World backfill explicitly fails without a verified full source manifest.
+- Final complete check: 445 web tests passed (9 opt-in browser skips), 122 MCP tests passed (2 Windows-only skips), and production build succeeded with 390 game routes. Separately, all 16 World real-browser cases and existing Arcade browser cases passed. Knight Crawler remains a private draft until the production publishing receipt is verified.
+
 ## Verified locally and at the release source
 
 - APK: `game.slop.api`, 3.7.7 (2077), universal ARM64/ARMv7/x86_64.
