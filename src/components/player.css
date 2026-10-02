@@ -64,3 +64,15 @@
 .game-player .player-view-modes>button[aria-pressed=true]:hover{background:#d2ff79;color:#17231d}
 .game-player .player-view-modes>button:focus-visible{outline:2px solid #f6ffe7;outline-offset:1px}
 @media(min-width:761px){.game-player .player-view-modes>button{min-height:36px}}
+.persistent-run-choice{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:clamp(18px,5vw,48px);overflow:auto;background:#0c120d;color:#f3f7ed;text-align:center;isolation:isolate}
+.persistent-run-choice h2{font-size:clamp(25px,4vw,42px);line-height:1.08;margin:0;max-width:17ch;letter-spacing:-.035em}
+.persistent-run-choice p{max-width:38ch;margin:0;line-height:1.45}
+.persistent-run-choice .eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#c5f564;font-weight:750}
+.persistent-run-choice .button{min-height:48px;width:min(100%,320px);flex-shrink:0}
+.persistent-run-choice .fine{font-size:12px;color:#b7c1b0}
+.persistent-save-status{font-size:12px;line-height:1.4;margin:5px 12px;color:var(--muted,#acb7a9)}
+.persistent-save-status[role=alert]{color:#ffd196}
+.persistent-continue-badge{display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border-radius:6px;background:#c5f564;color:#0c120d;font-size:11px;font-weight:800;line-height:1.1;letter-spacing:.02em}
+.game-cover>.persistent-continue-badge{position:absolute;top:9px;left:9px;z-index:3}
+.reel-caption>.persistent-continue-badge{position:relative;margin-bottom:9px}
+@media(max-height:440px){.persistent-run-choice{justify-content:flex-start;gap:10px;padding:14px}.persistent-run-choice h2{font-size:24px}}

@@ -1,4 +1,17 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {gameTemplate} from '../game-template.mjs';import {validateDraft} from '../../supabase/functions/slop-mcp/contract.mjs';
+import {checkBundle} from '../bundle-check.mjs';
+test('World template is fully admitted with composed runtime and waits for both save scopes before rendering',async()=>{
+ const template=await gameTemplate({persistent:true,target_platform:'mobile'});
+ const checked=await checkBundle(template.files,{target_platform:'mobile'});assert.deepEqual(checked.problems,[]);
+ const draft=await validateDraft({project_id:'11111111-1111-4111-8111-111111111111',request_id:'22222222-2222-4222-8222-222222222222',revision:1,name:'World',files:template.files});assert.equal(draft.persistent,true);
+ let deliver,tick,created=0,ready=0,checkpoints=0,commits=0;
+ const save={run:{floor:1,steps:0},profile:{bestFloor:1,totalSteps:0},commit(){commits++;},checkpoint(){checkpoints++;}};
+ const input={pressed:false,keys:new Set()},ctx=new Proxy({},{get:()=>()=>{},set:()=>true});
+ vm.runInNewContext(template.files['game.js'],{Math,console,Slop:{persist:()=>new Promise(resolve=>deliver=resolve),create:()=>{created++;return{ctx};},input,onRestart(){},loop:callback=>tick=callback,score(){},finished(){},ready:()=>ready++}});
+ assert.equal(created,0);assert.equal(ready,0);deliver(save);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(created,1);tick({time:0,width:320,height:568});assert.equal(ready,1);
+ input.pressed=true;for(let n=0;n<5;n++)tick({time:n,width:320,height:568});assert.equal(commits,5);assert.equal(checkpoints,1);assert.equal(save.run.floor,2);assert.equal(save.profile.bestFloor,2);
+});
 test('bundled template is a valid cross-platform draft with real ready/score/finish/restart lifecycle',async()=>{
  const template=await gameTemplate();assert.equal(template.runtime,'creator-v1');assert.equal(template.target_platform,'cross-platform');assert.equal(JSON.parse(template.files['slop-platform.json']).target_platform,'cross-platform');assert.match(template.files['index.html'],/name="slop-runtime" content="creator-v1"/);assert.match(template.files['index.html'],/name="slop-target" content="cross-platform"/);assert.match(template.files['slop.js'],/g\.Slop = Object\.freeze/);
  await validateDraft({project_id:'11111111-1111-4111-8111-111111111111',request_id:'22222222-2222-4222-8222-222222222222',revision:1,name:'Template',files:template.files});

@@ -3,6 +3,7 @@ import {supabase,syncSession,result,safeSignOut,verifySession,onInvalidSession,g
 import {createSessionResolver,pendingAuthReturn} from './lib/session-contracts.js';
 import {BUILD_IDEA_KEY} from './lib/build-draft.js';
 import {oauthCallbackUrl} from './lib/pairing-contracts.js';
+import {claimDeviceSaves} from './lib/persist-runtime.js';
 import {Button,Modal,Notice} from './components/ui.jsx';
 import {Icon} from './components/Icon.jsx';
 import RobotPortrait from './components/RobotPortrait.jsx';
@@ -39,6 +40,7 @@ export function AuthProvider({children}){
  },[]);
  useEffect(()=>{let alive=true;setProfile(null);if(session?.user?.id)result(supabase.from('profiles').select('id,username,display_name,avatar_url,bio,slop_look,profile_banner_id').eq('id',session.user.id).maybeSingle()).then(p=>{if(alive)setProfile(p);}).catch(()=>{});return()=>{alive=false;};},[session?.user?.id,profileVersion]);
  useEffect(()=>{if(session&&!session.user.is_anonymous)setLogin(false);},[session]);
+ useEffect(()=>{if(ready&&session?.user&&!session.user.is_anonymous)void claimDeviceSaves().catch(()=>{});},[ready,session?.user?.id]);
  const user=session&&!session.user.is_anonymous?session.user:null;
  return <AuthContext value={{user,session,ready,profile,refreshProfile:()=>setProfileVersion(v=>v+1),signIn:()=>setLogin(true),requireAuth:()=>{if(user)return true;setLogin(true);return false;},signOut:safeSignOut}}>{authError&&<Notice error={authError} onRetry={()=>window.location.reload()}/>}{children}{login&&<AuthDialog sessionEnded={sessionEnded} onClose={()=>setLogin(false)}/>}</AuthContext>;
 }

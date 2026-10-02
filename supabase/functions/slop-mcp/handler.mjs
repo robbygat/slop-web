@@ -3,6 +3,7 @@ import {
   BridgeError,
   HASH,
   MAX_BODY,
+  MAX_DRAFT_BODY,
   object,
   requireValue,
   secret,
@@ -13,6 +14,7 @@ import {
   VERSION,
 } from "./contract.mjs";
 import { FAILURE_CODES, LEASE, validateMedia, validateVideo, validatePoster, jpegSize, VIDEO_MAX, VIDEO_FAILURE } from "./publisher.mjs";
+import { JsonReader } from "./json-reader.mjs";
 
 const JSON_HEADERS = {
   "content-type": "application/json",
@@ -25,7 +27,7 @@ function json(body, status = 200, headers = {}) {
     headers: { ...JSON_HEADERS, ...headers },
   });
 }
-async function readBody(req) {
+async function readBody(req,limit=MAX_BODY,incremental=false) {
   requireValue(
     req.headers.get("content-type")?.split(";")[0].trim() ===
       "application/json",
@@ -36,27 +38,40 @@ async function readBody(req) {
   requireValue(reader, "invalid_request");
   let total = 0;
   const chunks = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.length;
-    if (total > MAX_BODY) {
-      await reader.cancel();
-      throw new BridgeError("request_too_large", 413);
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.length;
-  }
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const parser=incremental?new JsonReader({maxToken:limit}):null;
+  const ascii=text=>{
+    if(!/[^\x00-\x7f]/.test(text))return text;
+    const escaped=text.replace(/[^\x00-\x7f]/g,c=>"\\u"+c.charCodeAt(0).toString(16).padStart(4,"0"));
+    // V8 can preserve two-byte backing after replacement. This bounded Latin-1
+    // round trip narrows only changed chunks, never the entire request.
+    return atob(btoa(escaped));
+  };
   try {
-    return object(
-      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
-    );
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > limit) {
+        await reader.cancel();
+        throw new BridgeError("request_too_large", 413);
+      }
+      // Keep this transport buffer one-byte ASCII even when an otherwise large
+      // base64 draft contains a small Unicode SDK/source string. Escape only
+      // non-ASCII code units: JSON.parse still validates all original syntax.
+      // Bound individual decode allocations even if a reader yields one body.
+      for(let offset=0;offset<value.length;offset+=65_536){
+        const text=decoder.decode(value.subarray(offset,offset+65_536),{stream:true});
+        if(parser)parser.write(text);else chunks.push(ascii(text));
+      }
+    }
+    const tail=decoder.decode();if(tail){if(parser)parser.write(tail);else chunks.push(ascii(tail));}
+    if(parser)return object(parser.finish());
+    const source=chunks.length===1?chunks[0]:chunks.join("");
+    chunks.length=0;
+    return object(JSON.parse(source));
   } catch (e) {
+    await reader.cancel().catch(() => {});
     if (e instanceof BridgeError) throw e;
     throw new BridgeError("invalid_json");
   }
@@ -244,8 +259,18 @@ export function createHandler(deps, config = {}) {
         const owner = await deps.verifyUser(bearer);
         return json(await uploadPreviewVideo(req, deps, url, ownerVideo[1], "owner", owner));
       }
+      const agentDraft=path==='/agent/drafts'&&req.method==='POST';
+      let draftTokenHash;
+      if(agentDraft){
+        requireValue(/^slop_mcp_[0-9a-f]{64}$/.test(bearer||''),'invalid_connection',401);
+        draftTokenHash=await sha256(bearer);
+        // Existing server authority checks active connection/owner/expiry before
+        // admitting a 70 MB stream; bearer syntax alone grants no heavy work.
+        const receipt=await deps.service('agent_status',{token_hash:draftTokenHash});
+        requireValue(receipt?.status==='active','invalid_connection',401);
+      }
       const input = req.method === "POST"
-        ? await readBody(req)
+        ? await readBody(req,agentDraft?MAX_DRAFT_BODY:MAX_BODY,agentDraft)
         : Object.fromEntries(url.searchParams);
       if (path === "/pair/start" && req.method === "POST") {
         const clientName = boundedText(input.client_name, 60);
@@ -282,7 +307,7 @@ export function createHandler(deps, config = {}) {
           "invalid_connection",
           401,
         );
-        const token_hash = await sha256(bearer);
+        const token_hash = draftTokenHash??await sha256(bearer);
         if (path === "/agent/status" && req.method === "GET") {
           return json(await deps.service("agent_status", { token_hash }));
         }
@@ -431,6 +456,8 @@ export function createHandler(deps, config = {}) {
         return json({
           ...result,
           target_platform: validated.target_platform,
+          persistent: validated.persistent,
+          bundle_manifest: validated.persistent ? validated.manifest : undefined,
           preview_url: preview.url,
           preview_expires_at: preview.expires_at,
         });

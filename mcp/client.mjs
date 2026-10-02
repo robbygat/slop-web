@@ -144,11 +144,11 @@ const HINTS = {
   project_limit:
     "The account has twenty projects. Reuse an existing project_id for new revisions.",
   bundle_too_large:
-    "The bundle is too large: at most 512 KB per file and 2 MB in total.",
+    "The bundle is too large. Arcade: 512 KB per file / 2 MB total. Validated Slop Worlds: 8 MB per file / 50 MB total / 5 MB first_load. Run slop_check_bundle.",
   request_too_large:
-    "The bundle is too large: at most 512 KB per file and 2 MB in total.",
+    "The bundle is too large. Arcade: 512 KB per file / 2 MB total. Validated Slop Worlds: 8 MB per file / 50 MB total / 5 MB first_load. Run slop_check_bundle.",
   invalid_bundle:
-    "Include index.html and at most 64 files. Run slop_check_bundle first.",
+    "Include index.html and at most 64 Arcade files, or 400 validated Slop World files including metadata. Run slop_check_bundle first.",
   invalid_path:
     "File names may only use letters, digits, _ and - with one html/js/css/json/svg/txt extension. Run slop_check_bundle first.",
   empty_file: "Every file needs content. Remove empty files.",

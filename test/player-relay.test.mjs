@@ -82,6 +82,15 @@ test('legacy documents become playable without an SDK ready message, but game co
  f.load();assert.equal(acceptPlayerEvent(hostFrame,hostFrame,f.parentMessages.at(-1)).type,'loadError');
 });
 
+test('Worlds wait for SDK ready after rendering instead of the legacy document-loaded fallback',()=>{
+ const f=relayFixture();f.initialize();f.load();const frame={},signal=f.parentMessages.at(-1);
+ assert.equal(acceptPlayerEvent(frame,frame,signal,{persistent:true}),null);
+ assert.deepEqual(acceptPlayerEvent(frame,frame,signal,{persistent:false}),{type:'ready',source:'document'});
+ f.message(JSON.stringify({type:'ready'}),f.frame.contentWindow);
+ assert.deepEqual(acceptPlayerEvent(frame,frame,f.parentMessages.at(-1),{persistent:true}),{type:'ready'});
+ assert.equal(acceptPlayerEvent({},frame,f.parentMessages.at(-1),{persistent:true}),null);
+});
+
 test('nested relay forwards first Space and WASD presses, then native game releases allow another press',()=>{
  const listeners=new Map(),parent={postMessage(){}};
  const listen=(type,fn)=>{if(!listeners.has(type))listeners.set(type,[]);listeners.get(type).push(fn);};

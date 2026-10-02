@@ -1,15 +1,20 @@
 import {trustedEntry} from './contracts.js';
 import {validRestartAck} from './player-restart.js';
+import {acceptPersistEvent} from './persist-contracts.js';
+import {validAssetRequest} from './persist-assets.js';
 export function gamePolicy(base){
  if(!trustedEntry(base+'index.html',{preview:base.includes('/game-bundle/preview/')}))throw new Error('This game URL is not trusted.');
  return ["default-src 'none'",`script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: ${base} https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`,`style-src 'unsafe-inline' ${base}`,`img-src ${base} data: blob:`,`media-src ${base} data: blob:`,`font-src ${base} data:`,`connect-src ${base} blob:`,`worker-src ${base} blob:`,`manifest-src ${base}`,"object-src 'none'","frame-src 'none'","form-action 'none'",`base-uri ${base}`].join('; ');
 }
-export function acceptPlayerEvent(source,frame,data){
+export function acceptPlayerEvent(source,frame,data,{persistent=false}={}){
  if(!frame || source!==frame || typeof data!=='string' || data.length>750000)return null;
  // This string is reserved by the relay and cannot be forwarded by game code.
  // Legacy games do not always emit an SDK ready event after their document loads.
- if(data==='slop-player-loaded-v1')return {type:'ready',source:'document'};
+ // Worlds may still be restoring saves/assets at document load; only their
+ // explicit SDK ready after the first rendered frame releases the loader.
+ if(data==='slop-player-loaded-v1')return persistent?null:{type:'ready',source:'document'};
  try {const event=JSON.parse(data);if(!event||Array.isArray(event)||typeof event!=='object')return null;
+  if(event.type?.startsWith('persist-'))return acceptPersistEvent(event)||validAssetRequest(event)?event:null;
  const types=['restart-ack','ready','score','finished','gameOver','over','loadError','webGameError','webCaptureResult','webCaptureError','webInteraction','webScroll','webEscape','webPointerLock','webPointerError'];
  if(!types.includes(event.type))return null;
  if(event.type==='webPointerLock'&&typeof event.locked!=='boolean')return null;

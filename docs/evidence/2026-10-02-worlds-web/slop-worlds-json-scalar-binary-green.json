@@ -1,0 +1,1 @@
+{"kind":"binary","giant":false,"status":400,"result":{"ok":false,"code":"invalid_json"},"elapsedMs":39.826583,"cpuMs":35.933,"peak":{"stage":"after","total":26222045,"malloced":426080,"rss":71073792,"heapTotal":24117248,"heapUsed":17614448,"external":8181517},"readBytes":10682368,"cancelled":true,"actions":["agent_status"],"networkCalls":0,"productionWrites":0,"forcedGC":0}

@@ -130,6 +130,7 @@ test("agent uploads hash bearer, ignore supplied owner and never touch game stor
   const handler = createHandler({
     service: async (action, input) => {
       calls.push({ action, input });
+      if(action==='agent_status')return {status:'active'};
       return { status: "awaiting_confirmation" };
     },
   });
@@ -141,9 +142,9 @@ test("agent uploads hash bearer, ignore supplied owner and never touch game stor
     }),
   );
   assert.equal(response.status, 200);
-  assert.equal(calls[0].action, "send_draft");
+  assert.deepEqual(calls.map(call=>call.action), ["agent_status", "send_draft"]);
   assert.equal(calls[0].input.token_hash, await sha256(token));
-  assert.equal(calls[0].input.owner_id, undefined);
+  assert.equal(calls[1].input.owner_id, undefined);
 });
 test("confirmed preview uses same JWT, exact digest, lease checks; only private service finalizes", async () => {
   const validated = await validateDraft(draftInput);

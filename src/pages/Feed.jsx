@@ -14,6 +14,7 @@ import {Icon} from '../components/Icon.jsx';
 import ActivityLink from '../components/ActivityLink.jsx';
 import GameCrown from '../components/GameCrown.jsx';
 import GamePreview from '../components/GamePreview.jsx';
+import PersistentContinueBadge from '../components/PersistentContinueBadge.jsx';
 import {GameDetail} from './Play.jsx';
 import './feed.css';
 
@@ -79,7 +80,7 @@ export default function Feed(){
    {games.map(game=>{const live=active===game.id,liked=likes.has(game.slug)||likes.has(game.id),holder=leaders[game.slug],wide=gameFormat(game).orientation==='landscape';return <article className={`reel ${wide?'reel-wide':''}`} key={game.id} data-game={game.id} data-title-entrance={live&&titleEntrance?.gameId===game.id?titleEntrance.variant:undefined} ref={el=>{if(el)cards.current.set(game.id,el);else cards.current.delete(game.id);}} aria-label={game.name}>
     <div className="reel-stage">
      <button className="reel-media" onClick={()=>open(game)} aria-label={`Play ${game.name}`} tabIndex={live?0:-1}><GamePreview game={game} paused={!live||!!selected||filters}/></button>
-     <div className="reel-caption"><h2 className="reel-title">{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters} compact/>{game.description&&<p className="reel-description">{game.description}</p>}</div>
+     <div className="reel-caption"><PersistentContinueBadge game={game}/><h2 className="reel-title">{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters} compact/>{game.description&&<p className="reel-description">{game.description}</p>}</div>
 
     </div>
     <aside className="reel-side"><h2 className="reel-title">{game.name}</h2><GameCrown holder={holder} live={live&&!selected&&!filters}/>{game.description&&<p className="reel-side-description">{game.description}</p>}<Button onClick={()=>open(game)} tabIndex={live?0:-1}>{holder?'Play for first place':'Play game'} <Icon name={holder?'crown':'play'} size={16}/></Button></aside>

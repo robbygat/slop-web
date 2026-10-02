@@ -1,6 +1,6 @@
 import {asOwner,result,request,getSession,ownRpc} from './supabase.js';
 import {SlopError,UUID,trustedEntry} from './contracts.js';
-import {bundleIdentity,mime,sha256} from './bundle-contracts.js';
+import {bundleIdentity,mime,sha256,fileBytes,normalizeBundleFiles} from './bundle-contracts.js';
 import {futureExpiry,publicationReceipt} from './creator-contracts.js';
 import {validCaptureDimensionsForTarget} from './capture-contracts.js';
 import {mcpRuntimeProblem} from './mcp-runtime.js';
@@ -26,7 +26,7 @@ export async function privatePreview(project,revision,slugOverride){
 async function preparePrivatePreview(project,revision,slugOverride){
  const expected=getSession();if(!expected||project.owner_id!==expected.user.id||revision.project_id!==project.id)throw new SlopError('account_changed');
  if(!UUID.test(project.id)||!UUID.test(revision.id))throw new SlopError('invalid_response');
- const files=Object.freeze({...revision.files});
+ const files=Object.freeze({...normalizeBundleFiles(revision.files)});
  const identity=await bundleIdentity(files);verify(expected);
  const slug=slugOverride||`creator-preview-${project.id}-${revision.id}`;
  const url=await asOwner(async(owner,client)=>{
@@ -34,9 +34,9 @@ async function preparePrivatePreview(project,revision,slugOverride){
   if(!row){row=await result(client.from('games').insert({slug,owner_id:owner,status:'draft',name:project.title||'My Slop game',description:'A private creator playtest',prompt:'Created in Slop',html:'<!doctype html><html><body>Open this private draft in Slop.</body></html>'}).select('id,owner_id,status').single());verify(expected);}
   if(row.owner_id!==owner||row.status!=='draft')throw new SlopError('invalid_response');
   const entries=Object.entries(files);
-  const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:new TextEncoder().encode(body).length,content_type:mime(path)})));verify(expected);
+  const metadata=await reserve(client,owner,slug,entries.map(([path,body])=>({path:`${slug}/1.0.0/${path}`,bytes:fileBytes(path,body).length,content_type:mime(path)})));verify(expected);
   // Sequential chunks bound uploads and stop immediately on any failure.
-  for(let i=0;i<entries.length;i+=4){verify(expected);await Promise.all(entries.slice(i,i+4).map(([path,body])=>result(client.storage.from('game-drafts').upload(`${slug}/1.0.0/${path}`,new TextEncoder().encode(body),{contentType:mime(path),metadata,upsert:true,cacheControl:'0'}))));verify(expected);}
+  for(let i=0;i<entries.length;i+=4){verify(expected);await Promise.all(entries.slice(i,i+4).map(([path,body])=>result(client.storage.from('game-drafts').upload(`${slug}/1.0.0/${path}`,fileBytes(path,body),{contentType:mime(path),metadata,upsert:true,cacheControl:'0'}))));verify(expected);}
   const receipt=await request('game-bundle','/',{ownerReceipt:false,body:{action:'preview',slug,version:'1.0.0',expected_bundle_digest:identity.digest,expected_bundle_manifest:identity.manifest}});
   if(receipt.ok!==true||!trustedEntry(receipt.url,{preview:true,slug})||!futureExpiry(receipt.expires_at,16*60_000))throw new SlopError('invalid_response');
   return receipt.url;
@@ -56,8 +56,8 @@ export async function publishRevision({project,revision,title,tagline,prompt,cov
  const expected=getSession();if(!expected||project.owner_id!==expected.user.id||project.head_revision_id!==revision.id||revision.project_id!==project.id)throw new Error('Finish playtesting the latest version before publishing.');
  if(!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40)throw new Error('Record a cover and a short gameplay clip before publishing.');
  if(!UUID.test(project.id)||!UUID.test(revision.id))throw new SlopError('invalid_response');
- const files=Object.freeze({...revision.files});
- const identity=await bundleIdentity(files),runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html']),target=gameTargetFromFiles(files);verify(expected);
+ const files=Object.freeze({...normalizeBundleFiles(revision.files)});
+ const identity=await bundleIdentity(files),runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html'],{persistent:identity.persistent}),target=gameTargetFromFiles(files);verify(expected);
  if(runtimeError)throw new Error('This version does not contain the unchanged Slop.js runtime. Rebuild it before publishing.');
  if(!validCaptureDimensionsForTarget(width,height,target))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
  requireAnimatedGif(gif,frameCount);const slug=`creator-release-${revision.id}`;

@@ -1,0 +1,22 @@
+
+> @slop-game/mcp-bridge@0.6.0 package
+> node build-package.mjs
+
+{
+  "file": "slop-game-mcp-0.6.0.tgz",
+  "bytes": 174730,
+  "integrity": "sha512-Sab9iy2bcSeRGuBV4V0hqPL8O71GqMCeKXVjzmqW4UnU5XOi9LJbJ5qCEor4xsADehxYery8SqhtUByKCWqrmQ==",
+  "files": [
+    "README.md",
+    "bundle-check.mjs",
+    "bundle-rules.mjs",
+    "cli.mjs",
+    "client.mjs",
+    "game-template.mjs",
+    "package.json",
+    "pairing-display.mjs",
+    "runtime-policy.mjs",
+    "runtime/creator-v1.js",
+    "runtime/persistent-v1.js"
+  ]
+}

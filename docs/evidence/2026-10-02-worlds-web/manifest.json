@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "date": "2026-10-02",
+  "scope": "Frozen local Worlds web candidate plus approved build 2075 download metadata; no deployment or game publication by this branch",
+  "base": "717b666c9dcca8a6f94d20c07084a45b87549d82",
+  "branch": "codex/persistent-web-host-20261002",
+  "edge": {
+    "entry": "supabase/functions/slop-mcp/index.ts",
+    "externalImports": [],
+    "files": [
+      {
+        "path": "supabase/functions/slop-mcp/bundle-rules.mjs",
+        "bytes": 10341,
+        "sha256": "009da2747502dd69811a28a818b3f1b1d85f25c74e5e599162a7f54daaf361ec"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/contract.mjs",
+        "bytes": 5931,
+        "sha256": "7aafbfe29ba45d6d284dc56ed648ff26047b58e14655a26a03137499f773e69a"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/handler.mjs",
+        "bytes": 22704,
+        "sha256": "af3f202c8cbf63d88527782bb400f90b38a783a2e749c9d63c7d173618c12bcf"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/index.ts",
+        "bytes": 10925,
+        "sha256": "b7ea671dca10d7c6ee0f81dc7df90a2bc86e108cdbac39c0af9c23aecc47c64f"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/json-body.mjs",
+        "bytes": 1694,
+        "sha256": "c9b2dd0d48c41ad4a5bc05b54acf2e637e5ff1f1c1b95270106541bca91940b3"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/json-reader.mjs",
+        "bytes": 7204,
+        "sha256": "f186d6520f99dadb464b868a8e6cc4196cc4df45f6fe24ab929d1315dabad679"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/publisher.mjs",
+        "bytes": 11729,
+        "sha256": "bcd5f0cb7c2e529251ff11a174146d2eaa79142229ed68a83a428028032eab1f"
+      },
+      {
+        "path": "supabase/functions/slop-mcp/runtime-policy.mjs",
+        "bytes": 3523,
+        "sha256": "ed6c31804cfcbc37d9640e9303fe8e6824e1fa030d8e0c0b38559ef226661c75"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "mcp/runtime/persistent-v1.js",
+      "bytes": 450831,
+      "sha256": "621bd0840de3657e21789fe94e2bde8ce97f21d33cf58107779d891171366996"
+    },
+    {
+      "path": "mcp/runtime/creator-v1.js",
+      "bytes": 9612,
+      "sha256": "cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f"
+    },
+    {
+      "path": "mcp/bundle-rules.mjs",
+      "bytes": 10341,
+      "sha256": "009da2747502dd69811a28a818b3f1b1d85f25c74e5e599162a7f54daaf361ec"
+    },
+    {
+      "path": "mcp/runtime-policy.mjs",
+      "bytes": 3523,
+      "sha256": "ed6c31804cfcbc37d9640e9303fe8e6824e1fa030d8e0c0b38559ef226661c75"
+    },
+    {
+      "path": "src/lib/vendor/three-r128.js",
+      "bytes": 603445,
+      "sha256": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
+    },
+    {
+      "path": "public/downloads/slop-game-mcp-0.6.0.tgz",
+      "bytes": 174730,
+      "sha256": "4a69c1b0a3bbebb966972d09bfce11ce532cdb6b37cfaf1413a03f279e86fdbd"
+    },
+    {
+      "path": "public/downloads/android-release.json",
+      "bytes": 553,
+      "sha256": "b0d2ef9a27d0820acea9bb1da03a2ef1aa6de1607125999ffd0534b7c14e7184"
+    },
+    {
+      "path": "public/downloads/android-build-manifest.json",
+      "bytes": 1340,
+      "sha256": "786730d04caa1968b462a343cbedd1232b4f7b10b6cfa9e9d956a19a903c49b4"
+    }
+  ],
+  "checks": {
+    "web": {
+      "pass": 383,
+      "skip": 6,
+      "fail": 0
+    },
+    "mcp": {
+      "pass": 98,
+      "skip": 2,
+      "fail": 0
+    },
+    "deno": "pass",
+    "productionBuild": {
+      "pass": true,
+      "http200Routes": 388,
+      "warning": "Existing chunks larger than 500 kB"
+    },
+    "browser": {
+      "kind": "Parent-observed actual Browser using synthetic local immutable release, real opaque GamePlayer/SDK/IndexedDB",
+      "port": 5192,
+      "continue": "run.steps3/profile.visits3",
+      "cachedAssetToggle": {
+        "ready": true,
+        "requests": 0,
+        "forbiddenCalls": 0
+      },
+      "newRun": "run{}; profile.visits3; reload retained revision7",
+      "limitations": [
+        "No real account/cloud/native acceptance",
+        "Asset toggle is not whole browser network outage",
+        "No full-site cold offline bootstrap"
+      ]
+    }
+  },
+  "evidence": [
+    {
+      "source": "/private/tmp/slop-worlds-web-release-final-20261002.log",
+      "file": "slop-worlds-web-release-final-20261002.log",
+      "bytes": 37500,
+      "sha256": "c90e99cf81331c2da47ffc1cbf5d3ff4a23e9d9b2c7a5a14b41ce3a259feb0f6"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-mcp-release-final-bounded-20261002.log",
+      "file": "slop-worlds-mcp-release-final-bounded-20261002.log",
+      "bytes": 10273,
+      "sha256": "2fb8b56916c3f97a6352079f3f2911ebf154bb6505b3d5c4114299bdb5e17d9a"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-edge-check-final-bounded-20261002.log",
+      "file": "slop-worlds-edge-check-final-bounded-20261002.log",
+      "bytes": 46,
+      "sha256": "21495fb5a66bd7b1dafb92cb5ae26bdebc1a61544d37209bc365a39170aee964"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-build-release-final-20261002.log",
+      "file": "slop-worlds-build-release-final-20261002.log",
+      "bytes": 4457,
+      "sha256": "188df10dedde7ee4998de4ca21483d8f9dd954092307a8c2584a2aae43c355a3"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-package-release-final-20261002.log",
+      "file": "slop-worlds-package-release-final-20261002.log",
+      "bytes": 512,
+      "sha256": "2420eb53ea32f28622fb05d6b6c341366e82220ba8d7fd476e09bf366bfe8b5b"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-50mb-handler-native-green.json",
+      "file": "slop-worlds-50mb-handler-native-green.json",
+      "bytes": 890,
+      "sha256": "ed237af5393ef44116a79454109908dc28c8d8c41868502790909aee796c940f"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-50mb-handler-fallback-green.json",
+      "file": "slop-worlds-50mb-handler-fallback-green.json",
+      "bytes": 891,
+      "sha256": "0e69a84be9c46e26df92ebc97a44639dae84c1352d3d4c1069f3faaf9479492b"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-json-scalar-binary-green.json",
+      "file": "slop-worlds-json-scalar-binary-green.json",
+      "bytes": 377,
+      "sha256": "bf97e47f493ae8a6a370b97da12483427c512a410c26c832c9a12e39c6b46258"
+    },
+    {
+      "source": "/private/tmp/slop-worlds-json-scalar-unicode-green.json",
+      "file": "slop-worlds-json-scalar-unicode-green.json",
+      "bytes": 375,
+      "sha256": "6d3711d06c54627709a253d0fcbe0ba93684ca7c5e969dea81e919a3d426af17"
+    }
+  ],
+  "android": {
+    "build": 2075,
+    "bytes": 184841277,
+    "sha256": "f514166f5297589d8b216fff233ebde5e5c061d556dbc0034fd806d311ae7db4",
+    "evidence": "Root independently downloaded the public asset and confirmed exact hash, aapt2 identity and v2 signature before PR handoff; no upload by this branch",
+    "oldArtifactsPreserved": true
+  }
+}
