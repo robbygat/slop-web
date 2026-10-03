@@ -7,14 +7,14 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const release = JSON.parse(await read('public/downloads/android-release.json'));
 const manifest = JSON.parse(await read('public/downloads/android-build-manifest.json'));
 
-test('shared Android release metadata names the verified 2077 APK', () => {
-  assert.equal(release.build, 2077);
+test('shared Android release metadata names the verified 2078 APK', () => {
+  assert.equal(release.build, 2078);
   assert.equal(release.package, 'game.slop.api');
   assert.equal(release.version, '3.7.7');
-  assert.equal(release.file, 'Slop-3.7.7-build-2077-universal.apk');
+  assert.equal(release.file, 'Slop-3.7.7-build-2078-universal.apk');
   assert.equal(release.url, `https://slop.game/downloads/${release.file}`);
-  assert.equal(manifest.sourceUrl, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2077/${release.file}`);
-  assert.equal(release.sha256, 'a041ed8f6e73b95eda0ea70f71edd2177fd6cf96452161f961fa749fd3a19e7b');
+  assert.equal(manifest.sourceUrl, `https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2078/${release.file}`);
+  assert.equal(release.sha256, 'fafc01c0a668a129c5905e1cf11ce86f75687bbafdf93401103939b2d93be57d');
 });
 
 test('download page and artifact manifest agree without changing ad gates', () => {
@@ -22,7 +22,7 @@ test('download page and artifact manifest agree without changing ad gates', () =
     assert.equal(manifest[field], release[field]);
   }
   assert.equal(manifest.versionCode, release.build);
-  assert.equal(manifest.bytes, 184841937);
+  assert.equal(manifest.bytes, 160250775);
   assert.equal(manifest.adsEnabled, false);
   assert.equal(manifest.AD_ID_permission, false);
   assert.equal(manifest.signingCertificateSha256, '4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab');
@@ -43,7 +43,7 @@ test('hero and download page use the shared release rather than stale APK consta
 });
 
 test('freshness check bypasses browser cache and accepts a newer first-party release', async () => {
-  const newer={...release,build:2078,file:'Slop-3.7.7-build-2078-universal.apk',url:'https://slop.game/downloads/Slop-3.7.7-build-2078-universal.apk'};
+  const newer={...release,build:2079,file:'Slop-3.7.7-build-2079-universal.apk',url:'https://slop.game/downloads/Slop-3.7.7-build-2079-universal.apk'};
   const result=await latestAndroidRelease(release,async(url,options)=>{
     assert.equal(url,'/downloads/android-release.json');
     assert.equal(options.cache,'no-store');
@@ -67,9 +67,10 @@ test('Pages verifies and stages the APK only after the site build and before upl
   assert.match(flow,/actions\/cache@[a-f0-9]{40}/);
   assert.match(flow,/hashFiles\('public\/downloads\/android-build-manifest\.json'\)/);
   assert.match(flow,/--metadata-dir public\/downloads\/archive\/2076/);
+  assert.match(flow,/--metadata-dir public\/downloads\/archive\/2077/);
 });
 
-test('the previous first-party APK remains pinned for staging after upgrade', async () => {
+test('both previous first-party APKs remain pinned for staging after upgrade', async () => {
   const archived = JSON.parse(await read('public/downloads/archive/2076/android-release.json'));
   const archiveManifest = JSON.parse(await read('public/downloads/archive/2076/android-build-manifest.json'));
   const {validateAndroidMetadata} = await import('../scripts/stage-android-download.mjs');
@@ -77,4 +78,10 @@ test('the previous first-party APK remains pinned for staging after upgrade', as
   assert.equal(validated.file, 'Slop-3.7.7-build-2076-universal.apk');
   assert.equal(validated.sha256, '609161105b0c063e66dfce936c75a5c74058a967d32c77f4ab0815cd7b07bbab');
   assert.equal(validated.bytes, 184841937);
+  const previousRelease = JSON.parse(await read('public/downloads/archive/2077/android-release.json'));
+  const previousManifest = JSON.parse(await read('public/downloads/archive/2077/android-build-manifest.json'));
+  const previous = validateAndroidMetadata(previousRelease, previousManifest);
+  assert.equal(previous.file, 'Slop-3.7.7-build-2077-universal.apk');
+  assert.equal(previous.sha256, 'a041ed8f6e73b95eda0ea70f71edd2177fd6cf96452161f961fa749fd3a19e7b');
+  assert.equal(previous.bytes, 184841937);
 });
