@@ -25,7 +25,7 @@
     "archive": "aapt2 package/version/SDK and all three ABIs verified; SHA-256 matches the fresh release APK",
     "signature": "APK Signature Scheme v2 verified; certificate matches preserved build 2077",
     "ui": "Exact signed 2078 installed in an isolated Android 36 ARM64 emulator: onboarding/tutorial, all feed lanes, actual gameplay/game-over, return to the same card, subsequent swipe and visible ordinary/World More menus observed. Physical Fold7/iPhone and action side effects are not verified",
-    "tests": "Full Flutter sweep: 5116 passed, 16 skipped, 77 failed; independently triaged, not all green. Fourteen targeted HTTP-harness checks passed after test-only repairs; World authority/media suite 18/18 passed. Earlier 506 focused Flutter and 81 Node checks are separate. Full analysis clean",
+    "tests": "Full Flutter sweep: 5116 passed, 16 skipped, 77 failed; independently triaged, not all green. Fourteen targeted HTTP-harness checks passed after test-only repairs; World authority/media suite 18/18 passed. Final shipping-robot compact/2x-text profile and request-coalescing checks 7/7 passed. Earlier 506 focused Flutter and 81 Node checks are separate. Full analysis clean",
     "assets": "Six current promo assets retained byte-for-byte; older media originals preserved outside the shipping manifest. Packaged persistent-v1 runtime remains SHA-256 dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 (452194 bytes)",
     "permissions": "Both ENABLE_ADS and PREVIEW_ADS disabled; aapt2 permission inspection finds no AD_ID permission"
   },
