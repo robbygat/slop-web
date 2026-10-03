@@ -1,9 +1,9 @@
 {
-  "file": "Slop-3.7.7-build-2077-universal.apk",
-  "url": "https://slop.game/downloads/Slop-3.7.7-build-2077-universal.apk",
-  "sourceUrl": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2077/Slop-3.7.7-build-2077-universal.apk",
+  "file": "Slop-3.7.7-build-2078-universal.apk",
+  "url": "https://slop.game/downloads/Slop-3.7.7-build-2078-universal.apk",
+  "sourceUrl": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2078/Slop-3.7.7-build-2078-universal.apk",
   "version": "3.7.7",
-  "versionCode": 2077,
+  "versionCode": 2078,
   "package": "game.slop.api",
   "architectures": [
     "arm64-v8a",
@@ -12,8 +12,8 @@
   ],
   "minSdk": 24,
   "targetSdk": 36,
-  "bytes": 184841937,
-  "sha256": "a041ed8f6e73b95eda0ea70f71edd2177fd6cf96452161f961fa749fd3a19e7b",
+  "bytes": 160250775,
+  "sha256": "fafc01c0a668a129c5905e1cf11ce86f75687bbafdf93401103939b2d93be57d",
   "adsEnabled": false,
   "AD_ID_permission": false,
   "signingCertificateSha256": "4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab",
@@ -23,12 +23,15 @@
   },
   "verification": {
     "archive": "aapt2 package/version/SDK and all three ABIs verified; SHA-256 matches the fresh release APK",
-    "signature": "APK Signature Scheme v2 verified; certificate matches preserved build 2076",
-    "ui": "All three ABI binaries contain the Worlds divider and corrected self-record target copy; 132 focused app tests pass",
-    "assets": "Packaged persistent-v1 runtime byte-matches SHA-256 dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 (452194 bytes)",
+    "signature": "APK Signature Scheme v2 verified; certificate matches preserved build 2077",
+    "ui": "Exact signed 2078 installed in an isolated Android 36 ARM64 emulator: onboarding/tutorial, all feed lanes, actual gameplay/game-over, return to the same card, subsequent swipe and visible ordinary/World More menus observed. Physical Fold7/iPhone and action side effects are not verified",
+    "tests": "Full Flutter sweep: 5116 passed, 16 skipped, 77 failed; independently triaged, not all green. Fourteen targeted HTTP-harness checks passed after test-only repairs; World authority/media suite 18/18 passed. Earlier 506 focused Flutter and 81 Node checks are separate. Full analysis clean",
+    "assets": "Six current promo assets retained byte-for-byte; older media originals preserved outside the shipping manifest. Packaged persistent-v1 runtime remains SHA-256 dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 (452194 bytes)",
     "permissions": "Both ENABLE_ADS and PREVIEW_ADS disabled; aapt2 permission inspection finds no AD_ID permission"
   },
   "limitations": [
-    "No physical-device installation was performed during this website download update."
+    "No physical-device installation was performed during this website download update; emulator checks do not establish physical audio, offline resume or iPhone acceptance.",
+    "Full Flutter suite is not green; original result was 5116 passed, 16 skipped and 77 failed, followed by scoped triage and targeted reruns.",
+    "Pre-existing Money Eyes falls back to cyclops only in explicitly opted-in legacy JavaScript Slop.character rendering; the default native robot renderer and current Workshop support it. Identical SDK bytes are present in builds 2077 and 2078. This release does not fix or repin that SDK."
   ]
 }
