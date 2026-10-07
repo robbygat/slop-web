@@ -1,9 +1,12 @@
+# SLOP_CLOUDFLARE_DEPLOYMENT_DISABLED
+# No verified personal Slop account. Do not fall back to a global account.
+account_id = "00000000000000000000000000000000"
+
 # Optional: serve AASA with application/json when slop.game uses Cloudflare DNS.
 # Does not replace GitHub Pages for the rest of the site.
 #
-#   npm i -g wrangler   # or npx wrangler
-#   wrangler login
-#   wrangler deploy
+# Deployment is blocked until a personal Slop account is verified.
+# Read docs/CLOUDFLARE-ISOLATION.md; never use a global/work account.
 
 name = "slop-aasa"
 main = "cloudflare/aasa-worker.js"
@@ -12,3 +15,7 @@ compatibility_date = "2024-06-01"
 [[routes]]
 pattern = "slop.game/.well-known/apple-app-site-association"
 zone_name = "slop.game"
+
+# Fails locally before upload, regardless of credential/account overrides.
+[build]
+command = "node cloudflare-deploy-blocked.mjs"

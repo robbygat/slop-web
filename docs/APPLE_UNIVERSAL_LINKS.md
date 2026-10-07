@@ -1,44 +1,7 @@
-# Apple Universal Links (slop.game)
+# Apple Universal Links for Slop
 
-Canonical copy: `docs/apple-app-site-association`
+The canonical manifest is now served by **Slop Supabase**, with a verified GitHub Pages mirror at both required `slop.game` paths. The optional Cloudflare worker is retired and deployment remains blocked.
 
-Live URLs (both required):
+Read [Supabase links](SUPABASE-LINKS.md) for endpoints, build synchronization, verification and remaining native association limits. The app ID remains `6S8Z64V9JP.game.slop.slop`; `io.slop.game` is only the custom OAuth/game URL scheme.
 
-- `https://slop.game/.well-known/apple-app-site-association`
-- `https://slop.game/apple-app-site-association`
-
-App ID: `6S8Z64V9JP.game.slop.slop` (Team ID + bundle id `game.slop.slop` — **not** `io.slop.game`, which is only the custom URL scheme for OAuth).
-
-Paths: `/play/*`, `/r/*`, `/g/*` — covers multiplayer invites like `/play/<slug>?room=<code>`.
-
-## Verify
-
-```bash
-curl -sI https://slop.game/.well-known/apple-app-site-association
-curl -sI https://slop.game/apple-app-site-association
-curl -sL https://slop.game/.well-known/apple-app-site-association
-```
-
-Expect HTTP 200, no redirects, JSON body with `appID` `6S8Z64V9JP.game.slop.slop`.
-
-## Content-Type
-
-GitHub Pages serves extensionless files as `application/octet-stream`. Modern iOS accepts this; for `application/json` see Option A below.
-
-### A. Cloudflare Transform Rule (keep GitHub Pages)
-
-Rules → Transform Rules → Modify Response Header → URI Path equals `/.well-known/apple-app-site-association` OR `/apple-app-site-association` → set `Content-Type: application/json`.
-
-### B. Cloudflare Pages
-
-Use root `_headers` (already in repo) and point `slop.game` at Cloudflare Pages.
-
-### C. Cloudflare Worker
-
-`npx wrangler deploy` (see `cloudflare/aasa-worker.js`).
-
-## iOS checklist
-
-- Associated Domains: `applinks:slop.game`
-- AASA must be live **before** TestFlight install (iOS fetches at install time)
-- Provisioning profile must include Associated Domains capability
+Do not remove the `.well-known` website copy, redirect it to Supabase, or revive Cloudflare hosting. Never touch Parky or a work Cloudflare account.

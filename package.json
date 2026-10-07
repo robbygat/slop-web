@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "start": "vite --host 127.0.0.1",
-    "build": "vite build && node tools/postbuild-routes.mjs",
+    "build": "vite build && node tools/sync-supabase-links.mjs && node tools/postbuild-routes.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "qa:worlds": "node tools/worlds-acceptance/serve.mjs",
     "test": "node --test test/*.test.mjs",
