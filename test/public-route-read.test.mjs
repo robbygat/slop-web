@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readPublicRouteRows} from '../tools/public-route-read.mjs';
+import {readPublicRoutePage, readPublicRouteRows} from '../tools/public-route-read.mjs';
 
 function query(result, {stall = false} = {}) {
   return {
@@ -28,4 +28,11 @@ test('a stalled catalog read is aborted and fails the build with an actionable e
 test('public catalog errors and malformed responses cannot silently drop routes', async () => {
   await assert.rejects(readPublicRouteRows(query({data: null, error: {message: 'unavailable'}}), 'public names'), /public names: unavailable/);
   await assert.rejects(readPublicRouteRows(query({data: null, error: null}), 'public names'), /invalid row list/);
+});
+
+test('complete-page reads require the server exact count rather than guessing from page length', async () => {
+  assert.deepEqual(await readPublicRoutePage(query({data: [], error: null, count: 0}), 'games'), {rows: [], total: 0});
+  for (const count of [undefined, null, -1, 1.2]) {
+    await assert.rejects(readPublicRoutePage(query({data: [], error: null, count}), 'games'), /no exact catalog count/);
+  }
 });
