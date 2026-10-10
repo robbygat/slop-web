@@ -32,6 +32,14 @@ curl -i https://slop.game/.well-known/assetlinks.json
 
 GitHub Pages serves extensionless AASA as `application/octet-stream`; the current Apple CDN returns the same accepted JSON as `application/json`. Actual new-install association and app-link opening still require physical device verification. The production AASA retains its reviewed path allowlist (`/play/*`, `/r/*`, `/g/*`, `/invite/*`, `/mcp/pair`). New root game aliases and the legacy `/open/?game=` link are not included by that allowlist; keep the website's explicit Open in Slop fallback until a separate native route/association change is reviewed.
 
+## Complete software index
+
+The Pages postbuild also generates `/games/` and `/games/catalog.json` from the complete published, non-delete-authorized public catalog. It reads every page with an exact count; truncation, duplicate identities, invalid native slugs, or a count changing during pagination fails the build. Empty descriptions are explicitly reported as not supplied, not generated. The mobile platform game `grun` (Run Infinite) is source-reviewed separately because it is not a community catalog row. Disabled multiplayer previews are not listed.
+
+Every entry uses the existing associated path `/play/<internal-slug>/`, not its root public alias. The build emits HTTP-200 `/play/<internal-slug>/` and `/g/<internal-slug>/` fallback pages while retaining all existing canonical game routes. A platform-only game receives an honest mobile-app/download fallback, not a fabricated browser game. The association manifest, Cloudflare guard, publication authority, and game content do not change. The existing scheduled Pages build refreshes the index along with game routes. The website footer and Support pages link to the index.
+
+Validate the generated HTML and JSON counts, the full route set, live HTTP responses, and the unchanged AASA separately. Build success does not establish physical-device association, cold/warm native opening, or App Review approval. This index addresses the software-index/universal-link requirement in [App Review Guideline 4.7.4](https://developer.apple.com/app-store/review/guidelines/#mini-apps-mini-games-streaming-games-chatbots-plug-ins-and-game-emulators); the other requirements in section 4.7 remain independent.
+
 ## Deployment boundary
 
 Deploy only the named Supabase functions with `--project-ref yqlolbebqfsodqgjlbeh`; never deploy all functions implicitly or run blanket database migrations. The former Cloudflare AASA/invite configurations are retired, pinned to a nonexistent account and blocked by a local build guard. Do not bypass or revive them. Do not access Parky or any work Cloudflare account. Existing historical resources in another account cannot be claimed removed without a verified audit by that account's owner.

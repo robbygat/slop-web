@@ -14,7 +14,7 @@ export function BrandHeader({user,profile,signIn,navigation}){
 }
 export function BrandFooter(){
  return <footer className="site-footer compact-footer">
-  <div className="footer-main"><a className="footer-brand" href="#/home" aria-label="Slop.game home"><SlopMark/><span>Slop.game</span></a><nav className="footer-links" aria-label="Footer"><a href="#/download">Get the app</a><a href="#/connect">Create</a><a href="#/shop">Shop</a><a href="/support.html">Support</a></nav><DownloadLinks/></div>
+  <div className="footer-main"><a className="footer-brand" href="#/home" aria-label="Slop.game home"><SlopMark/><span>Slop.game</span></a><nav className="footer-links" aria-label="Footer"><a href="#/download">Get the app</a><a href="#/connect">Create</a><a href="#/shop">Shop</a><a href="/games/">Game index</a><a href="/support.html">Support</a></nav><DownloadLinks/></div>
   <div className="footer-bottom"><a className="footer-company" href="https://aislopinc.com" target="_blank" rel="noopener noreferrer">© {new Date().getFullYear()} AI Slop Inc.</a><nav aria-label="Legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav><Appearance/></div>
  </footer>;
 }
