@@ -1,0 +1,16 @@
+{
+  "url": "https://slop.game/downloads/Slop-3.7.7-build-2078-universal.apk",
+  "file": "Slop-3.7.7-build-2078-universal.apk",
+  "version": "3.7.7",
+  "build": 2078,
+  "date": "October 3, 2026",
+  "size": "160 MB",
+  "sha256": "fafc01c0a668a129c5905e1cf11ce86f75687bbafdf93401103939b2d93be57d",
+  "architectures": "Universal APK",
+  "minAndroid": "7.0",
+  "package": "game.slop.api",
+  "source": {
+    "commit": "4acc17a4102ec6b895c74e14d9e822a83d4ac03b",
+    "includesWorkingTreeChanges": true
+  }
+}

@@ -1,9 +1,9 @@
 {
-  "file": "Slop-3.7.7-build-2078-universal.apk",
-  "url": "https://slop.game/downloads/Slop-3.7.7-build-2078-universal.apk",
-  "sourceUrl": "https://github.com/robbygat/slop-web/releases/download/android-3.7.7-build-2078/Slop-3.7.7-build-2078-universal.apk",
-  "version": "3.7.7",
-  "versionCode": 2078,
+  "file": "Slop-3.7.8-build-2080-universal.apk",
+  "url": "https://slop.game/downloads/Slop-3.7.8-build-2080-universal.apk",
+  "sourceUrl": "https://github.com/robbygat/slop-web/releases/download/android-3.7.8-build-2080/Slop-3.7.8-build-2080-universal.apk",
+  "version": "3.7.8",
+  "versionCode": 2080,
   "package": "game.slop.api",
   "architectures": [
     "arm64-v8a",
@@ -13,25 +13,26 @@
   "minSdk": 24,
   "targetSdk": 36,
   "bytes": 160250775,
-  "sha256": "fafc01c0a668a129c5905e1cf11ce86f75687bbafdf93401103939b2d93be57d",
+  "sha256": "9baa5f8621609ec1aecb8bef67caee40bffda88e81345fd116c469ae2e76b6ce",
   "adsEnabled": false,
   "AD_ID_permission": false,
   "signingCertificateSha256": "4866dc903fe041f8e0bee3c240ae1340ec4ebcfdd5a4e34019f4fc8eb597b8ab",
   "source": {
-    "commit": "4acc17a4102ec6b895c74e14d9e822a83d4ac03b",
-    "includesWorkingTreeChanges": true
+    "commit": "8a98988faac9f7f17e327c298d297e55159a134a",
+    "includesWorkingTreeChanges": true,
+    "patchSha256": "432125cae4df44c6d02f013136ad46ab22493a7b31e2e5ff2d5af64943076820"
   },
   "verification": {
-    "archive": "aapt2 package/version/SDK and all three ABIs verified; SHA-256 matches the fresh release APK",
-    "signature": "APK Signature Scheme v2 verified; certificate matches preserved build 2077",
-    "ui": "Exact signed 2078 installed in an isolated Android 36 ARM64 emulator: onboarding/tutorial, all feed lanes, actual gameplay/game-over, return to the same card, subsequent swipe and visible ordinary/World More menus observed. Physical Fold7/iPhone and action side effects are not verified",
-    "tests": "Full Flutter sweep: 5116 passed, 16 skipped, 77 failed; independently triaged, not all green. Fourteen targeted HTTP-harness checks passed after test-only repairs; World authority/media suite 18/18 passed. Final shipping-robot compact/2x-text profile and request-coalescing checks 7/7 passed. Earlier 506 focused Flutter and 81 Node checks are separate. Full analysis clean",
-    "assets": "Six current promo assets retained byte-for-byte; older media originals preserved outside the shipping manifest. Packaged persistent-v1 runtime remains SHA-256 dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6 (452194 bytes)",
-    "permissions": "Both ENABLE_ADS and PREVIEW_ADS disabled; aapt2 permission inspection finds no AD_ID permission"
+    "archive": "Package game.slop.api, version 3.7.8 (2080), SDK bounds and all three ABIs independently verified; APK bytes and SHA-256 match the actual build output. 16 KB ZIP alignment and 64-bit ELF load-segment checks pass",
+    "signature": "APK Signature Scheme v2 verified; certificate matches preserved website build 2078",
+    "ui": "Build 2080 native runtime acceptance is not yet established. Earlier 2079 iPhone/iPad observations are not claimed as 2080 acceptance",
+    "tests": "121 scoped World Continue/lifecycle regression tests pass. This is not a new full-app regression acceptance claim",
+    "assets": "All 894 app-asset/native entries and classes.dex match the independently verified ads-disabled 2080 AAB; all 456 inventoried source files remained unchanged during the build",
+    "permissions": "Both ENABLE_ADS and PREVIEW_ADS disabled; APK permission inspection finds no advertising-ID permissions"
   },
   "limitations": [
-    "No physical-device installation was performed during this website download update; emulator checks do not establish physical audio, offline resume or iPhone acceptance.",
-    "Full Flutter suite is not green; original result was 5116 passed, 16 skipped and 77 failed, followed by scoped triage and targeted reruns.",
-    "Pre-existing Money Eyes falls back to cyclops only in explicitly opted-in legacy JavaScript Slop.character rendering; the default native robot renderer and current Workshop support it. Identical SDK bytes are present in builds 2077 and 2078. This release does not fix or repin that SDK."
+    "The APK artifact audit verifies provenance, signature and packaging only. Build 2080 installation, native World Continue behavior, physical audio and offline resume are not established by that audit.",
+    "The scoped 121-test result does not establish a clean full Flutter suite or replace earlier release limitations; preserved build manifests retain their original evidence.",
+    "Production ads remain disabled. The separate account-deletion backend gate remains blocked; this website APK is not a claim of Google Play or App Store approval."
   ]
 }

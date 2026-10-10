@@ -73,6 +73,8 @@ jobs:
       - name: Stage the verified first-party APK download
         run: node scripts/stage-android-download.mjs --cache-dir "$RUNNER_TEMP/slop-apk-cache"
       - name: Preserve the previous direct APK download
+        run: node scripts/stage-android-download.mjs --metadata-dir public/downloads/archive/2078 --cache-dir "$RUNNER_TEMP/slop-apk-cache"
+      - name: Preserve the build 2077 direct APK download
         run: node scripts/stage-android-download.mjs --metadata-dir public/downloads/archive/2077 --cache-dir "$RUNNER_TEMP/slop-apk-cache"
       - name: Preserve the older direct APK download
         run: node scripts/stage-android-download.mjs --metadata-dir public/downloads/archive/2076 --cache-dir "$RUNNER_TEMP/slop-apk-cache"
