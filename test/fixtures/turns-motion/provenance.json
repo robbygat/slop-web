@@ -1,0 +1,206 @@
+{
+  "format": "gray8",
+  "frames": 222,
+  "fps": 30,
+  "local": {
+    "width": 144,
+    "height": 256,
+    "filter": "scale=144:256:flags=area,format=gray"
+  },
+  "global": {
+    "width": 24,
+    "height": 40,
+    "filter": "scale=24:40,format=gray"
+  },
+  "cases": [
+    {
+      "name": "pocket-play",
+      "game": "pocket-putt",
+      "idle": false,
+      "input": "Official generic recorder trusted pointer/touch gestures.",
+      "source": [
+        {
+          "path": "game.js",
+          "sha256": "74f94270d28f611051996847728870794aa367a59a582e93a3ca490f889f49d5"
+        },
+        {
+          "path": "index.html",
+          "sha256": "0193f9e3c3699896c3d5a4e2f69cc3576e237f0659dfada0418f755aea2eb4c8"
+        },
+        {
+          "path": "simulation.js",
+          "sha256": "06a163a945a841af27733ca3d1815f6c0cfa7d0619539eb9bed69815d9e12791"
+        },
+        {
+          "path": "slop-platform.json",
+          "sha256": "1485cd7484541f75e74b0052b648ab666d881e22e7362519bf506d9e230bf551"
+        },
+        {
+          "path": "slop.js",
+          "sha256": "c98852985abbe1a35182a4eaf3d350ded668b6089d264ed14020ac552a50e733"
+        },
+        {
+          "path": "slop.spec.json",
+          "sha256": "3efb73f5e5fa13065a52ee60e516384e0c965dedc7d3b79d88f0ed49d765f13a"
+        }
+      ],
+      "framesSha256": "87d33ab723b853d54b60af62a1213f42effbbfc14fb9d53ea8b4854f4e1c8d2a",
+      "samples": {
+        "local": {
+          "file": "pocket-play.local.gray.gz",
+          "bytes": 85454,
+          "sha256": "0252b94f2ab71344ff950f30d6464132767ca2891db5f9be24fb310c4c471b21",
+          "rawSha256": "45d44e73da82ac934e2fffca5814c3fae3062da360f45dac27b58511a3b8efdb"
+        },
+        "global": {
+          "file": "pocket-play.global.gray.gz",
+          "bytes": 5057,
+          "sha256": "6a57a27d1c5588d141ff8d85ae4bc47be1df98ba7efc84086e0cde39d83fcbe3",
+          "rawSha256": "ed62ac3b928c941fdc6a2c027160d076e65d17f600ab83a30c39a35c52889f1b"
+        }
+      }
+    },
+    {
+      "name": "blob-play",
+      "game": "blob-brawl",
+      "idle": false,
+      "input": "Official generic recorder trusted pointer/touch gestures.",
+      "source": [
+        {
+          "path": "game.js",
+          "sha256": "14d11da89e92a6fda0d1eaabe0f272e5e154f3a553fde2b2438e9341d22ec06b"
+        },
+        {
+          "path": "index.html",
+          "sha256": "c95b81f9044967569a274881c3aa6b59df48147fd81305e4bd1ce45915cbd1b2"
+        },
+        {
+          "path": "simulation.js",
+          "sha256": "2f34810528fb66a9c65cfaba9f028e13e01eb821c9f9c27f2de445550f2757ee"
+        },
+        {
+          "path": "slop-platform.json",
+          "sha256": "1485cd7484541f75e74b0052b648ab666d881e22e7362519bf506d9e230bf551"
+        },
+        {
+          "path": "slop.js",
+          "sha256": "c98852985abbe1a35182a4eaf3d350ded668b6089d264ed14020ac552a50e733"
+        },
+        {
+          "path": "slop.spec.json",
+          "sha256": "9ed220e7805b599935b2c64fa6d8cc1afbf18aa5ccc378159ebb968935b6cf33"
+        }
+      ],
+      "framesSha256": "5b6900b0bbf9c1db6b02ddff69ba796eaadcdfd8e8e99eaa82393220383f68f5",
+      "samples": {
+        "local": {
+          "file": "blob-play.local.gray.gz",
+          "bytes": 187046,
+          "sha256": "943a8937af04c8eb213322e654812ce6ca99fba5dbd390b7058ff55f7f2cd3b5",
+          "rawSha256": "c1a306e18384d3bdce42ff82a02dc7cc41ff71895649ff409b63ddd700e9756a"
+        },
+        "global": {
+          "file": "blob-play.global.gray.gz",
+          "bytes": 8297,
+          "sha256": "81d0f2f22b0c1536b869eeb31c6a35dadfe96e8b79832cfdfa67ec55933d1a22",
+          "rawSha256": "5ad87c20a4e9a4426c3610f0f8ab9c77fab657b9e7429ec18c961258535158a9"
+        }
+      }
+    },
+    {
+      "name": "pocket-idle",
+      "game": "pocket-putt",
+      "idle": true,
+      "input": "Diagnostic-only omission of recorder input(frame); all game source, clock and host unchanged.",
+      "source": [
+        {
+          "path": "game.js",
+          "sha256": "74f94270d28f611051996847728870794aa367a59a582e93a3ca490f889f49d5"
+        },
+        {
+          "path": "index.html",
+          "sha256": "0193f9e3c3699896c3d5a4e2f69cc3576e237f0659dfada0418f755aea2eb4c8"
+        },
+        {
+          "path": "simulation.js",
+          "sha256": "06a163a945a841af27733ca3d1815f6c0cfa7d0619539eb9bed69815d9e12791"
+        },
+        {
+          "path": "slop-platform.json",
+          "sha256": "1485cd7484541f75e74b0052b648ab666d881e22e7362519bf506d9e230bf551"
+        },
+        {
+          "path": "slop.js",
+          "sha256": "c98852985abbe1a35182a4eaf3d350ded668b6089d264ed14020ac552a50e733"
+        },
+        {
+          "path": "slop.spec.json",
+          "sha256": "3efb73f5e5fa13065a52ee60e516384e0c965dedc7d3b79d88f0ed49d765f13a"
+        }
+      ],
+      "framesSha256": "c9294a68da6afbf429d6648a49713a5317c0e6e7b6293bdf4cb27995ea2d87d3",
+      "samples": {
+        "local": {
+          "file": "pocket-idle.local.gray.gz",
+          "bytes": 79050,
+          "sha256": "d8ce2b9f1cc88846843ad287940dec44885481f1bc13b83f6ee473672e81e74e",
+          "rawSha256": "965ab17d17cee1dcfa87990b7cc34335b163736633756b8381ca7a788b54cba9"
+        },
+        "global": {
+          "file": "pocket-idle.global.gray.gz",
+          "bytes": 3344,
+          "sha256": "a4888420e660636450c31bb4933b137181620ac990203507330db95a6d724b85",
+          "rawSha256": "916c5ff3d6ba13e3d8db771ea4734f3322af46fe3a6a6a4f03a9da2e93f1e861"
+        }
+      }
+    },
+    {
+      "name": "blob-idle",
+      "game": "blob-brawl",
+      "idle": true,
+      "input": "Diagnostic-only omission of recorder input(frame); all game source, clock and host unchanged.",
+      "source": [
+        {
+          "path": "game.js",
+          "sha256": "14d11da89e92a6fda0d1eaabe0f272e5e154f3a553fde2b2438e9341d22ec06b"
+        },
+        {
+          "path": "index.html",
+          "sha256": "c95b81f9044967569a274881c3aa6b59df48147fd81305e4bd1ce45915cbd1b2"
+        },
+        {
+          "path": "simulation.js",
+          "sha256": "2f34810528fb66a9c65cfaba9f028e13e01eb821c9f9c27f2de445550f2757ee"
+        },
+        {
+          "path": "slop-platform.json",
+          "sha256": "1485cd7484541f75e74b0052b648ab666d881e22e7362519bf506d9e230bf551"
+        },
+        {
+          "path": "slop.js",
+          "sha256": "c98852985abbe1a35182a4eaf3d350ded668b6089d264ed14020ac552a50e733"
+        },
+        {
+          "path": "slop.spec.json",
+          "sha256": "9ed220e7805b599935b2c64fa6d8cc1afbf18aa5ccc378159ebb968935b6cf33"
+        }
+      ],
+      "framesSha256": "cdc623ec0b4fed21b39fd9220a75b9805b4b875a8f1414371e20a2618a82c325",
+      "samples": {
+        "local": {
+          "file": "blob-idle.local.gray.gz",
+          "bytes": 141497,
+          "sha256": "fb98f68642079f18a9a224d40e22ffe55e14640039ac9cc1120dc891f93bbc3e",
+          "rawSha256": "dd14500826da86ffdc5a41d892f7f76b544e21956726f4d4885a2b07b6e8927c"
+        },
+        "global": {
+          "file": "blob-idle.global.gray.gz",
+          "bytes": 5418,
+          "sha256": "0f1314e7bd929340b132708c4b0f6ef72401bc146290f1fbe1dd2a8bc79a69c1",
+          "rawSha256": "2c85f9c043e89c62d5d0749e16969e9f9f31f530c4df12b049654ab989873057"
+        }
+      }
+    }
+  ],
+  "encoding": "gzip of first gray8 frame followed by framewise byte XOR against previous frame (lossless)"
+}
