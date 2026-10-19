@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {authoredInputTitle,identifyGameInput,readRecorderGame,installGameObservation,createGameInputController,continuousGameInput,gameInputSimulationSteps} from '../scripts/mcp-publisher/game-input.mjs';
+import {authoredInputTitle,identifyGameInput,fixedGameInputFrame,readRecorderGame,installGameObservation,createGameInputController,continuousGameInput,gameInputSimulationSteps} from '../scripts/mcp-publisher/game-input.mjs';
 const size={width:360,height:640};
 const target=(title,game)=>({document:{title},__game:game});
 
@@ -10,6 +10,24 @@ test('game-aware input requires a known title and exact control revision',()=>{
  assert.equal(identifyGameInput('<title>Zoomies</title>','different game source'),null);
  assert.equal(identifyGameInput('<title>Taiko Bloom</title>',null),null);
  let called=0;assert.equal(readRecorderGame(target('Other',{snap(){called++;}}),'zoomies'),null);assert.equal(called,0);
+});
+test('Tankfall input needs its exact source and presses the visible Fire button across frames',()=>{
+ assert.equal(authoredInputTitle('<title>Tankfall</title>'),'Tankfall');
+ assert.equal(identifyGameInput('<title>Tankfall</title>','changed control source'),null);
+ assert.equal(fixedGameInputFrame(null,0,size),null);
+ for(const viewport of [size,{width:420,height:660},{width:640,height:360}]){
+  const scale=Math.min(viewport.width/420,viewport.height/660),events=[];
+  for(let frame=0;frame<270;frame++)for(const event of fixedGameInputFrame('tankfall',frame,viewport))events.push({frame,...event});
+  assert.equal(events.length,6);
+  for(let i=0;i<events.length;i+=2){
+   const down=events[i],up=events[i+1];
+   assert.equal(down.type,'touchStart');assert.equal(up.type,'touchEnd');assert.equal(up.frame-down.frame,4);
+   assert.ok(Math.abs((down.x-(viewport.width-420*scale)/2)/scale-348)<1e-9);
+   assert.ok(Math.abs((down.y-(viewport.height-660*scale)/2)/scale-602)<1e-9);
+   if(i)assert.equal(down.frame-events[i-2].frame,90);
+  }
+ }
+ assert.throws(()=>fixedGameInputFrame('tankfall',-1,size),TypeError);
 });
 
 test('observation bridge accepts only parent requests and never invokes gameplay mutations',()=>{

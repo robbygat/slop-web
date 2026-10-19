@@ -4,6 +4,7 @@ import {coastLane,roofTarget,crowdTarget,joinTarget,petalDelta,puffPlan,flappyTa
 // These controls are reviewed only for these exact authored control revisions.
 // Titles alone never opt an unrelated or newly changed game into a policy.
 const BUILDS = Object.freeze({
+ 'Tankfall': ['tankfall','690bbfb17d3d4a2a9a985a8f7616479772474584e0aa19325175b6a0b1f733dc'],
  'Petal Storm': ['petal','7990c680c23f52c5644fbf2e80241f85e9c739bf6cad8f67a77a9845dcfdc300'],
  'Puff Gulp': ['puff','3dabae337266ea67875c2c40ec3237fd57b644b676a909973435ed6e179175a1'],
  'Join Clash 3D': ['join','c9f7240af7f0a3b05f05a32fbeb1e548a4aa30eef18d3f6c5415b1048fae387b'],
@@ -34,6 +35,18 @@ const BUILDS = Object.freeze({
 });
 export function authoredInputTitle(html){const title=/<title>\s*([^<]+?)\s*<\/title>/i.exec(String(html))?.[1];return Object.hasOwn(BUILDS,title)?title:!title&&/<script[^>]+src=[\"']game\.js[\"']/i.test(String(html))?'untitled':null;}
 export function identifyGameInput(html,source){const title=authoredInputTitle(html);if(!title||typeof source!=='string')return null;const hash=createHash('sha256').update(source).digest('hex');if(title==='untitled')return ['FLIGHT HORIZON','RIFF RUSH'].map(t=>BUILDS[t]).find(b=>b[1]===hash)?.[0]??null;return hash===BUILDS[title][1]?BUILDS[title][0]:null;}
+
+// A reviewed canvas button needs no game-state observation. Preserve the
+// authored default aim and press Fire across four animation frames, then wait
+// for the shot and CPU reply. Letterboxing matches this exact control revision.
+export function fixedGameInputFrame(kind,frame,{width,height}={}){
+ if(kind!=='tankfall')return null;
+ if(!Number.isInteger(frame)||frame<0||!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)throw TypeError('Invalid recorder input viewport or frame');
+ const f=frame%90,scale=Math.min(width/420,height/660);
+ if(f===0)return [{type:'touchStart',x:(width-420*scale)/2+348*scale,y:(height-660*scale)/2+602*scale}];
+ if(f===4)return [{type:'touchEnd'}];
+ return [];
+}
 
 // Injected into the isolated game frame. Copy bounded scalar observations;
 // never expose renderer/debug objects or call gameplay/state mutation methods.

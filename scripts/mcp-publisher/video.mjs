@@ -21,7 +21,7 @@ import { installGameStorage } from "../../src/lib/player-storage.js";
 import { installLegacyKeyboard, legacyControlSpec } from "../../src/lib/player-input.js";
 import { installRecorderClock } from "./clock.js";
 import { installRecorderInput, mobileInputFrame } from "./input.mjs";
-import { authoredInputTitle, identifyGameInput, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput, gameInputSimulationSteps } from "./game-input.mjs";
+import { authoredInputTitle, identifyGameInput, fixedGameInputFrame, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput, gameInputSimulationSteps } from "./game-input.mjs";
 import {recorderFileBytes,recorderWorldConfig,hasWorldMarker,worldRecorderBundle,worldEngineScript,scriptJson,worldMobileInputFrame,worldCaptureProblem} from './world-recorder.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -164,6 +164,7 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
   const worldHost=world?await worldRecorderBundle():'',worldEngine=await worldEngineScript(world);
   const authoredGame = authoredInputTitle(authoredHtml) ? (fromFiles ? source.files['game.js'] : (await fetchRemote('game.js'))?.toString('utf8')) : null;
   const knownInput = !desktop ? identifyGameInput(authoredHtml, authoredGame) : null;
+  const fixedInput = knownInput==='tankfall' ? knownInput : null;
   let port = 0;
   const base = () => `http://127.0.0.1:${port}/game/`;
   const policy = () => ["sandbox allow-scripts allow-pointer-lock", "default-src 'none'",
@@ -286,7 +287,7 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})().catch(()=>win
           progress.last = gameInputProgress(observation);
           progress.bestScore = Math.max(progress.bestScore, observation?.score || 0);
         }
-        const events = controller ? controller.next(runFrame++, observation) : world?worldMobileInputFrame(frame,{width:W,height:H}):mobileInputFrame(frame, { width: W, height: H, fps: FPS });
+        const events = controller ? controller.next(runFrame++, observation) : fixedGameInputFrame(fixedInput,frame,{width:W,height:H}) ?? (world?worldMobileInputFrame(frame,{width:W,height:H}):mobileInputFrame(frame, { width: W, height: H, fps: FPS }));
         if (controller && Array.isArray(diagnostics.inputTrace) && diagnostics.inputTrace.length < 900) diagnostics.inputTrace.push({ frame, x: observation?.x, ...(knownInput==='trig'?{ground:observation?.ground,bottom:observation?.bottom,obstacle:observation?.obstacle}:{}), events });
         for (const event of events) {
           await touch(event.type, event.x, event.y);
@@ -324,14 +325,14 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})().catch(()=>win
     await activateStart();
     if (desktop && !controlClicks) await click(W / 2, H * 0.6);
 
-    if (knownInput) {
+    if (knownInput && !fixedInput) {
       observation = await observe();
       if (observation?.kind === knownInput) {
         controller = createGameInputController(knownInput, { width: W, height: H, fps: FPS });
         progress.first = gameInputProgress(observation);
       }
     }
-    diagnostics.inputPolicy = controller ? knownInput : world?.inputPolicy||'generic';
+    diagnostics.inputPolicy = controller ? knownInput : fixedInput||world?.inputPolicy||'generic';
     if (controller) diagnostics.gameplay = progress;
 
     // Settle a few virtual frames (games often spawn on their first update),
