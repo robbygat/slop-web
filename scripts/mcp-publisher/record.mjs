@@ -11,6 +11,8 @@ import { launchChrome } from "./cdp.mjs";
 import { installGameStorage } from "../../src/lib/player-storage.js";
 import { mcpRuntimeProblem } from "../../src/lib/mcp-runtime.js";
 import { mcpTargetFromFiles } from "../../src/lib/mcp-platform.js";
+import { inspectBundle } from "../../mcp/bundle-rules.mjs";
+import { identifyGameInput, fixedGameInputFrame } from "./game-input.mjs";
 import {recorderManifest,recorderFileBytes,recorderWorldConfig,worldRecorderBundle,worldEngineScript,scriptJson,worldMobileInputFrame,worldCaptureProblem} from './world-recorder.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -46,15 +48,25 @@ async function bundle() {
 // and speeds up as variants are cached. Warm-up waits for a steady rate.
 const WARMUP_FRAMES = 8, WARMUP_FPS = 1.5, WARMUP_MS = 20000, ENOUGH_FRAMES = 24;
 
-export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeconds = 70, diagnostics = {} } = {}) {
+export function recorderConfig(files) {
   if (!files?.["index.html"]) throw new RecorderFailure("runtime_invalid");
-  let world;
-  try {world=recorderWorldConfig(files);}catch {throw new RecorderFailure('runtime_invalid');}
-  if (mcpRuntimeProblem(recorderManifest(files), files["index.html"],{persistent:!!world})) throw new RecorderFailure("runtime_invalid");
-  let target;
-  try { target = mcpTargetFromFiles(files); } catch { throw new RecorderFailure("runtime_invalid"); }
+  try {
+    const inspected = inspectBundle(files), world = recorderWorldConfig(files);
+    if (mcpRuntimeProblem(recorderManifest(files), files["index.html"], {
+      persistent: !!world, multiplayer: inspected.multiplayer,
+    })) throw new Error("runtime_invalid");
+    return { world, target: mcpTargetFromFiles(files) };
+  } catch { throw new RecorderFailure("runtime_invalid"); }
+}
+
+export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeconds = 70, diagnostics = {} } = {}) {
+  // A turns bundle records its authored practice mode. Admission selects its
+  // canonical SDK without supplying a room, seat or simulated online peer.
+  const { world, target } = recorderConfig(files);
   const desktop = target === "desktop";
   const [W, H] = desktop ? [1280, 720] : [360, 640];
+  const fixedInput = !desktop && identifyGameInput(files['index.html'],files['game.js'])==='tankfall' ? 'tankfall' : null;
+  diagnostics.inputPolicy = fixedInput || world?.inputPolicy || 'generic';
   const bootstrap = await readFile(join(root, "src/lib/player-bootstrap.js"), "utf8");
   const recorder = await bundle();
   const worldHost=world?await worldRecorderBundle():'',worldEngine=await worldEngineScript(world);
@@ -189,8 +201,14 @@ export async function recordGame(files, { seconds = 9, maxSeconds = 45, slowSeco
     // the finger down and moving, not a swipe that began and ended in between.
     let drag = null;
     let worldInputFrame=-1;
+    let fixedInputFrame=-1;
     const touch = (type, x, y) => s.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
     const input = async (i) => {
+      if(fixedInput){
+        const through=Math.round(i*.12*30);
+        for(;fixedInputFrame<through;fixedInputFrame++)for(const event of fixedGameInputFrame(fixedInput,fixedInputFrame+1,{width:W,height:H})){await touch(event.type,event.x,event.y);drag=event.type==='touchEnd'?null:{fixed:true};}
+        return;
+      }
       if(world&&!desktop){
         const through=Math.round(i*.12*30);
         for(;worldInputFrame<through;worldInputFrame++)for(const event of worldMobileInputFrame(worldInputFrame+1,{width:W,height:H})){await touch(event.type,event.x,event.y);drag=event.type==='touchEnd'?null:{world:true};}

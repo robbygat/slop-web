@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {IDBFactory} from 'fake-indexeddb';
 import {gameTemplate} from '../mcp/game-template.mjs';
 import {installWorldRecorder} from '../scripts/mcp-publisher/world-recorder-host.js';
+import {recorderConfig} from '../scripts/mcp-publisher/record.mjs';
 import {hasWorldMarker,recorderWorldConfig,recorderManifest,recorderFileBytes,scriptJson,worldEngineScript,worldMobileInputFrame,worldCaptureProblem} from '../scripts/mcp-publisher/world-recorder.mjs';
 
 const template=await gameTemplate({persistent:true,target_platform:'mobile'});
@@ -34,6 +35,23 @@ test('World admission requires the exact runtime and true persistent contract; A
  assert.throws(()=>recorderWorldConfig({...template.files,'slop.js':template.files['slop.js']+'\n'}),/runtime_invalid/);
  assert.throws(()=>recorderWorldConfig({...template.files,'slop.spec.json':JSON.stringify({persistent:true,first_load:[]})}),/first_load/);
  assert.throws(()=>recorderWorldConfig({...template.files,'game.js':'Slop.ready();'}));
+});
+test('capture admission selects the declared canonical Arcade, World or turns runtime',async()=>{
+ const arcade=await gameTemplate(),turns=await gameTemplate({multiplayer:true});
+ assert.deepEqual(recorderConfig(arcade.files),{world:null,target:'cross-platform'});
+ assert.ok(recorderConfig(template.files).world);
+ assert.deepEqual(recorderConfig(turns.files),{world:null,target:'cross-platform'});
+});
+test('turns capture rejects missing or invalid contracts, mixed capabilities and altered SDK loading',async()=>{
+ const {files}=await gameTemplate({multiplayer:true}),spec=JSON.parse(files['slop.spec.json']);
+ for(const changed of [
+  {...files,'slop.spec.json':JSON.stringify({...spec,multiplayer:false})},
+  {...files,'slop.spec.json':JSON.stringify({...spec,multiplayer:{...spec.multiplayer,seats:3}})},
+  {...files,'slop.spec.json':JSON.stringify({...spec,persistent:true})},
+  {...files,'slop.js':files['slop.js']+'\n'},
+  {...files,'index.html':files['index.html'].replace('multiplayer-v1','creator-v1')},
+  {...files,'index.html':files['index.html'].replace('src="slop.js"','async src="slop.js"')},
+ ])assert.throws(()=>recorderConfig(changed),{code:'runtime_invalid'});
 });
 test('inert or unrelated HTML markers never promote Arcade into a World',()=>{
  const marker='<meta name="slop-runtime" content="persistent-v1">';
