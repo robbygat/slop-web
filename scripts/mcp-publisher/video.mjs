@@ -67,9 +67,10 @@ export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 2
   const k = Math.min(seam, Math.floor(count / 4));
   const bodyFrames = count - k;
   const scale = `scale=${width}:${height}:flags=lanczos:out_range=tv:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1`;
+  // Trimming can clear frame-rate metadata; xfade requires both inputs to be CFR.
   const filter = k >= 2
-    ? `[0:v]${scale},split[a][b];[a]trim=end_frame=${k},setpts=PTS-STARTPTS[head];` +
-      `[b]trim=start_frame=${k},setpts=PTS-STARTPTS[body];` +
+    ? `[0:v]${scale},split[a][b];[a]trim=end_frame=${k},setpts=PTS-STARTPTS,fps=${FPS}[head];` +
+      `[b]trim=start_frame=${k},setpts=PTS-STARTPTS,fps=${FPS}[body];` +
       `[body][head]xfade=transition=fade:duration=${(k / FPS).toFixed(4)}:offset=${((bodyFrames - k) / FPS).toFixed(4)},format=yuv420p[v]`
     : `[0:v]${scale},format=yuv420p[v]`;
   const encode = (quality) => runFfmpeg([
