@@ -165,17 +165,25 @@ test('isolated browser still rejects a static canvas despite trusted gestures', 
 });
 
 
-test('higher-quality encoder preserves decodable 720p30 video and the upload byte ceiling', {skip:process.env.SLOP_RECORDER_ENCODER_TEST !== '1',timeout:60000}, async()=>{
+test('crossfade encoder preserves every 720p30 output frame and the upload byte ceiling', {skip:process.env.SLOP_RECORDER_ENCODER_TEST !== '1',timeout:60000}, async()=>{
  const {mkdtemp,rm}=await import('node:fs/promises'),{tmpdir}=await import('node:os'),{join}=await import('node:path'),{execFileSync}=await import('node:child_process');
  const {encodeLoop}=await import('../scripts/mcp-publisher/video.mjs');
  const {validateVideo,validatePoster}=await import('../supabase/functions/slop-mcp/publisher.mjs');
+ const ffmpeg=process.env.FFMPEG_PATH ?? 'ffmpeg';
  const dir=await mkdtemp(join(tmpdir(),'slop-quality-test-'));
  try {
-  execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=720x1280:rate=30','-frames:v','72','-q:v','2','-start_number','0',join(dir,'f%05d.jpg')]);
+  execFileSync(ffmpeg,['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=720x1280:rate=30','-frames:v','72','-q:v','2','-start_number','0',join(dir,'f%05d.jpg')]);
   const clip=await encodeLoop(dir,72,{width:720,height:1280});
   assert.equal(clip.crf,21);assert.ok(clip.video.length<=2600000);
-  const info=validateVideo(clip.video);assert.equal(info.width,720);assert.equal(info.height,1280);assert.ok(validatePoster(clip.poster,720,1280));
-  const media=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_name,r_frame_rate,pix_fmt','-of','json',join(dir,'preview.mp4')],{encoding:'utf8'}));
-  assert.equal(media.streams[0].codec_name,'h264');assert.equal(media.streams[0].r_frame_rate,'30/1');assert.equal(media.streams[0].pix_fmt,'yuv420p');
+  const info=validateVideo(clip.video);assert.equal(info.codec,'avc1');assert.equal(info.width,720);assert.equal(info.height,1280);assert.equal(info.duration_ms,2000);assert.ok(validatePoster(clip.poster,720,1280));
+  const decoded=execFileSync(ffmpeg,['-hide_banner','-loglevel','error','-i',join(dir,'preview.mp4'),'-map','0:v:0','-f','framemd5','-'],{encoding:'utf8'});
+  assert.match(decoded,/^#tb 0: 1\/30$/m);
+  assert.match(decoded,/^#dimensions 0: 720x1280$/m);
+  const frames=decoded.trim().split(/\r?\n/).filter(line=>!line.startsWith('#')).map(line=>line.split(',').map(value=>value.trim()));
+  assert.equal(clip.frames,60);assert.equal(frames.length,60);
+  for(const [index,frame] of frames.entries()) {
+   assert.equal(Number(frame[1]),index);assert.equal(Number(frame[2]),index);assert.equal(Number(frame[3]),1);
+   assert.equal(Number(frame[4]),720*1280*3/2,'decoded frame must retain 8-bit 4:2:0 pixels');
+  }
  } finally {await rm(dir,{recursive:true,force:true});}
 });
