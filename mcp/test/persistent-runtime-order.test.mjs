@@ -24,7 +24,7 @@ const changes=[
 ];
 for(const [name,change] of changes){
  test(`persistent runtime rejects ${name} at all three admission surfaces`,async()=>{
-  const {files}=await gameTemplate({persistent:true});
+  const {files}=await gameTemplate({game_type:"single-player",persistent:true});
   files['index.html']=change(files['index.html']);
   const {manifest}=await bundleIdentity(files);
   assert.equal(mcpRuntimeProblem(manifest,files['index.html'],{persistent:true}),MCP_RUNTIME_ERROR,'web publication');
@@ -33,7 +33,7 @@ for(const [name,change] of changes){
  });
 }
 test('persistent synchronous SDK accepts inert examples without treating them as boot code',async()=>{
- const {files}=await gameTemplate({persistent:true});
+ const {files}=await gameTemplate({game_type:"single-player",persistent:true});
  files['index.html']=files['index.html'].replace(script,
   '<template><template></template><script src="missing.js"></script></template><script type="application/json">{"example":"<script>"}</script><script src=slop.js></script>');
  const {manifest}=await bundleIdentity(files);
@@ -42,7 +42,7 @@ test('persistent synchronous SDK accepts inert examples without treating them as
  assert.equal((await validateDraft(draft(files))).persistent,true);
 });
 test('Arcade deferred SDK validation remains unchanged at all three surfaces',async()=>{
- const {files}=await gameTemplate();
+ const {files}=await gameTemplate({game_type:'single-player'});
  files['index.html']=files['index.html'].replace(script,'<script defer src="slop.js"></script>');
  const {manifest}=await bundleIdentity(files);
  assert.equal(mcpRuntimeProblem(manifest,files['index.html']),null);

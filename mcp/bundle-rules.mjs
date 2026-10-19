@@ -6,6 +6,18 @@ const BINARY=/\.(?:glb|bin|jpg|webp|ktx2|ogg)$/;
 const ARCADE_PATH=/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:html|js|css|json|svg|txt)$/;
 const PERSISTENT_PATH=/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:html|js|css|json|svg|txt|glb|bin|jpg|webp|ktx2|ogg)$/;
 const fail=message=>{throw new Error(message);};
+export const GAME_TYPES=Object.freeze(['single-player','multiplayer']);
+export function gameType(raw,{optional=false}={}){
+ if(raw===undefined&&optional)return null;
+ if(!GAME_TYPES.includes(raw))fail(raw===undefined?'game_type_required':'invalid_game_type');
+ return raw;
+}
+export function assertGameType(checked,expected,{requireDeclaration=false}={}){
+ const selected=gameType(expected,{optional:true});
+ if(selected&&selected!==checked.game_type)fail('game_type_mismatch');
+ if(selected&&requireDeclaration&&selected!==checked.declared_game_type)fail('game_type_declaration_required');
+ return checked.game_type;
+}
 // A bounded action contract, never a caller-supplied server program. The room
 // authority checks every field again when accepting an authenticated turn.
 export function multiplayerContract(raw){
@@ -67,6 +79,15 @@ export function fileBytes(path,value,buffer=null){
 // Comments/string contents never grant a persistence capability. Templates are
 // stripped as a whole: interpolated dynamic boot programs fail conservative.
 function executable(source){return source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n\r]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g,match=>' '.repeat(match.length));}
+function usesMatch(code){
+ // Accept the canonical receiver or a directly assigned SDK alias (including
+ // the global-object wrapper used by existing releases). This only verifies
+ // integration presence; real two-client playtests remain required.
+ const receivers=['Slop\\s*\\.\\s*match'];
+ for(const match of code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:[A-Za-z_$][\w$]*\s*\.\s*)?Slop\s*\.\s*match\b/g))receivers.push(match[1].replace(/[$]/g,'\\$'));
+ const receiver='(?:^|[^\\w$])(?:'+receivers.join('|')+')\\s*\\.\\s*';
+ return new RegExp(receiver+'(?:snapshot|subscribe)\\s*\\(').test(code)&&new RegExp(receiver+'submit\\s*\\(').test(code);
+}
 // Read whole attribute values, including valid unquoted HTML, without treating
 // data-src or text inside another attribute as a real resource dependency.
 function attributes(source){
@@ -141,6 +162,10 @@ function inspect(input,{retainDecoded=true,decodedInput=false}={}){
  const code=codeOrder(files),callsPersist=/\bSlop\s*\.\s*persist\s*\(/.test(code);
  const multiplayer=multiplayerContract(spec.multiplayer);
  if(multiplayer&&(spec.persistent===true||callsPersist))fail('persistent_multiplayer_conflict');
+ const declared_game_type=gameType(spec.game_type,{optional:true}),game_type=multiplayer?'multiplayer':'single-player';
+ if(declared_game_type&&declared_game_type!==game_type)fail('game_type_mismatch');
+ if(!multiplayer&&/\bSlop\s*\.\s*match\b/.test(code))fail('multiplayer_contract_required');
+ if(multiplayer&&!usesMatch(code))fail('multiplayer_match_required');
  const persistent=spec.persistent===true&&callsPersist;
  if(spec.persistent===true&&!callsPersist){delete spec.persistent;files['slop.spec.json']=JSON.stringify(spec);}
  const budget=persistent?PERSISTENT_BUDGET:ARCADE_BUDGET,paths=Object.keys(files);
@@ -163,7 +188,7 @@ function inspect(input,{retainDecoded=true,decodedInput=false}={}){
   if(!/\b\w+\s*\.\s*(?:commit|checkpoint)\s*\(/.test(code))fail('persistent_checkpoint_required');
   boot=firstLoad(files,spec,byteLengths);
  }
- return {files,persistent,multiplayer,budget,total,decoded,byteLengths,firstLoad:boot};
+ return {files,persistent,multiplayer,game_type,declared_game_type,budget,total,decoded,byteLengths,firstLoad:boot};
 }
 export function inspectBundle(input,{retainDecoded=true}={}){return inspect(input,{retainDecoded});}
 // Storage attesters use their own decoded readbacks, not client JSON. The

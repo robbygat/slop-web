@@ -7,6 +7,7 @@ import {QuestGlyph} from './Icon.jsx';
 export default function NavIcon({name,size=28}) {
  if(name==='play')return <SlopMark className="slop-nav-glyph glyph-play"/>;
  const art={
+  multiplayer:<><circle className="nav-glyph-wash" cx="10" cy="9" r="4"/><circle className="nav-glyph-wash" cx="23" cy="11" r="3.5"/><path className="nav-glyph-wash" d="M2.5 26v-3a7.5 7.5 0 0 1 15 0v3ZM20 19a6 6 0 0 1 9.5 5v2H22"/></>,
   social:<><path className="nav-glyph-wash" d="M14 4.5C7 4.5 3.8 7.4 3.8 14.2C3.8 19 5.7 21.6 9.3 22.8L8.8 27.5Q13 26.3 16.3 23.6C24.9 23.6 28.2 20.6 28.2 14.2C28.2 7.3 24.8 4.5 18 4.5Z"/><path className="nav-mind" d="M9.2 14C11.5 8.8 13.8 19.2 16 14S20.5 8.8 22.8 14"/></>,
   quest:<QuestGlyph transform="translate(2 2)"/>,
   code:<g transform="translate(16 20) rotate(-30)"><rect className="nav-glyph-wash" x="-2.6" y="-7" width="5.2" height="15" rx="2.5"/><path className="nav-glyph-wash" d="M-8-13Q-9.5-13-9.5-11.5V-7.5Q-9.5-6-8-6H5.5L9-9Q6.5-13 2.5-13Z"/></g>,

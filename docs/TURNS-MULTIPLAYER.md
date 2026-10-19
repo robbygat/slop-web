@@ -1,5 +1,29 @@
 # Turn-based multiplayer rollout
 
+## Explicit game types (MCP 0.8.0)
+
+The current MCP requires `game_type: "single-player"` or `"multiplayer"` for
+template, check, send and publish. `slop_game_types` and the resource
+`slop://guides/game-types` explain the choice before source is generated.
+The setup page also requires a game-type choice before showing a starter prompt.
+New source specs declare the type; existing untyped source retains its bytes and
+is checked against its inferred capability. A project's type cannot change.
+
+The web Multiplayer tab is `#/multiplayer` and lists published, enabled
+`turns-v1`/`match` games only. Home and Play list single-player games. Legacy
+real-time games, including Air Hockey, are not admitted to either selection.
+Direct supported match links still open the authenticated room gate.
+
+Release order: apply the reviewed MCP game-type SQL authority migration and
+deploy this repository's `supabase/functions/slop-mcp` folder to the verified
+Slop project before publishing MCP 0.8.0 through the normal Pages workflow.
+Do not change old source digests or archives. The backend verifies the requested
+type against source and stored project when creating, updating and publishing.
+Record the final migration/deployment receipt separately; a local package check
+does not demonstrate that the production gate is deployed.
+
+## Initial platform support (MCP 0.7.0)
+
 This change adds MCP 0.7.0, the pinned multiplayer-v1 SDK, generic turns-v1
 admission, and a web room host. It does not deploy any service by itself.
 
@@ -39,8 +63,9 @@ runtime lifecycle and host result overlay once.
 
 Run npm ci --ignore-scripts, npm ci --ignore-scripts --prefix mcp,
 npm test --prefix mcp, npm test, npm run build, and node mcp/build-package.mjs.
-Verified locally: all 135 MCP tests and 16 focused SDK/admission/host tests
-passed; the full web suite passed 495 tests, skipped 10 and had the one Windows
+Verified locally for MCP 0.8.0: all 141 MCP tests passed, including the 52-check
+PostgreSQL migration/authority test; the full web suite passed 503 tests,
+skipped 10 and had the one Windows
 symlink permission failure described below. The production build and package
 build both passed.
 

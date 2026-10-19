@@ -8,6 +8,7 @@ import { LocalCredentials, SlopBridge } from "./client.mjs";
 import { gameTemplate } from "./game-template.mjs";
 import { checkBundle } from "./bundle-check.mjs";
 import { pairingResult } from "./pairing-display.mjs";
+import { GAME_TYPE_GUIDE, gameTypes } from './game-types.mjs';
 
 const bridge = new SlopBridge({
   base: process.env.SLOP_MCP_URL ??
@@ -17,7 +18,9 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.7.0" });
+const server = new McpServer({ name: "slop", version: "0.8.0" });
+const gameTypeInput=z.enum(['single-player','multiplayer']).describe('Required explicit choice. single-player means one human (CPU opponents allowed); multiplayer means two humans online using turns-v1. Use slop_game_types before creating a project.');
+server.registerResource('game-types','slop://guides/game-types',{title:'Single-player or online multiplayer',description:'Choose the game type before creating, checking or publishing a Slop project.',mimeType:'text/markdown'},async uri=>({contents:[{uri:uri.href,mimeType:'text/markdown',text:GAME_TYPE_GUIDE}]}));
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -55,11 +58,15 @@ tool(
   () => bridge.status(),
   { readOnlyHint: true },
 );
-tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Set persistent:true for a Slop World with awaited saving, checkpoints and profile progression. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. Its instructions include the feed framing and terse-HUD rules. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform'),persistent:z.boolean().default(false).describe('Use true for Slop Worlds with durable run/profile saving and the persistent-v1 runtime.'),multiplayer:z.boolean().default(false).describe('Use true for turn-based two-player matches, exclusive with persistent.')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
+tool('slop_game_types','Read before creating a project: choose single-player or online turn-based multiplayer explicitly. Explains supported runtimes, catalog placement, constraints and the matching check/send/publish workflow.',{},gameTypes,{readOnlyHint:true,openWorldHint:false});
+
+tool("slop_game_template", "Create a NEW game only after explicitly choosing game_type. single-player: one human, optional CPU opponents; persistent:true makes a single-player World. multiplayer: two humans online taking turns through Slop.match/turns-v1, never real-time or CPU-only. Choose target_platform separately for controls. Returns the canonical runtime, source type declaration, working canvas and concise HUD instructions. No account needed.", {game_type:gameTypeInput,target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform'),persistent:z.boolean().default(false).describe('Only single-player Worlds may persist durable run/profile progress.'),multiplayer:z.boolean().optional().describe('Deprecated compatibility hint; use game_type. If supplied, it must agree with game_type.')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
+
 tool(
   "slop_send_draft",
-  "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private game bundle (strings for text, strict base64 descriptors for allowed World binaries) for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Private by default; publish:true requests publication only with owner-enabled Auto-publish. Does not charge credits. index.html is required. Arcade: 64 files / 2,000,000 decoded bytes total / 512,000 per file. Slop Worlds: actual Slop.persist + persistent:true spec; 400 files / 50,000,000 total / 8,000,000 per file / first_load <=5,000,000 bytes. No paid Store assets in this bridge.",
+  "Use slop_game_template first for the same explicit game_type and target_platform. Keep game_type in slop.spec.json for a new project. Project type cannot change; use a new project_id for a different type. Include its unchanged slop.js plus ready/score/finished integration. Send a private game bundle (strings for text, strict base64 descriptors for allowed World binaries) for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Private by default; publish:true requests publication only with owner-enabled Auto-publish. Does not charge credits. index.html is required. Arcade: 64 files / 2,000,000 decoded bytes total / 512,000 per file. Slop Worlds: actual Slop.persist + persistent:true spec; 400 files / 50,000,000 total / 8,000,000 per file / first_load <=5,000,000 bytes. No paid Store assets in this bridge.",
   {
+    game_type: gameTypeInput,
     project_id: z.string().uuid(),
     request_id: z.string().uuid(),
     revision: z.number().int().min(1).max(1_000_000),
@@ -71,10 +78,10 @@ tool(
   },
   async ({publish, ...args}) => {
     const files = {...args.files,'slop-platform.json':JSON.stringify({target_platform:args.target_platform})};
-    // Advisory only: the server stays the authority on what it accepts.
-    const local_check = await checkBundle(files, { target_platform: args.target_platform });
+    const local_check = await checkBundle(files, { target_platform: args.target_platform, game_type: args.game_type });
+    if(!local_check.ok)throw new Error("Bundle rejected locally: "+local_check.problems.join("; "));
     const sent = await bridge.authorized("/agent/drafts", {...args, files});
-    const publication = publish ? await bridge.authorized("/agent/publish", { submission_id: sent.submission_id }).catch((error) => ({ error: error.message })) : undefined;
+    const publication = publish ? await bridge.authorized("/agent/publish", { submission_id: sent.submission_id, game_type: args.game_type }).catch((error) => ({ error: error.message })) : undefined;
     const result = publication ? { ...sent, publication } : sent;
     return local_check.ok && !local_check.warnings.length ? result : { ...result, local_check };
   },
@@ -82,19 +89,20 @@ tool(
 );
 tool(
   "slop_check_bundle",
-  "Check a game bundle locally before slop_send_draft: file names, sizes, the unchanged slop.js runtime, required meta tags and script order, and sandbox rules Slop enforces (no storage or network, WebGL needs preserveDrawingBuffer:true so covers are not black). Returns problems (will be rejected or broken) and warnings. No account, connection or network needed.",
+  "Check against the explicitly selected game_type before slop_send_draft. Reject source-type, runtime or capability mismatches. Check a game bundle locally: file names, sizes, the unchanged slop.js runtime, required meta tags and script order, and sandbox rules Slop enforces (no storage or network, WebGL needs preserveDrawingBuffer:true so covers are not black). Returns problems (will be rejected or broken) and warnings. No account, connection or network needed.",
   {
+    game_type: gameTypeInput,
     target_platform: z.enum(['mobile','desktop','cross-platform']).optional(),
     files: z.record(z.union([z.string(),z.object({encoding:z.literal('base64'),data:z.string()}).strict()])),
   },
-  (args) => checkBundle(args.files, { target_platform: args.target_platform }),
+  (args) => checkBundle(args.files, { target_platform: args.target_platform, game_type: args.game_type }),
   { readOnlyHint: true, openWorldHint: false },
 );
 tool(
   "slop_publish",
-  "Publish a draft revision without a browser: Slop's server playtests it, records a moving H.264 MP4 feed video plus a poster and legacy GIF/cover, and publishes it only after video recording succeeds (staff accounts go live immediately; everyone else goes to review). Needs the owner to switch on Auto-publish for this connection at slop.game/#/connect. Only the project's latest revision can be published; a later revision of an already-published project updates that game. Poll slop_draft_status for publication status (requested, recording, publishing, published, pending_review, failed with a reason).",
-  { submission_id: z.string().uuid() },
-  (args) => bridge.authorized("/agent/publish", { submission_id: args.submission_id }),
+  "Publish a draft only with the same explicit game_type as its stored project and source. This does not convert a CPU game into multiplayer. Publish a draft revision without a browser: Slop's server playtests it, records a moving H.264 MP4 feed video plus a poster and legacy GIF/cover, and publishes it only after video recording succeeds (staff accounts go live immediately; everyone else goes to review). Needs the owner to switch on Auto-publish for this connection at slop.game/#/connect. Only the project's latest revision can be published; a later revision of an already-published project updates that game. Poll slop_draft_status for publication status (requested, recording, publishing, published, pending_review, failed with a reason).",
+  { submission_id: z.string().uuid(), game_type: gameTypeInput },
+  (args) => bridge.authorized("/agent/publish", { submission_id: args.submission_id, game_type: args.game_type }),
   { idempotentHint: true },
 );
 tool(

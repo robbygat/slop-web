@@ -1,0 +1,12 @@
+.multiplayer-page{max-width:1100px;margin:12px auto 40px;min-height:55vh}
+.multiplayer-heading{margin-bottom:32px}
+.multiplayer-heading h1{font-size:clamp(34px,5vw,58px)}
+.multiplayer-heading p{margin-top:12px;font-size:15px}
+.multiplayer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:28px;align-items:start}
+.multiplayer-card{width:100%;max-width:340px;padding:0;text-align:left;overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--surface);color:var(--ink)}
+.multiplayer-card:hover{border-color:var(--soft)}
+.multiplayer-cover{position:relative;aspect-ratio:9/12;overflow:hidden}
+.multiplayer-card-info{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px}
+.multiplayer-card-info strong{font-size:20px;overflow-wrap:anywhere}
+.multiplayer-card-info svg{flex-shrink:0}
+@media(max-width:600px){.multiplayer-page{margin-top:6px}.multiplayer-heading{margin-bottom:24px}.multiplayer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.multiplayer-card{border-radius:16px}.multiplayer-card-info{padding:14px 12px;gap:6px}.multiplayer-card-info strong{font-size:16px}}

@@ -13,7 +13,7 @@ import {VideoFailure} from '../scripts/mcp-publisher/video.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const digest=manifest=>hash([...manifest].sort((a,b)=>a.path.localeCompare(b.path)).map(file=>`${file.path}:${file.bytes}:${file.sha256}`).join('\n'));
 const clone=value=>JSON.parse(JSON.stringify(value));
-const template=await gameTemplate({persistent:true,target_platform:'mobile'});
+const template=await gameTemplate({game_type:"single-player",persistent:true,target_platform:'mobile'});
 function fixture(){
  const files={...template.files,'zone.bin':{encoding:'base64',data:Buffer.from([0,255,12,98]).toString('base64')}};
  const manifest=recorderManifest(files),slug=`mcp-${'a'.repeat(32)}`;

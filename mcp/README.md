@@ -10,13 +10,51 @@ requires the owner to enable Auto-publish for that connection, or to review and
 submit a draft in Slop. Connections cannot spend coins, buy assets, or change your account. Your agent never
 receives your Slop password, account session, or private preview URL.
 
-## Turn-based multiplayer (0.7.0)
+## Choose the game type first (0.8.0)
 
-Call `slop_game_template({multiplayer:true,target_platform:"cross-platform"})`.
+Call `slop_game_types()` or read `slop://guides/game-types` before a new project.
+Choose explicitly; no template defaults to single-player. If the user's intent
+is unclear, ask them before building. Screen target and game type are independent.
+
+| `game_type` | Players | Runtime | Where it appears |
+| --- | --- | --- | --- |
+| `single-player` | One human; CPU opponents allowed | `creator-v1`, or `persistent-v1` for a World | Ordinary catalog |
+| `multiplayer` | Two humans online, taking turns | `multiplayer-v1` and `turns-v1` | Multiplayer tab |
+
+All four tools—`slop_game_template`, `slop_check_bundle`, `slop_send_draft`, and
+`slop_publish`—require the same explicit `game_type`. Templates include it in
+`slop.spec.json`. New projects need this declaration and matching request type;
+runtime, capability, source and stored project mismatches are rejected. Use a
+new `project_id` to build a different game type. A persistent World is always
+single-player. The source type is immutable across retries and revisions.
+
+```js
+slop_game_template({game_type:"single-player",target_platform:"mobile"})
+slop_game_template({game_type:"multiplayer",target_platform:"cross-platform"})
+slop_check_bundle({game_type:"multiplayer",target_platform:"cross-platform",files})
+slop_send_draft({game_type:"multiplayer",target_platform:"cross-platform",project_id,request_id,revision:1,name,files})
+slop_publish({game_type:"multiplayer",submission_id})
+```
+
+Real-time multiplayer is unsupported. Never silently substitute a CPU game,
+local hot-seat or mock online mode for an online multiplayer request. For a
+multiplayer game's standalone preview/recording, clearly label practice and use
+it only when `Slop.match.active` is false. A live room always waits for the
+authoritative snapshot and opponent; practice must not replace either.
+
+Existing untyped projects remain compatible: checks infer their type from the
+existing multiplayer contract, and updates must retain that type. Existing
+published source is not rewritten. Keep exact old bytes and request identity
+when retrying; new projects must make the explicit choice. Upgrade the server
+type gate before releasing this client so publication checks remain authoritative.
+
+## Turn-based multiplayer
+
+Call `slop_game_template({game_type:"multiplayer",target_platform:"cross-platform"})`.
 Keep its `multiplayer-v1` runtime unchanged. Declare `slop.spec.json` with:
 
 ```json
-{"multiplayer":{"protocol":"turns-v1","mode":"match","seats":2,"max_turns":20,"action_schema":{"angle":{"type":"number","min":10,"max":80},"power":{"type":"number","min":0,"max":1}}}}
+{"game_type":"multiplayer","multiplayer":{"protocol":"turns-v1","mode":"match","seats":2,"max_turns":20,"action_schema":{"angle":{"type":"number","min":10,"max":80},"power":{"type":"number","min":0,"max":1}}}}
 ```
 
 `Slop.match.active` is true in a host-assigned room, including while the initial
@@ -52,7 +90,7 @@ This source/package adds persistent-v1 support. The package, web host, mobile ho
 and bundle authority must be rolled out together before a World can be published.
 Local validation does not establish that the live service supports this version.
 
-Call `slop_game_template({persistent:true,target_platform:"cross-platform"})`.
+Call `slop_game_template({game_type:"single-player",persistent:true,target_platform:"cross-platform"})`.
 Keep its composed `slop.js` unchanged: it includes the Creator surface API and
 the canonical persistence/asset runtime. Arcade still uses unchanged creator-v1.
 
@@ -94,7 +132,7 @@ Install Node.js 22.12 or later. The versioned package is hosted by Slop; there i
 no npm registry package to guess. It contains only the local adapter and its
 pinned runtime dependencies are resolved by npm.
 
-Upgrading an existing connection: update its package URL to `slop-game-mcp-0.7.0.tgz`
+Upgrading an existing connection: update its package URL to `slop-game-mcp-0.8.0.tgz`
 and restart the coding app’s MCP server. Keep the saved Slop credential; no new
 pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 
@@ -103,7 +141,7 @@ pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.8.0.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -112,7 +150,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.8.0.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -132,7 +170,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.8.0.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -150,7 +188,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.8.0.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -173,7 +211,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.8.0.tgz",
         "slop-mcp"
       ]
     }
@@ -222,7 +260,7 @@ A QR is a pending request, not a connection. Delivery marked
 Pairing challenges expire after ten minutes; approved connections last thirty
 days unless revoked sooner. Publishing is a separate Slop action.
 
-Available tools: `slop_pair`, `slop_connection_status`, `slop_game_template`,
+Available tools: `slop_pair`, `slop_connection_status`, `slop_game_types`, `slop_game_template`,
 `slop_check_bundle`, `slop_send_draft`, `slop_publish`, `slop_draft_status`, and `slop_disconnect`.
 
 ### Large World draft delivery

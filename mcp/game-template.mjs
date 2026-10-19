@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {multiplayerContract} from './bundle-rules.mjs';
+import {multiplayerContract,gameType} from './bundle-rules.mjs';
 const targets={
  mobile:'Build for a portrait phone viewport. Use touch-first controls, mobile safe areas, and never require a keyboard or mouse.',
  desktop:'Build for a responsive desktop viewport. Use keyboard and mouse controls and make the complete playfield fit without clipping.',
@@ -54,23 +54,30 @@ const persistentGame=`async function boot(){
  });
 }
 boot().catch(error=>{console.error('Slop World could not open',error);});`;
-export async function gameTemplate({target_platform='cross-platform',persistent=false,multiplayer=false}={}){
+export async function gameTemplate({game_type,target_platform='cross-platform',persistent=false,multiplayer}={}){
+ gameType(game_type);
+ if(multiplayer!==undefined&&multiplayer!==(game_type==='multiplayer'))throw new Error('game_type_mismatch');
+ multiplayer=game_type==='multiplayer';
  if(persistent&&multiplayer)throw new Error('Slop Worlds and turn-based matches are separate game modes.');
  const template=await arcadeTemplate({target_platform});
+ const baseInstructions=template.instructions;
+ template.game_type=game_type;
+ template.files['slop.spec.json']=JSON.stringify({game_type,multiplayer:false});
+ template.instructions=`Game type: single-player. Build for one human, including any CPU opponents. This type cannot enter an online room or use Slop.match. A World is still single-player. Keep game_type in slop.spec.json and pass the same game_type to slop_check_bundle, slop_send_draft and slop_publish. ${template.instructions}`;
  if(multiplayer){
-  const contract=multiplayerContract(typeof multiplayer==='object'?multiplayer:{protocol:'turns-v1',mode:'match',seats:2,max_turns:20,action_schema:{choice:{type:'enum',values:['left','right']}}});
-  return {runtime:'multiplayer-v1',target_platform,multiplayer:contract,
-   instructions:`${template.instructions}\nUse the unchanged multiplayer-v1 runtime and slop.spec.json multiplayer contract. Multiplayer belongs in Slop's Multiplayer tab. Slop.match.active distinguishes a live assigned room from solo preview/recording. Slop.match.snapshot() returns null until the authenticated host supplies a snapshot; subscribe(callback) returns an unsubscribe function. Wait for that snapshot before live input. Rebuild deterministic gameplay from snapshot.seed and the ordered actions on reconnect. Snapshot fields include room, seat, epoch, revision, status, turn, players, actions[{revision,seat,actionId,action}], releaseDigest and rematchVotes. Submit only your turn with await Slop.match.submit({actionId,expectedRevision:snapshot.revision,epoch:snapshot.epoch,action}); use a stable unique actionId for retries. The host owns authentication, room selection and transport. Never send user IDs, room IDs or opponent seats. The service validates action_schema, turn order, epoch and revision and stores the ordered action log; game physics and scoring remain deterministic client logic, not trusted server adjudication. max_turns bounds every round; there are no monetary rewards. await Slop.match.rematch() votes; both players must consent before a new epoch. Ignore old epoch/revision snapshots and reconstruct on rejoin. Render smoothly between accepted turns, never stream per-frame input. Provide a clearly labeled CPU practice mode for standalone previews and video recording; it must never submit to a live room. Do not add your own lobby, start or result screen. No authored network or storage. Multiplayer needs the corresponding deployed host and match authority; local validation is not proof of live rollout.`,
+  const contract=multiplayerContract({protocol:'turns-v1',mode:'match',seats:2,max_turns:20,action_schema:{choice:{type:'enum',values:['left','right']}}});
+  return {game_type,runtime:'multiplayer-v1',target_platform,multiplayer:contract,
+   instructions:`Game type: multiplayer. Build online turn-based play for two authenticated humans using turns-v1, not a CPU-only game, local hot-seat, or real-time networking. Keep game_type in slop.spec.json and pass the same game_type to slop_check_bundle, slop_send_draft and slop_publish. ${baseInstructions}\nUse the unchanged multiplayer-v1 runtime and slop.spec.json multiplayer contract. Multiplayer belongs in Slop's Multiplayer tab. Slop.match.active distinguishes a live assigned room from solo preview/recording. Slop.match.snapshot() returns null until the authenticated host supplies a snapshot; subscribe(callback) returns an unsubscribe function. Wait for that snapshot before live input. Rebuild deterministic gameplay from snapshot.seed and the ordered actions on reconnect. Snapshot fields include room, seat, epoch, revision, status, turn, players, actions[{revision,seat,actionId,action}], releaseDigest and rematchVotes. Submit only your turn with await Slop.match.submit({actionId,expectedRevision:snapshot.revision,epoch:snapshot.epoch,action}); use a stable unique actionId for retries. The host owns authentication, room selection and transport. Never send user IDs, room IDs or opponent seats. The service validates action_schema, turn order, epoch and revision and stores the ordered action log; game physics and scoring remain deterministic client logic, not trusted server adjudication. max_turns bounds every round; there are no monetary rewards. await Slop.match.rematch() votes; both players must consent before a new epoch. Ignore old epoch/revision snapshots and reconstruct on rejoin. Render smoothly between accepted turns, never stream per-frame input. Provide clearly labeled practice for standalone previews and video recording; practice must never replace a live opponent or submit to a live room. Do not add your own lobby, start or result screen. No authored network or storage. Multiplayer needs the corresponding deployed host and match authority; local validation is not proof of live rollout.`,
    files:{...template.files,'index.html':index(target_platform).replace('creator-v1','multiplayer-v1'),
     'slop.js':await readFile(new URL('./runtime/multiplayer-v1.js',import.meta.url),'utf8'),
-    'slop.spec.json':JSON.stringify({multiplayer:contract}),
+    'slop.spec.json':JSON.stringify({game_type,multiplayer:contract}),
     'game.js':multiplayerGame}};
  }
  if(!persistent)return template;
  const runtime='persistent-v1';
  return {
-  runtime,target_platform,persistent:true,
-  instructions:`Build a Slop World with durable run and profile progress. ${targets[target_platform]}
+  game_type,runtime,target_platform,persistent:true,
+  instructions:`Game type: single-player. Build a Slop World with durable run and profile progress for one human. Keep game_type in slop.spec.json and pass the same type to check, send and publish. Slop.match and online multiplayer are unavailable in a World. ${targets[target_platform]}
 Keep slop.js unchanged and the slop-runtime persistent-v1 marker. Await Slop.persist({version,run,profile,migrate(old,fromVersion,scope)}) BEFORE Slop.ready and before gameplay starts. save.run and save.profile are live plain JSON objects; call save.commit after meaningful changes and save.checkpoint(label) at rooms/floors. Set save.run.__label for the platform Continue sheet. Do not draw a Continue, start or New run menu: Slop owns these. Slop.persist.newRun() is asynchronous; await it when your authored logic genuinely resets a run. Normal platform restart already clears run before Slop.onRestart; profile stays. Slop.finished(score) ends a genuine run and preserves profile. It is still a client-authored score, not proof of a reward.
 Use Slop.create, Slop.loop(frame), Slop.input, Slop.onRestart and one real canvas. Call Slop.ready after the first usable rendered frame. Provide equivalent controls for the selected target, keep a terse centered HUD inside ~80% width, and preserve full gameplay with contain fitting. Capture a genuine moving H.264 MP4 plus poster, never synthetic gameplay.
 Declare slop.spec.json persistent:true and first_load:[relative paths]. Include index.html, slop.js, game.js and every static HTML/CSS/module dependency needed before the first frame. Limits are decimal: 50,000,000 decoded bytes total, 8,000,000 per file, 400 files including metadata, and 5,000,000 first load. Arcade limits stay unchanged. run <=262,144 UTF-8 JSON bytes; profile <=131,072.
@@ -79,7 +86,7 @@ Save commits are acknowledged after durable device storage; cloud sync is separa
   files:{'index.html':index(target_platform).replace('creator-v1',runtime).replace('Pocket Bounce','Pocket World'),
    'slop.js':await readFile(new URL('./runtime/persistent-v1.js',import.meta.url),'utf8'),
    'slop-platform.json':JSON.stringify({target_platform}),
-   'slop.spec.json':JSON.stringify({persistent:true,first_load:['index.html','slop.js','game.js','slop-platform.json']}),
+   'slop.spec.json':JSON.stringify({game_type,multiplayer:false,persistent:true,first_load:['index.html','slop.js','game.js','slop-platform.json']}),
    'game.js':persistentGame}
  };
 }
@@ -99,6 +106,7 @@ Slop.loop(({time,width,height})=>{
  }
  keyHeld=key;
  ctx.fillStyle='#faf3e8';ctx.fillRect(0,0,width,height);ctx.fillStyle='#302a3d';ctx.textAlign='center';ctx.font='bold 44px system-ui';ctx.fillText(points,width/2,height*.16);
+ if(!Slop.match.active){ctx.font='14px system-ui';ctx.fillText('Practice',width/2,height*.24);}
  ctx.fillStyle='#faaa47';ctx.beginPath();ctx.arc(width/2,height*.56-Math.abs(Math.sin(time*2.4))*36,48,0,Math.PI*2);ctx.fill();
  if(!announced){announced=true;Slop.ready();}
  if(!finished&&(snapshot?.status==='complete'||!Slop.match.active&&points>=10)){finished=true;Slop.finished(points);}

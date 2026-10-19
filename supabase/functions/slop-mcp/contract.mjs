@@ -1,4 +1,4 @@
-import {inspectBundle,fileBytes} from './bundle-rules.mjs';
+import {inspectBundle,fileBytes,assertGameType} from './bundle-rules.mjs';
 import {mcpRuntimeProblem} from './runtime-policy.mjs';
 export {fileBytes};
 export const VERSION = "1.0.0";
@@ -64,7 +64,7 @@ export async function validateDraft(input) {
   const name = boundedText(input.name, 80);
   const description = boundedText(input.description ?? "", 240, true);
   let checked;
-  try { checked=inspectBundle(object(input.files),{retainDecoded:false}); }
+  try { checked=inspectBundle(object(input.files),{retainDecoded:false});assertGameType(checked,input.game_type); }
   catch(error) { throw new BridgeError(error.message,error.message.includes('too_large')?413:400); }
   const files = checked.files;
   let target_platform = "mobile";
@@ -135,6 +135,8 @@ export async function validateDraft(input) {
     target_platform,
     persistent: checked.persistent,
     multiplayer: checked.multiplayer,
+    ...(input.game_type===undefined?{}:{game_type:input.game_type}),
+    declared_game_type: checked.declared_game_type,
     files,
     manifest,
     digest,
