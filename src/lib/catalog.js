@@ -6,9 +6,12 @@ import {filterPlatform} from './game-platforms.js';
 import {PUBLIC_PROFILE_COLUMNS} from './profile-banners.js';
 import {prioritizePeople} from './people-order.js';
 import {createPublicPageCache} from './public-page-cache.js';
+import {readMultiplayerPage} from './multiplayer-catalog.js';
+import {filterSinglePlayer,singlePlayerGame} from './single-player-catalog.js';
 const discoveryPages=createPublicPageCache();
 const previewColumns=',preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)';
 const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,multiplayer_mode,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
+export const loadMultiplayerPage=options=>readMultiplayerPage({...options,client:supabase,read:publicRead,names:publicGameNames});
 // Keep the existing Arcade query usable before the additive save migration.
 // No missing-column fallback is allowed to grant a persistent capability.
 async function persistenceMetadata(input){
@@ -59,8 +62,8 @@ export async function loadDiscoveryPage({cursor=null,order='popular',platform='a
 }
 async function readDiscoveryPage({cursor,order,platform,search,limit}){
  const metric=order==='popular'?'qualified_play_count':'created_at';
- let query=supabase.from('games').select(columns+',qualified_play_count,preview_url,preview_status,preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)')
-  .eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%');
+ let query=filterSinglePlayer(supabase.from('games').select(columns+',multiplayer_protocol,qualified_play_count,preview_url,preview_status,preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)')
+  .eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%'));
  query=filterPlatform(query,platform);
  if(cursor){
   // A stable continuation is scoped to the active search and platform.
@@ -70,10 +73,10 @@ async function readDiscoveryPage({cursor,order,platform,search,limit}){
  if(order==='popular')query=query.order(metric,{ascending:false});
  const rows=await publicRead(query.order('created_at',{ascending:false}).order('slug',{ascending:false}).limit(limit+1));
  const games=rows.slice(0,limit),last=games.at(-1);
- return {games:await persistenceMetadata(await publicGameNames(games)),next:rows.length>limit&&last?{slug:last.slug,created_at:last.created_at,plays:Number(last.qualified_play_count)||0}:null};
+ return {games:await persistenceMetadata(await publicGameNames(games.filter(singlePlayerGame))),next:rows.length>limit&&last?{slug:last.slug,created_at:last.created_at,plays:Number(last.qualified_play_count)||0}:null};
 }
 export const popularGames=async(platform='all')=>{
- let query=supabase.from('games').select(columns+',qualified_play_count').eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%').gt('qualified_play_count',0);
+ let query=filterSinglePlayer(supabase.from('games').select(columns+',multiplayer_protocol,qualified_play_count').eq('status','published').eq('media_delete_authorized',false).ilike('html','%slop.js%').gt('qualified_play_count',0));
  query=filterPlatform(query,platform);
- return persistenceMetadata(await publicGameNames(await publicRead(query.order('qualified_play_count',{ascending:false}).order('slug').limit(8))));
+ return persistenceMetadata(await publicGameNames((await publicRead(query.order('qualified_play_count',{ascending:false}).order('slug').limit(8))).filter(singlePlayerGame)));
 };

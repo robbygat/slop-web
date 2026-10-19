@@ -5,14 +5,14 @@ import { gameTemplate } from "../game-template.mjs";
 
 test("the bundled template passes its own pre-flight for every target", async () => {
   for (const target of ["mobile", "desktop", "cross-platform"]) {
-    const { files } = await gameTemplate({ target_platform: target });
+    const { files } = await gameTemplate({game_type:"single-player", target_platform: target });
     const result = await checkBundle(files, { target_platform: target });
     assert.deepEqual(result.problems, [], target);
   }
 });
 
 test("pre-flight catches games that could never be published or would break in the sandbox", async () => {
-  const { files } = await gameTemplate({ target_platform: "desktop" });
+  const { files } = await gameTemplate({game_type:"single-player", target_platform: "desktop" });
   const broken = {
     ...files,
     "slop.js": files["slop.js"] + "\n// tweaked",

@@ -28,7 +28,7 @@ async function adapter(work,{reply,fail}={}){
   try{
     await import(`../../supabase/functions/slop-mcp/index.ts?world-upload-${++importId}`);
     const send=async(persistent,hints={})=>{
-      const files=persistent?(await gameTemplate({persistent:true})).files:{'index.html':'<canvas></canvas>'};
+      const files=persistent?(await gameTemplate({game_type:"single-player",persistent:true})).files:{'index.html':'<canvas></canvas>'};
       return handler(new Request('https://backend.example/functions/v1/slop-mcp/agent/drafts',{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify({project_id:id,request_id:id,revision:1,name:'Private upload fixture',files,...hints})}));
     };
     return await work({send,calls,deadlines,warnings});

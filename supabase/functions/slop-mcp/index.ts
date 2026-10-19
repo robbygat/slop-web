@@ -44,6 +44,11 @@ const knownCodes = new Set([
   "media_invalid",
   "target_unavailable",
   "invalid_bundle",
+  "game_type_required",
+  "invalid_game_type",
+  "game_type_mismatch",
+  "game_type_declaration_required",
+  "project_game_type_mismatch",
 ]);
 function reportDraftFailure(status: number | null, result: unknown, timeoutMs: number, elapsedMs: number) {
   const code = (result as {code?: string} | null)?.code;

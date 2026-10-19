@@ -2,6 +2,7 @@ export const PLAYER_TABS = [
   ['home', 'Home', 'home'],
   ['social', 'Social', 'social'],
   ['feed', 'Play', 'play'],
+  ['multiplayer', 'Multiplayer', 'multiplayer'],
   ['quests', 'Quests', 'quest'],
   ['connect', 'Create', 'code'],
 ];

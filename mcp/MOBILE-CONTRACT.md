@@ -107,3 +107,17 @@ owner/session checks, storage byte receipts, and review nonces remain mandatory.
 GIFs and covers remain legacy compatibility media only. Covers use 720×1280,
 1280×720 or 1280×1280; corresponding GIFs use 360×640, 640×360 or 640×640, with
 3–40 frames and at most 2 MiB. They do not replace the required MP4 preview.
+
+## Explicit game type (MCP 0.8.0)
+
+Use `slop_game_types` before creation. Pass the chosen `game_type` to template,
+check, send and publish: `single-player` for one human (CPU opponents allowed),
+or `multiplayer` for two humans online taking turns via `turns-v1` and
+`Slop.match`. Screen target is separate. Persistent Worlds are single-player.
+New `slop.spec.json` files declare the same type. Existing untyped source stays
+compatible with its inferred type, but a project cannot switch types.
+
+Real-time networking, local hot-seat and CPU practice do not satisfy online
+multiplayer. The host owns rooms, identity and transport; authored networking
+and storage remain forbidden. Use practice only outside a live assigned room.
+See [the MCP guide](README.md#choose-the-game-type-first-080) for the full flow.

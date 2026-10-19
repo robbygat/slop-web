@@ -11,6 +11,7 @@ import { once } from "node:events";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { bridgeUrl, LocalCredentials, SlopBridge } from "../client.mjs";
+import {gameTemplate} from '../game-template.mjs';
 
 test("credentials stay in a private local file and never appear in tool results", async () => {
   const dir = await mkdtemp(join(tmpdir(), "slop-mcp-"));
@@ -163,6 +164,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
     assert.deepEqual(listed.tools.map((t) => t.name), [
       "slop_pair",
       "slop_connection_status",
+      "slop_game_types",
       "slop_game_template",
       "slop_send_draft",
       "slop_check_bundle",
@@ -172,7 +174,12 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
     ]);
     assert.deepEqual(listed.tools.find(t=>t.name==="slop_game_template").inputSchema.properties.target_platform.enum,["mobile","desktop","cross-platform"]);
     assert.ok(listed.tools.find(t=>t.name==="slop_send_draft").inputSchema.required.includes("target_platform"));
-    const template=await client.callTool({name:"slop_game_template",arguments:{target_platform:"desktop"}});assert.equal(JSON.parse(template.content[0].text).target_platform,"desktop");
+    for(const name of ['slop_game_template','slop_check_bundle','slop_send_draft','slop_publish'])assert.ok(listed.tools.find(t=>t.name===name).inputSchema.required.includes('game_type'));
+    const resources=await client.listResources();assert.ok(resources.resources.some(r=>r.uri==='slop://guides/game-types'));
+    const guide=await client.readResource({uri:'slop://guides/game-types'});assert.match(guide.contents[0].text,/Real-time multiplayer is unsupported/);
+    const choices=JSON.parse((await client.callTool({name:'slop_game_types',arguments:{}})).content[0].text);assert.deepEqual(choices.game_types.map(t=>t.game_type),['single-player','multiplayer']);
+    const missing=await client.callTool({name:'slop_game_template',arguments:{target_platform:'desktop'}});assert.equal(missing.isError,true);
+    const template=await client.callTool({name:"slop_game_template",arguments:{game_type:'single-player',target_platform:"desktop"}});assert.equal(JSON.parse(template.content[0].text).target_platform,"desktop");
     const result = await client.callTool({
       name: "slop_connection_status",
       arguments: {},
@@ -182,7 +189,7 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
     assert.match(unpaired.next_step, /slop_pair/);
     const checked = await client.callTool({
       name: "slop_check_bundle",
-      arguments: { target_platform: "desktop", files: JSON.parse(template.content[0].text).files },
+      arguments: { game_type:'single-player',target_platform: "desktop", files: JSON.parse(template.content[0].text).files },
     });
     assert.equal(JSON.parse(checked.content[0].text).ok, true);
     const send = await client.callTool({
@@ -191,9 +198,9 @@ test("official SDK performs real STDIO handshake, lists tools, and returns hones
         project_id: "11111111-1111-4111-8111-111111111111",
         request_id: "22222222-2222-4222-8222-222222222222",
         revision: 1,
-        target_platform: "cross-platform",
+        game_type:'single-player',target_platform: "desktop",
         name: "test",
-        files: { "index.html": "<canvas/>" },
+        files: JSON.parse(template.content[0].text).files,
       },
     });
     assert.equal(send.isError, true);
@@ -279,7 +286,9 @@ test("an approved local agent sends its chosen platform headlessly and cannot ch
  const dir=await mkdtemp(join(tmpdir(),"slop-mcp-headless-")),credentials=join(dir,"credentials.json"),token="slop_mcp_"+"a".repeat(64);let received;
  const http=createServer(async(req,res)=>{let raw="";for await(const part of req)raw+=part;res.setHeader("content-type","application/json");if(req.url==="/agent/drafts"){assert.equal(req.headers.authorization,`Bearer ${token}`);received=JSON.parse(raw);res.end(JSON.stringify({status:"awaiting_confirmation",submission_id:"11111111-1111-4111-8111-111111111111"}));}else res.end(JSON.stringify({status:"active"}));});
  http.listen(0,"127.0.0.1");await once(http,"listening");const base=`http://127.0.0.1:${http.address().port}`;await new LocalCredentials(credentials).save({base,token});const client=new Client({name:"local-model",version:"1.0.0"});
- try{await client.connect(new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL("../cli.mjs",import.meta.url))],env:{SLOP_MCP_CREDENTIALS:credentials,SLOP_MCP_URL:base},stderr:"pipe"}));const sent=await client.callTool({name:"slop_send_draft",arguments:{project_id:"11111111-1111-4111-8111-111111111111",request_id:"22222222-2222-4222-8222-222222222222",revision:1,target_platform:"desktop",name:"Desktop proof",files:{"index.html":"<canvas></canvas>","slop.js":"runtime"}}});assert.equal(JSON.parse(sent.content[0].text).status,"awaiting_confirmation");assert.equal(JSON.parse(received.files["slop-platform.json"]).target_platform,"desktop");assert.equal(Object.hasOwn(received,"publish"),false);}
+ try{await client.connect(new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL("../cli.mjs",import.meta.url))],env:{SLOP_MCP_CREDENTIALS:credentials,SLOP_MCP_URL:base},stderr:"pipe"}));const files=(await gameTemplate({game_type:"single-player",target_platform:"desktop"})).files;
+ const rejected=await client.callTool({name:"slop_send_draft",arguments:{project_id:"11111111-1111-4111-8111-111111111111",request_id:"22222222-2222-4222-8222-222222222222",revision:1,game_type:"multiplayer",target_platform:"desktop",name:"Wrong type",files}});assert.equal(rejected.isError,true);assert.match(rejected.content[0].text,/game_type_mismatch/);assert.equal(received,undefined,'mismatched source must never reach the upload service');
+ const sent=await client.callTool({name:"slop_send_draft",arguments:{project_id:"11111111-1111-4111-8111-111111111111",request_id:"22222222-2222-4222-8222-222222222222",revision:1,game_type:"single-player",target_platform:"desktop",name:"Desktop proof",files:(await gameTemplate({game_type:"single-player",target_platform:"desktop"})).files}});assert.equal(JSON.parse(sent.content[0].text).status,"awaiting_confirmation");assert.equal(JSON.parse(received.files["slop-platform.json"]).target_platform,"desktop");assert.equal(received.game_type,"single-player");assert.equal(JSON.parse(received.files["slop.spec.json"]).game_type,"single-player");assert.equal(Object.hasOwn(received,"publish"),false);}
  finally{await client.close();http.close();await rm(dir,{recursive:true,force:true});}
 });
 

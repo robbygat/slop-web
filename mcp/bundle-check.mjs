@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import {inspectBundle,fileBytes} from './bundle-rules.mjs';
+import {inspectBundle,fileBytes,assertGameType} from './bundle-rules.mjs';
 import {mcpRuntimeProblem} from './runtime-policy.mjs';
 
 // Local pre-flight for a draft bundle. It mirrors rules the server, the
@@ -32,9 +32,9 @@ function metaContents(html, name) {
   return found;
 }
 
-export async function checkBundle(files, { target_platform } = {}) {
+export async function checkBundle(files, { target_platform, game_type } = {}) {
   const problems = [], warnings = [];
-  let checked;try{checked=inspectBundle(files);}catch(error){problems.push(error.message);}
+  let checked;try{checked=inspectBundle(files);assertGameType(checked,game_type);}catch(error){problems.push(error.message);}
   const persistent=!!checked?.persistent;
   const multiplayer=checked?.multiplayer;
   if(checked)files=checked.files;

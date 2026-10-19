@@ -15,6 +15,7 @@ import {
 } from "./contract.mjs";
 import { FAILURE_CODES, LEASE, validateMedia, validateVideo, validatePoster, jpegSize, VIDEO_MAX, VIDEO_FAILURE } from "./publisher.mjs";
 import { JsonReader } from "./json-reader.mjs";
+import {gameType} from './bundle-rules.mjs';
 
 const JSON_HEADERS = {
   "content-type": "application/json",
@@ -324,9 +325,11 @@ export function createHandler(deps, config = {}) {
           // Publishing needs the owner's per-connection opt-in (Connect page).
           // Without it the queue refuses with auto_publish_disabled.
           requireValue(UUID.test(input.submission_id ?? ""));
+          let game_type;
+          try{game_type=gameType(input.game_type,{optional:true});}catch(error){throw new BridgeError(error.message);}
           return json(await deps.service(
             req.method === "POST" ? "request_publish" : "publish_status",
-            { token_hash, submission_id: input.submission_id },
+            { token_hash, submission_id: input.submission_id, ...(game_type?{game_type}:{}) },
           ));
         }
         if (path === "/agent/revoke" && req.method === "POST") {

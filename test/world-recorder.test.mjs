@@ -7,7 +7,7 @@ import {installWorldRecorder} from '../scripts/mcp-publisher/world-recorder-host
 import {recorderConfig} from '../scripts/mcp-publisher/record.mjs';
 import {hasWorldMarker,recorderWorldConfig,recorderManifest,recorderFileBytes,scriptJson,worldEngineScript,worldMobileInputFrame,worldCaptureProblem} from '../scripts/mcp-publisher/world-recorder.mjs';
 
-const template=await gameTemplate({persistent:true,target_platform:'mobile'});
+const template=await gameTemplate({game_type:"single-player",persistent:true,target_platform:'mobile'});
 const init={type:'persist-init',version:1,scopes:['run','profile']};
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=Buffer.alloc(140000,37);
@@ -31,19 +31,19 @@ async function setup(t,{fetcher=()=>new Response(bytes),...override}={}){
 
 test('World admission requires the exact runtime and true persistent contract; Arcade stays Arcade',async()=>{
  assert.ok(recorderWorldConfig(template.files));
- assert.equal(recorderWorldConfig((await gameTemplate()).files),null);
+ assert.equal(recorderWorldConfig((await gameTemplate({game_type:'single-player'})).files),null);
  assert.throws(()=>recorderWorldConfig({...template.files,'slop.js':template.files['slop.js']+'\n'}),/runtime_invalid/);
  assert.throws(()=>recorderWorldConfig({...template.files,'slop.spec.json':JSON.stringify({persistent:true,first_load:[]})}),/first_load/);
  assert.throws(()=>recorderWorldConfig({...template.files,'game.js':'Slop.ready();'}));
 });
 test('capture admission selects the declared canonical Arcade, World or turns runtime',async()=>{
- const arcade=await gameTemplate(),turns=await gameTemplate({multiplayer:true});
+ const arcade=await gameTemplate({game_type:'single-player'}),turns=await gameTemplate({game_type:"multiplayer",multiplayer:true});
  assert.deepEqual(recorderConfig(arcade.files),{world:null,target:'cross-platform'});
  assert.ok(recorderConfig(template.files).world);
  assert.deepEqual(recorderConfig(turns.files),{world:null,target:'cross-platform'});
 });
 test('turns capture rejects missing or invalid contracts, mixed capabilities and altered SDK loading',async()=>{
- const {files}=await gameTemplate({multiplayer:true}),spec=JSON.parse(files['slop.spec.json']);
+ const {files}=await gameTemplate({game_type:"multiplayer",multiplayer:true}),spec=JSON.parse(files['slop.spec.json']);
  for(const changed of [
   {...files,'slop.spec.json':JSON.stringify({...spec,multiplayer:false})},
   {...files,'slop.spec.json':JSON.stringify({...spec,multiplayer:{...spec.multiplayer,seats:3}})},
