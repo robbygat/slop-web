@@ -23,6 +23,7 @@ import { installRecorderClock } from "./clock.js";
 import { installRecorderInput, mobileInputFrame } from "./input.mjs";
 import { authoredInputTitle, identifyGameInput, fixedGameInputFrame, readRecorderGame, installGameObservation, createGameInputController, GAME_WARMUP_FRAMES, gameInputProgress, continuousGameInput, gameInputSimulationSteps } from "./game-input.mjs";
 import {recorderFileBytes,recorderWorldConfig,hasWorldMarker,worldRecorderBundle,worldEngineScript,scriptJson,worldMobileInputFrame,worldCaptureProblem} from './world-recorder.mjs';
+import {recorderTurnsConfig,globalMotionStats,localMotionStats,localMotionSize,motionProblem,LOCAL_MOTION_POLICY,LOCAL_MOTION_MAX_FRAMES} from './motion.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..");
@@ -98,21 +99,14 @@ export async function encodeLoop(dir, count, { width, height, seam = 12, crf = 2
 async function motionStats(dir, count) {
   const raw = join(dir, "thumbs.gray");
   await runFfmpeg(["-y", "-framerate", String(FPS), "-i", join(dir, "f%05d.jpg"), "-vf", "scale=24:40,format=gray", "-f", "rawvideo", raw]);
-  const data = await readFile(raw), size = 24 * 40;
-  let moving = 0, lit = 0;
-  for (let i = 0; i < count; i++) {
-    const frame = data.subarray(i * size, (i + 1) * size);
-    let min = 255, max = 0;
-    for (const v of frame) { if (v < min) min = v; if (v > max) max = v; }
-    if (max - min > 12) lit++;
-    if (i) {
-      const prev = data.subarray((i - 1) * size, i * size);
-      let diff = 0;
-      for (let p = 0; p < size; p++) diff += Math.abs(frame[p] - prev[p]);
-      if (diff / size > 0.35) moving++;
-    }
-  }
-  return { moving, lit };
+  return globalMotionStats(await readFile(raw), count);
+}
+
+async function turnsMotionStats(dir, count, desktop) {
+  const [width, height] = localMotionSize(desktop), raw = join(dir, 'turns-thumbs.gray');
+  await runFfmpeg(['-y', '-framerate', String(FPS), '-i', join(dir, 'f%05d.jpg'), '-frames:v', String(count),
+    '-vf', `scale=${width}:${height}:flags=area,format=gray`, '-f', 'rawvideo', raw]);
+  return localMotionStats(await readFile(raw), count, width, height);
 }
 
 function contentType(path) { return MIME[path.split(".").pop()?.toLowerCase()] ?? "application/octet-stream"; }
@@ -160,8 +154,8 @@ export async function recordVideo(source, { target = "mobile", seconds = 7, diag
   // A remote URL alone does not prove a World asset manifest. Fail closed;
   // first publication always supplies the complete admitted source bundle.
   if(!fromFiles&&hasWorldMarker(authoredHtml))throw new VideoFailure('world_manifest_required');
-  let world;
-  try{world=fromFiles?recorderWorldConfig(source.files):null;}catch{throw new VideoFailure('runtime_invalid');}
+  let world, turns;
+  try{world=fromFiles?recorderWorldConfig(source.files):null;turns=fromFiles?recorderTurnsConfig(source.files):null;}catch{throw new VideoFailure('runtime_invalid');}
   const worldHost=world?await worldRecorderBundle():'',worldEngine=await worldEngineScript(world);
   const authoredGame = authoredInputTitle(authoredHtml) ? (fromFiles ? source.files['game.js'] : (await fetchRemote('game.js'))?.toString('utf8')) : null;
   const knownInput = !desktop ? identifyGameInput(authoredHtml, authoredGame) : null;
@@ -389,8 +383,18 @@ void f.getBoundingClientRect().width;f.src='/game/index.html';})().catch(()=>win
     if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new VideoFailure(problem,problem==='recorder_error');}
     const stats = await motionStats(dir, frames);
     diagnostics.moving = stats.moving; diagnostics.lit = stats.lit;
-    if (stats.lit < frames * 0.5) throw new VideoFailure("blank_canvas");
-    if (stats.moving < frames * 0.15) throw new VideoFailure("no_motion");
+    diagnostics.motionPolicy = 'whole-frame';
+    let local = null;
+    // First publications supply the complete source bundle. Remote repair jobs
+    // lack that attestation and keep the original whole-frame path. Blank clips
+    // never reach the fallback, and long captures stay on the bounded old path.
+    if (turns && frames <= LOCAL_MOTION_MAX_FRAMES && motionProblem(stats, frames) === 'no_motion') {
+      local = await turnsMotionStats(dir, frames, desktop);
+      diagnostics.localizedMoving = local.moving;
+      diagnostics.motionPolicy = LOCAL_MOTION_POLICY;
+    }
+    const problem = motionProblem(stats, frames, local);
+    if (problem) throw new VideoFailure(problem);
     const encoded = await encodeLoop(dir, frames, { width: OW, height: OH });
     if(world){diagnostics.world=await evaluate('window.__worldHost.inspect()');const problem=worldCaptureProblem(diagnostics.world);if(problem)throw new VideoFailure(problem,problem==='recorder_error');}
     diagnostics.crf = encoded.crf;
