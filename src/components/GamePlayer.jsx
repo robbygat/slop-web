@@ -15,13 +15,21 @@ import {Notice,IconButton,Button} from './ui.jsx';
 import {GameOver,GameLeaderboard} from './GameResults.jsx';
 import {usePersistentPlayer} from './usePersistentPlayer.js';
 import PersistentRunChoice from './PersistentRunChoice.jsx';
+import TurnMatchGate from './TurnMatchGate.jsx';
+import {isTurnGame} from '../lib/turn-match.js';
 import './player.css';
-export function GamePlayer({url,game,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
+export function GamePlayer(props){
+ if(!props.preview&&isTurnGame(props.game))return <TurnMatchGate key={props.game.id} game={props.game}>{match=><GamePlayerContent {...props} url={match.entry()} match={match}/>}</TurnMatchGate>;
+ if(!props.preview&&props.game?.multiplayer_mode)return <div className="empty"><h2>Multiplayer</h2><p>This game's match host is not available on this web version.</p></div>;
+ return <GamePlayerContent {...props}/>;
+}
+function GamePlayerContent({url,game,match=null,previewVideo=null,preview=false,paused=false,initialMuted=false,requireInteraction=false,theater=false,onEvent,ref,title='Slop game',stageAspect=null}){
  const {profile,user,signIn}=useAuth();
  const frame=useRef(null),container=useRef(null),initialized=useRef(false),callbacks=useRef(onEvent),run=useRef(null),replayIntent=useRef(false),verifiedDocument=useRef(null),keyboard=useRef(null),focusAtStart=useRef(theater);callbacks.current=onEvent;
  const restartGate=useRef(null);if(!restartGate.current)restartGate.current=createRestartGate();
  const[doc,setDoc]=useState(null),[error,setError]=useState(null),[ready,setReady]=useState(false),[restart,setRestart]=useState(0),[muted,setMuted]=useState(initialMuted);
  const[finished,setFinished]=useState(null),[save,setSave]=useState(null),[baseline,setBaseline]=useState(null),[board,setBoard]=useState(false),[expanded,setExpanded]=useState(false),[waitingStart,setWaitingStart]=useState(false);
+ const[rematchWaiting,setRematchWaiting]=useState(false);
  const[smallScreen,setSmallScreen]=useState(()=>matchMedia('(max-width:1024px) and (hover:none) and (pointer:coarse)').matches),[copied,setCopied]=useState(false);
  const[desktopLayout,setDesktopLayout]=useState(()=>matchMedia('(min-width:761px) and (hover:hover) and (pointer:fine)').matches),[viewChoice,setViewChoice]=useState(null);
  const[pointerMode,setPointerMode]=useState(false),[pointerLocked,setPointerLocked]=useState(false),[pointerError,setPointerError]=useState('');
@@ -38,10 +46,10 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  const focusGame=()=>{if(!state.current.paused&&!state.current.persistentBlocked&&!state.current.board&&state.current.finished===null&&!state.current.waitingStart&&!document.hidden)focusFrame(frame.current?.contentWindow);};
  function newRun(interacted){
   const session=getSession(),owner=session?.user&&!session.user.is_anonymous?session.user.id:null;
-  const current={score:0,ended:false,interacted,baseline:null,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview?scoreRun(game.slug):null};
+  const current={score:0,ended:false,interacted,baseline:null,scoreContext:{game:{id:game?.id,slug:game?.slug},session},save:game&&!preview&&!match?scoreRun(game.slug):null};
   // Let the previous round's in-flight save settle before taking this baseline.
   // Gameplay and this round's eventual submission never wait for this read.
-  if(game&&!preview&&owner)Promise.resolve(run.current?.saveRequest).catch(()=>{}).then(()=>loadPersonalBest(game.slug,owner)).then(value=>{if(!current.ended)current.baseline={...value,userId:owner};},()=>{});
+  if(game&&!preview&&!match&&owner)Promise.resolve(run.current?.saveRequest).catch(()=>{}).then(()=>loadPersonalBest(game.slug,owner)).then(value=>{if(!current.ended)current.baseline={...value,userId:owner};},()=>{});
   return current;
  }
  function saveRound(current,retry=false){
@@ -63,6 +71,14 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   },error=>{if(run.current===current)setSave({state:'failed',retryable:!['account_changed','authentication_required','invalid_response'].includes(error?.code),errorCode:error?.code});}).finally(()=>{current.saving=false;});
  }
  function retrySave(){const current=run.current;if(current?.ended&&current.interacted&&current.save)saveRound(current,true);}
+ useEffect(()=>{
+  if(!match)return;let epoch=match.snapshot().epoch;
+  return match.subscribe(snapshot=>{
+   if(snapshot.epoch>epoch){epoch=snapshot.epoch;run.current=newRun(true);setFinished(null);setBoard(false);setRematchWaiting(false);setError(null);state.current={...state.current,finished:null,board:false};}
+   send({type:'match-snapshot',snapshot});
+   if(snapshot.epoch===epoch&&snapshot.status==='active'&&state.current.finished===null)send({type:document.hidden||state.current.paused?'pause':'resume'});
+  });
+ },[match]);
  async function signInForNextRound(){await exitExpanded();signIn({gameSlug:game?.slug});}
  useEffect(()=>{
   const bridge=createHostKeyboardBridge({getContext:()=>{const current=state.current;return {frame:frame.current?.contentWindow,
@@ -99,12 +115,13 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
   // Replays reuse this mounted player's validated bytes. Nothing is shared
   // across games or accounts; an explicit error retry downloads a fresh copy.
   if(verifiedDocument.current?.url===url&&verifiedDocument.current.preview===preview&&verifiedDocument.current.persistent===game?.persistent)setDoc(verifiedDocument.current.value);
-  else loadDocument(url,{signal:controller.signal,preview,persistent:game?.persistent===true,manifest:game?.bundle_manifest}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,persistent:game?.persistent,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
+  else loadDocument(url,{signal:controller.signal,preview,persistent:game?.persistent===true,manifest:game?.bundle_manifest,matchExpected:!!match}).then(value=>{if(!controller.signal.aborted){verifiedDocument.current={url,preview,persistent:game?.persistent,value};setDoc(value);}}).catch(e=>{if(!controller.signal.aborted)setError(e);});
   return()=>{keyboard.current?.release();restartGate.current.cancel();controller.abort();run.current=null;};
  },[url,restart,preview,game?.id,game?.slug,game?.persistent,requireInteraction,desktopRequired]);
  useEffect(()=>{
   const onMessage=e=>{
    const event=acceptPlayerEvent(e.source,frame.current?.contentWindow,e.data,{persistent:journeyRef.current.enabled});if(!event)return;
+   if(event.type.startsWith('match-')){if(match){const source=e.source;void match.handle(event,message=>{if(frame.current?.contentWindow===source)send(message);});}return;}
    if(event.type.startsWith('persist-')){
     if(!journeyRef.current.enabled){send({type:event.type==='persist-init'?'persist-data':'persist-ack',request:event.request,error:'This release is not enabled as a Slop World. Progress cannot be saved.'});setError(new Error('This game needs a published Slop World save capability.'));return;}
     void journeyRef.current.handle(event);return;
@@ -156,6 +173,7 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
  }
  function showBoard(){setBoard(true);send({type:'pause'});}function closeBoard(){state.current={...state.current,board:false};setBoard(false);if(finished===null&&!paused){send({type:'resume'});focusGame();}}
  async function replay(){
+  if(match){try{setRematchWaiting(true);await match.rematch();}catch(cause){setError(cause);setRematchWaiting(false);}return;}
   if(restartGate.current.pending||persistentReplayBusy.current)return;
   const capturedJourney=journeyRef.current;
   if(capturedJourney.enabled){persistentReplayBusy.current=true;try{await capturedJourney.flush();await capturedJourney.newRun();if(!capturedJourney.current())return;}catch(cause){setError(cause);return;}finally{persistentReplayBusy.current=false;}}
@@ -189,16 +207,16 @@ export function GamePlayer({url,game,previewVideo=null,preview=false,paused=fals
    {previewVideo&&!error&&!ready&&<PlayerPoster key={previewVideo.poster} poster={previewVideo.poster}/>}
    {!ready&&!error&&!journey.blocked&&<div className="player-boot-status" role="status"><i aria-hidden="true"/><span>Opening game…</span></div>}
    {error&&<div className="player-error"><Notice error={error} onRetry={()=>{focusAtStart.current=true;verifiedDocument.current=null;setRestart(v=>v+1);}}/></div>}
-   {finished!==null&&!error&&<GameOver game={preview?null:game} preview={preview} score={finished} save={save} baseline={baseline?.userId===user?.id?baseline:null} look={profile?.slop_look} onReplay={replay} onRetrySave={retrySave} onSignIn={signInForNextRound} viewerId={user?.id}/>}
+   {finished!==null&&!error&&(match?<div className="game-over-overlay"><section className="game-over-card" role="region" aria-label="Round complete"><h2>Round complete</h2><strong>{finished}</strong><Button disabled={rematchWaiting} onClick={replay}>{rematchWaiting?'Waiting for opponent':'Rematch'}</Button></section></div>:<GameOver game={preview?null:game} preview={preview} score={finished} save={save} baseline={baseline?.userId===user?.id?baseline:null} look={profile?.slop_look} onReplay={replay} onRetrySave={retrySave} onSignIn={signInForNextRound} viewerId={user?.id}/>)}
    {board&&game&&<div className="player-board-overlay"><div className="player-board-top"><h2>Top players</h2><IconButton name="close" label="Close leaderboard" onClick={closeBoard}/></div><GameLeaderboard game={game} refreshKey={save?.state==='saved'?1:0} viewerId={user?.id}/><Button onClick={closeBoard}>{finished!==null?'Back to your result':'Back to game'}</Button></div>}
   </div></div>
   {controls&&<p className="desktop-game-hint">{controls.hint}</p>}
   {journey.enabled&&journey.view.started&&!journey.view.conflict&&<p className="persistent-save-status" role={journey.view.error?'alert':'status'}>{journey.view.error?.message||(journey.view.pending?'Saved on this device · cloud sync pending':'Progress saved on this device')}</p>}
   <div className="player-controls"><div className="player-control-context">{canChangeView&&<div className="player-view-modes" role="group" aria-label="Game display"><button type="button" aria-pressed={!wideView} onClick={()=>changeView('original')} title="Use the game's original shape">Original</button><button type="button" aria-pressed={wideView} onClick={()=>changeView('wide')} title="Use a wider desktop playfield">Wide</button></div>}{waitingStart&&!error?<button className="player-start-round" onClick={startFromRest}>Start round →</button>:<span className="fine" role="status">{pointerLocked?'Mouse captured · Esc to release':pointerError||pointerMode?'Click inside the game to capture the mouse':preview?'Private playtest':desktopHint||title}</span>}</div><div>
    {!smallScreen&&<IconButton name="cursor" label={pointerMode?'Turn off mouse capture':'Capture mouse for this game'} aria-pressed={pointerMode} onClick={()=>{const enabled=!pointerMode;setPointerMode(enabled);setPointerError('');send({type:'hostPointerMode',enabled});focusGame();}}/>}
-   {game&&!preview&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}
+   {game&&!preview&&!match&&<IconButton name="crown" label="Leaderboard" onClick={showBoard}/>}
    <IconButton name={muted?'mute':'volume'} label={muted?'Unmute game':'Mute game'} onClick={()=>{send({type:'mute',on:!muted});setMuted(!muted);focusGame();}}/>
-   <IconButton name="refresh" label="Restart game" onClick={replay}/>
+   {!match&&<IconButton name="refresh" label="Restart game" onClick={replay}/>}
    <button className="icon-button" aria-label={expanded?'Exit fullscreen':'Expand game'} title={expanded?'Exit fullscreen':'Expand game'} onClick={expand}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{expanded?<path d="M3 9h6V3m12 6h-6V3M3 15h6v6m12-6h-6v6"/>:<path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/>}</svg></button>
   </div></div>
  </div>;

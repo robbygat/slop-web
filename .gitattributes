@@ -6,6 +6,9 @@ public/native-character/** -whitespace
 tools/native-character/profile-face-clock.patch -whitespace
 # The game authority verifies the runtime's exact bytes on every platform.
 mcp/runtime/creator-v1.js text eol=lf
+mcp/runtime/persistent-v1.js text eol=lf
+mcp/runtime/multiplayer-v1.js text eol=lf
+src/lib/vendor/three-r128.js text eol=lf
 # The renderer version hashes these exact generated assets.
 public/native-character/index.html text eol=lf
 public/native-character/flutter_bootstrap.js text eol=lf

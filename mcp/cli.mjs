@@ -17,7 +17,7 @@ const bridge = new SlopBridge({
       join(homedir(), ".config", "slop", "mcp.json"),
   ),
 });
-const server = new McpServer({ name: "slop", version: "0.6.1" });
+const server = new McpServer({ name: "slop", version: "0.7.0" });
 function result(data) {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
@@ -55,7 +55,7 @@ tool(
   () => bridge.status(),
   { readOnlyHint: true },
 );
-tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Set persistent:true for a Slop World with awaited saving, checkpoints and profile progression. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. Its instructions include the feed framing and terse-HUD rules. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform'),persistent:z.boolean().default(false).describe('Use true for Slop Worlds with durable run/profile saving and the persistent-v1 runtime.')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
+tool("slop_game_template", "Choose mobile, desktop, or cross-platform and get the canonical Slop.js runtime plus a responsive working canvas game. Set persistent:true for a Slop World with awaited saving, checkpoints and profile progression. Use before building any Slop game so ready, score, finish, restart, pointer, keyboard, touch and pause work on web/iOS/Android. Its instructions include the feed framing and terse-HUD rules. No account or connection required.", {target_platform:z.enum(['mobile','desktop','cross-platform']).default('cross-platform'),persistent:z.boolean().default(false).describe('Use true for Slop Worlds with durable run/profile saving and the persistent-v1 runtime.'),multiplayer:z.boolean().default(false).describe('Use true for turn-based two-player matches, exclusive with persistent.')}, gameTemplate, {readOnlyHint:true,openWorldHint:false});
 tool(
   "slop_send_draft",
   "Use slop_game_template first for the same target_platform. Include its unchanged slop.js plus ready/score/finished integration. Send a private game bundle (strings for text, strict base64 descriptors for allowed World binaries) for owner confirmation and validation in Slop on web or mobile. Keep project_id stable, increase revision, and reuse request_id only for an identical retry. Private by default; publish:true requests publication only with owner-enabled Auto-publish. Does not charge credits. index.html is required. Arcade: 64 files / 2,000,000 decoded bytes total / 512,000 per file. Slop Worlds: actual Slop.persist + persistent:true spec; 400 files / 50,000,000 total / 8,000,000 per file / first_load <=5,000,000 bytes. No paid Store assets in this bridge.",

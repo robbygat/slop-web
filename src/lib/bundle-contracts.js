@@ -21,5 +21,5 @@ export async function bundleIdentity(files){
   manifest.push({path:`1.0.0/${path}`,bytes:bytes.length,sha256:await sha256(bytes)});
  }
  const serialized=new Uint8Array(canonical.reduce((n,b)=>n+b.length,0));let offset=0;for(const bytes of canonical){serialized.set(bytes,offset);offset+=bytes.length;}
- return {buildId:`b3-${(await sha256(serialized)).slice(0,32)}`,manifest,digest:await sha256(manifest.map(f=>`${f.path}:${f.bytes}:${f.sha256}`).join('\n')),persistent:checked.persistent,files};
+ return {buildId:`b3-${(await sha256(serialized)).slice(0,32)}`,manifest,digest:await sha256(manifest.map(f=>`${f.path}:${f.bytes}:${f.sha256}`).join('\n')),persistent:checked.persistent,multiplayer:checked.multiplayer,files};
 }

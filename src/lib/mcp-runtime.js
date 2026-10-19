@@ -1,11 +1,11 @@
 // Matches the unchanged creator-v1.js shipped in slop-mobile and the MCP package.
-import {mcpRuntimeProblem as sharedRuntimeProblem,MCP_RUNTIME_SHA256,MCP_PERSISTENT_RUNTIME_SHA256,MCP_PERSISTENT_RUNTIME_BYTES,MCP_RUNTIME_ERROR} from '../../mcp/runtime-policy.mjs';
+import {mcpRuntimeProblem as sharedRuntimeProblem,MCP_RUNTIME_SHA256,MCP_PERSISTENT_RUNTIME_SHA256,MCP_PERSISTENT_RUNTIME_BYTES,MCP_MULTIPLAYER_RUNTIME_SHA256,MCP_MULTIPLAYER_RUNTIME_BYTES,MCP_RUNTIME_ERROR} from '../../mcp/runtime-policy.mjs';
 export {MCP_RUNTIME_SHA256,MCP_PERSISTENT_RUNTIME_SHA256,MCP_RUNTIME_ERROR};
-export function mcpRuntimeProblem(manifest,html,{persistent=false}={}){
- if(persistent&&sharedRuntimeProblem(manifest,html,true)!==null)return MCP_RUNTIME_ERROR;
+export function mcpRuntimeProblem(manifest,html,{persistent=false,multiplayer=null}={}){
+ if((persistent||multiplayer)&&sharedRuntimeProblem(manifest,html,persistent,multiplayer)!==null)return MCP_RUNTIME_ERROR;
  const runtime=manifest?.find(file=>file.path==='1.0.0/slop.js');
- const marker=persistent?'persistent-v1':'creator-v1';
- if(runtime?.sha256!==(persistent?MCP_PERSISTENT_RUNTIME_SHA256:MCP_RUNTIME_SHA256)||runtime.bytes!==(persistent?MCP_PERSISTENT_RUNTIME_BYTES:9612)||typeof html!=='string')return MCP_RUNTIME_ERROR;
+ const marker=persistent?'persistent-v1':multiplayer?'multiplayer-v1':'creator-v1';
+ if(runtime?.sha256!==(persistent?MCP_PERSISTENT_RUNTIME_SHA256:multiplayer?MCP_MULTIPLAYER_RUNTIME_SHA256:MCP_RUNTIME_SHA256)||runtime.bytes!==(persistent?MCP_PERSISTENT_RUNTIME_BYTES:multiplayer?MCP_MULTIPLAYER_RUNTIME_BYTES:9612)||typeof html!=='string')return MCP_RUNTIME_ERROR;
  const source=html.replace(/<!--[\s\S]*?(?:-->|$)/g,'').replace(/<template\b[\s\S]*?<\/template\s*>/gi,'');
  let meta=0,script=false;
  for(const match of source.matchAll(/<(meta|script)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/gi)){

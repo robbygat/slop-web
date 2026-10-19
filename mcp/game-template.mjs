@@ -1,4 +1,5 @@
 import {readFile} from 'node:fs/promises';
+import {multiplayerContract} from './bundle-rules.mjs';
 const targets={
  mobile:'Build for a portrait phone viewport. Use touch-first controls, mobile safe areas, and never require a keyboard or mouse.',
  desktop:'Build for a responsive desktop viewport. Use keyboard and mouse controls and make the complete playfield fit without clipping.',
@@ -53,8 +54,18 @@ const persistentGame=`async function boot(){
  });
 }
 boot().catch(error=>{console.error('Slop World could not open',error);});`;
-export async function gameTemplate({target_platform='cross-platform',persistent=false}={}){
+export async function gameTemplate({target_platform='cross-platform',persistent=false,multiplayer=false}={}){
+ if(persistent&&multiplayer)throw new Error('Slop Worlds and turn-based matches are separate game modes.');
  const template=await arcadeTemplate({target_platform});
+ if(multiplayer){
+  const contract=multiplayerContract(typeof multiplayer==='object'?multiplayer:{protocol:'turns-v1',mode:'match',seats:2,max_turns:20,action_schema:{choice:{type:'enum',values:['left','right']}}});
+  return {runtime:'multiplayer-v1',target_platform,multiplayer:contract,
+   instructions:`${template.instructions}\nUse the unchanged multiplayer-v1 runtime and slop.spec.json multiplayer contract. Multiplayer belongs in Slop's Multiplayer tab. Slop.match.active distinguishes a live assigned room from solo preview/recording. Slop.match.snapshot() returns null until the authenticated host supplies a snapshot; subscribe(callback) returns an unsubscribe function. Wait for that snapshot before live input. Rebuild deterministic gameplay from snapshot.seed and the ordered actions on reconnect. Snapshot fields include room, seat, epoch, revision, status, turn, players, actions[{revision,seat,actionId,action}], releaseDigest and rematchVotes. Submit only your turn with await Slop.match.submit({actionId,expectedRevision:snapshot.revision,epoch:snapshot.epoch,action}); use a stable unique actionId for retries. The host owns authentication, room selection and transport. Never send user IDs, room IDs or opponent seats. The service validates action_schema, turn order, epoch and revision and stores the ordered action log; game physics and scoring remain deterministic client logic, not trusted server adjudication. max_turns bounds every round; there are no monetary rewards. await Slop.match.rematch() votes; both players must consent before a new epoch. Ignore old epoch/revision snapshots and reconstruct on rejoin. Render smoothly between accepted turns, never stream per-frame input. Provide a clearly labeled CPU practice mode for standalone previews and video recording; it must never submit to a live room. Do not add your own lobby, start or result screen. No authored network or storage. Multiplayer needs the corresponding deployed host and match authority; local validation is not proof of live rollout.`,
+   files:{...template.files,'index.html':index(target_platform).replace('creator-v1','multiplayer-v1'),
+    'slop.js':await readFile(new URL('./runtime/multiplayer-v1.js',import.meta.url),'utf8'),
+    'slop.spec.json':JSON.stringify({multiplayer:contract}),
+    'game.js':multiplayerGame}};
+ }
  if(!persistent)return template;
  const runtime='persistent-v1';
  return {
@@ -72,3 +83,23 @@ Save commits are acknowledged after durable device storage; cloud sync is separa
    'game.js':persistentGame}
  };
 }
+
+const multiplayerGame=`const surface=Slop.create({background:'#faf3e8'}),ctx=surface.ctx;
+let snapshot=null,points=0,finished=false,announced=false,pending=false,keyHeld=false;
+Slop.match.subscribe(value=>{snapshot=value;points=value.actions.length;Slop.score(points);});
+Slop.onRestart(()=>{finished=false;keyHeld=false;points=0;Slop.score(0);});
+Slop.loop(({time,width,height})=>{
+ const key=Slop.input.keys.has('Space')||Slop.input.keys.has('Enter');
+ if((Slop.input.pressed||key&&!keyHeld)&&!pending&&!finished){
+  if(Slop.match.active){
+   if(snapshot&&snapshot.status==='active'&&snapshot.turn===snapshot.seat){
+    pending=true;Slop.match.submit({actionId:'turn-'+snapshot.epoch+'-'+snapshot.revision,expectedRevision:snapshot.revision,epoch:snapshot.epoch,action:{choice:Slop.input.x<width/2?'left':'right'}}).catch(()=>{}).finally(()=>{pending=false;});
+   }
+  }else{points++;Slop.score(points);}
+ }
+ keyHeld=key;
+ ctx.fillStyle='#faf3e8';ctx.fillRect(0,0,width,height);ctx.fillStyle='#302a3d';ctx.textAlign='center';ctx.font='bold 44px system-ui';ctx.fillText(points,width/2,height*.16);
+ ctx.fillStyle='#faaa47';ctx.beginPath();ctx.arc(width/2,height*.56-Math.abs(Math.sin(time*2.4))*36,48,0,Math.PI*2);ctx.fill();
+ if(!announced){announced=true;Slop.ready();}
+ if(!finished&&(snapshot?.status==='complete'||!Slop.match.active&&points>=10)){finished=true;Slop.finished(points);}
+});`;

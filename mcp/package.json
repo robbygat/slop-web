@@ -1,6 +1,6 @@
 {
   "name": "@slop-game/mcp-bridge",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Send private mobile game drafts from your coding agent to Slop on web and mobile.",
   "license": "UNLICENSED",
   "type": "module",
@@ -17,7 +17,8 @@
     "bundle-rules.mjs",
     "runtime-policy.mjs",
     "runtime/creator-v1.js",
-    "runtime/persistent-v1.js"
+    "runtime/persistent-v1.js",
+    "runtime/multiplayer-v1.js"
   ],
   "engines": {
     "node": ">=22.12"

@@ -6,6 +6,33 @@ const BINARY=/\.(?:glb|bin|jpg|webp|ktx2|ogg)$/;
 const ARCADE_PATH=/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:html|js|css|json|svg|txt)$/;
 const PERSISTENT_PATH=/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*\.(?:html|js|css|json|svg|txt|glb|bin|jpg|webp|ktx2|ogg)$/;
 const fail=message=>{throw new Error(message);};
+// A bounded action contract, never a caller-supplied server program. The room
+// authority checks every field again when accepting an authenticated turn.
+export function multiplayerContract(raw){
+ if(raw===undefined||raw===null||raw===false)return null;
+ const invalid=()=>fail('invalid_multiplayer_contract');
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join(',')!=='action_schema,max_turns,mode,protocol,seats'||raw.protocol!=='turns-v1'||raw.mode!=='match'||raw.seats!==2||!Number.isSafeInteger(raw.max_turns)||raw.max_turns<1||raw.max_turns>256)invalid();
+ const schema=raw.action_schema;
+ if(!schema||typeof schema!=='object'||Array.isArray(schema)||Object.keys(schema).length<1||Object.keys(schema).length>8)invalid();
+ const normalized={};
+ for(const name of Object.keys(schema).sort()){
+  if(!/^[a-z][a-z0-9_]{0,31}$/.test(name)||['__proto__','prototype','constructor'].includes(name))invalid();
+  const rule=schema[name];if(!rule||typeof rule!=='object'||Array.isArray(rule))invalid();
+  if(rule.type==='number'||rule.type==='integer'){
+   if(Object.keys(rule).sort().join(',')!=='max,min,type'||!Number.isFinite(rule.min)||!Number.isFinite(rule.max)||rule.min>rule.max||Math.abs(rule.min)>1e6||Math.abs(rule.max)>1e6||rule.type==='integer'&&(!Number.isInteger(rule.min)||!Number.isInteger(rule.max)))invalid();
+   normalized[name]={type:rule.type,min:rule.min,max:rule.max};
+  }else if(rule.type==='enum'){
+   if(Object.keys(rule).sort().join(',')!=='type,values'||!Array.isArray(rule.values)||rule.values.length<1||rule.values.length>16||rule.values.some(value=>typeof value!=='string'||Array.from(value).length<1||Array.from(value).length>32||value.includes('\0'))||new Set(rule.values).size!==rule.values.length)invalid();
+   normalized[name]={type:'enum',values:[...rule.values]};
+  }else invalid();
+ }
+ const contract={protocol:'turns-v1',mode:'match',seats:2,max_turns:raw.max_turns,action_schema:normalized};
+ // PostgreSQL jsonb uses a space after separators. Count those UTF-8 bytes
+ // too so a locally accepted large enum cannot exceed the authority's cap.
+ const jsonb=value=>Array.isArray(value)?'['+value.map(jsonb).join(', ')+']':value&&typeof value==='object'?'{'+Object.keys(value).map(key=>JSON.stringify(key)+': '+jsonb(value[key])).join(', ')+'}':JSON.stringify(value);
+ if(new TextEncoder().encode(jsonb(contract)).length>4096)invalid();
+ return contract;
+}
 function binaryLength(path,value){
  if(!BINARY.test(path)||!value||Object.keys(value).sort().join(',')!=='data,encoding'||value.encoding!=='base64'||typeof value.data!=='string'||value.data.length>10_666_668||value.data.length%4!==0||/[^A-Za-z0-9+/]/.test(value.data.replace(/={1,2}$/, '')))fail('invalid_binary_file');
  const encoded=value.data,padding=encoded.endsWith('==')?2:encoded.endsWith('=')?1:0;
@@ -112,6 +139,8 @@ function inspect(input,{retainDecoded=true,decodedInput=false}={}){
  const files={...input};let spec={};
  if(files['slop.spec.json']!==undefined){try{spec=JSON.parse(files['slop.spec.json']);}catch{fail('invalid_spec');}if(!spec||typeof spec!=='object'||Array.isArray(spec))fail('invalid_spec');}
  const code=codeOrder(files),callsPersist=/\bSlop\s*\.\s*persist\s*\(/.test(code);
+ const multiplayer=multiplayerContract(spec.multiplayer);
+ if(multiplayer&&(spec.persistent===true||callsPersist))fail('persistent_multiplayer_conflict');
  const persistent=spec.persistent===true&&callsPersist;
  if(spec.persistent===true&&!callsPersist){delete spec.persistent;files['slop.spec.json']=JSON.stringify(spec);}
  const budget=persistent?PERSISTENT_BUDGET:ARCADE_BUDGET,paths=Object.keys(files);
@@ -134,7 +163,7 @@ function inspect(input,{retainDecoded=true,decodedInput=false}={}){
   if(!/\b\w+\s*\.\s*(?:commit|checkpoint)\s*\(/.test(code))fail('persistent_checkpoint_required');
   boot=firstLoad(files,spec,byteLengths);
  }
- return {files,persistent,budget,total,decoded,byteLengths,firstLoad:boot};
+ return {files,persistent,multiplayer,budget,total,decoded,byteLengths,firstLoad:boot};
 }
 export function inspectBundle(input,{retainDecoded=true}={}){return inspect(input,{retainDecoded});}
 // Storage attesters use their own decoded readbacks, not client JSON. The

@@ -8,10 +8,12 @@ import {prioritizePeople} from './people-order.js';
 import {createPublicPageCache} from './public-page-cache.js';
 const discoveryPages=createPublicPageCache();
 const previewColumns=',preview_video:game_preview_videos(video_path,poster_path,width,height,duration_ms)';
-const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
+const columns='id,slug,name,description,thumb,play_count,created_at,owner_id,category,status,published_bundle_path,bundle_version,multiplayer_mode,preview_width,preview_height,supported_platforms,profiles(username,avatar_url,slop_look)';
 // Keep the existing Arcade query usable before the additive save migration.
 // No missing-column fallback is allowed to grant a persistent capability.
-async function persistenceMetadata(games){
+async function persistenceMetadata(input){
+ let games=input;
+ if(games.length){try{const rows=await publicRead(supabase.from('games').select('id,multiplayer_protocol,multiplayer_contract').in('id',games.map(game=>game.id)));const byId=new Map(rows.map(row=>[row.id,row]));games=games.map(game=>({...game,multiplayer_protocol:byId.get(game.id)?.multiplayer_protocol||null,multiplayer_contract:byId.get(game.id)?.multiplayer_contract||null}));}catch{/* Existing multiplayer_mode keeps unsupported matches fail-closed. */}}
  if(!games.length)return games;
  try{
   const rows=await publicRead(supabase.from('games').select('id,persistent,root_game_slug,bundle_manifest').in('id',games.map(game=>game.id)));
