@@ -10,6 +10,42 @@ requires the owner to enable Auto-publish for that connection, or to review and
 submit a draft in Slop. Connections cannot spend coins, buy assets, or change your account. Your agent never
 receives your Slop password, account session, or private preview URL.
 
+## Turn-based multiplayer (0.7.0)
+
+Call `slop_game_template({multiplayer:true,target_platform:"cross-platform"})`.
+Keep its `multiplayer-v1` runtime unchanged. Declare `slop.spec.json` with:
+
+```json
+{"multiplayer":{"protocol":"turns-v1","mode":"match","seats":2,"max_turns":20,"action_schema":{"angle":{"type":"number","min":10,"max":80},"power":{"type":"number","min":0,"max":1}}}}
+```
+
+`Slop.match.active` is true in a host-assigned room, including while the initial
+snapshot is loading. `snapshot()` returns the latest immutable snapshot or null;
+`subscribe(fn)` observes changes and returns an unsubscribe function. Use
+`submit({actionId,expectedRevision,epoch,action})` once per turn. Action IDs are
+8–96 letters, digits, `_` or `-`; retain an ID when retrying the same action.
+`rematch()` votes for a new round; both players must agree. Accepted new epochs
+reset Creator's round lifecycle once. The SDK retries the initial host handshake,
+rejects stale snapshots, preserves newer snapshots across delayed responses,
+and times out pending requests after 18 seconds.
+
+The service owns authentication, seats, revision/epoch checks and a bounded
+ordered action log. Rebuild deterministic game state from `seed` and `actions`
+after reconnect. Each room stays pinned to the immutable release it opened.
+The service does not adjudicate arbitrary game physics, winners or rewards.
+For standalone playtests and feed recording, provide clearly labeled CPU
+practice when `Slop.match.active` is false. Multiplayer games are routed through
+the host's room UI; never put a lobby or transport in the authored bundle.
+
+Contracts allow 1–256 turns and 1–8 action fields. Number/integer bounds must
+be finite and within ±1,000,000. Enum fields use `{type:"enum",values:[...]}`
+with 1–16 unique strings of up to 32 characters. Field names use lowercase
+letters, digits and underscores, start with a letter, and are at most 32
+characters. Browser network/storage remain forbidden. Multiplayer and durable
+World saves are mutually exclusive. The package, app hosts, bundle authority
+and match database migration must be rolled out together; local checks do not
+prove the production service is enabled.
+
 ## Slop Worlds (0.6.1)
 
 This source/package adds persistent-v1 support. The package, web host, mobile host
@@ -58,7 +94,7 @@ Install Node.js 22.12 or later. The versioned package is hosted by Slop; there i
 no npm registry package to guess. It contains only the local adapter and its
 pinned runtime dependencies are resolved by npm.
 
-Upgrading an existing connection: update its package URL to `slop-game-mcp-0.6.1.tgz`
+Upgrading an existing connection: update its package URL to `slop-game-mcp-0.7.0.tgz`
 and restart the coding app’s MCP server. Keep the saved Slop credential; no new
 pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 
@@ -67,7 +103,7 @@ pairing is needed. Versioned URLs prevent reuse of an older cached adapter.
 Run in your computer's terminal:
 
 ```sh
-codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
+codex mcp add slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
 ```
 
 Restart Codex and check its MCP settings, or run `codex mcp list`.
@@ -76,7 +112,7 @@ Restart Codex and check its MCP settings, or run `codex mcp list`.
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
+claude mcp add --transport stdio --scope user slop -- npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
 ```
 
 Restart Claude Code and run `/mcp` to check Slop.
@@ -96,7 +132,7 @@ settings:
       "command": [
         "npx",
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz",
         "slop-mcp"
       ],
       "enabled": true,
@@ -114,7 +150,7 @@ Restart OpenCode and check that Slop is enabled in its MCP servers.
 Open **Settings → MCP**, add a personal local server named `slop`, and use:
 
 ```sh
-npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz slop-mcp
+npx --yes --package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz slop-mcp
 ```
 
 Save the server and leave it enabled.
@@ -137,7 +173,7 @@ then enable Slop in Cursor's MCP settings:
       "command": "npx",
       "args": [
         "--yes",
-        "--package=https://slop.game/downloads/slop-game-mcp-0.6.1.tgz",
+        "--package=https://slop.game/downloads/slop-game-mcp-0.7.0.tgz",
         "slop-mcp"
       ]
     }

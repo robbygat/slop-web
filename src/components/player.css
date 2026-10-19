@@ -75,3 +75,5 @@
 .game-cover>.persistent-continue-badge{position:absolute;top:9px;left:9px;z-index:3}
 .reel-caption>.persistent-continue-badge{position:relative;margin-bottom:9px}
 @media(max-height:440px){.persistent-run-choice{justify-content:flex-start;gap:10px;padding:14px}.persistent-run-choice h2{font-size:24px}}
+
+.turn-match-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}.turn-match-lobby{display:grid;gap:16px}.turn-match-lobby>div{display:flex;gap:8px}.turn-match-lobby input{max-width:180px;text-transform:uppercase}

@@ -57,7 +57,7 @@ export async function publishRevision({project,revision,title,tagline,prompt,cov
  if(!cover?.length||cover.length>700*1024||!gif?.length||gif.length>2*1024*1024||!Number.isInteger(frameCount)||frameCount<3||frameCount>40)throw new Error('Record a cover and a short gameplay clip before publishing.');
  if(!UUID.test(project.id)||!UUID.test(revision.id))throw new SlopError('invalid_response');
  const files=Object.freeze({...normalizeBundleFiles(revision.files)});
- const identity=await bundleIdentity(files),runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html'],{persistent:identity.persistent}),target=gameTargetFromFiles(files);verify(expected);
+ const identity=await bundleIdentity(files),runtimeError=mcpRuntimeProblem(identity.manifest,files['index.html'],{persistent:identity.persistent,multiplayer:identity.multiplayer}),target=gameTargetFromFiles(files);verify(expected);
  if(runtimeError)throw new Error('This version does not contain the unchanged Slop.js runtime. Rebuild it before publishing.');
  if(!validCaptureDimensionsForTarget(width,height,target))throw new Error('Record the gameplay preview in the game’s selected phone or desktop shape.');
  requireAnimatedGif(gif,frameCount);const slug=`creator-release-${revision.id}`;

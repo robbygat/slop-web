@@ -112,7 +112,7 @@ export async function validateDraft(input) {
     });
   }
   requireValue(files["index.html"].trim().length > 0, "empty_entry_point");
-  if(checked.persistent)requireValue(mcpRuntimeProblem(manifest,files['index.html'],true)===null,'runtime_invalid');
+  if(checked.persistent||checked.multiplayer)requireValue(mcpRuntimeProblem(manifest,files['index.html'],checked.persistent,checked.multiplayer)===null,'runtime_invalid');
   const digest = await sha256(
     manifest.map((e) => `${e.path}:${e.bytes}:${e.sha256}`).join("\n"),
   );
@@ -134,6 +134,7 @@ export async function validateDraft(input) {
     description,
     target_platform,
     persistent: checked.persistent,
+    multiplayer: checked.multiplayer,
     files,
     manifest,
     digest,

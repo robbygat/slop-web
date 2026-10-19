@@ -2,6 +2,7 @@ import {trustedEntry} from './contracts.js';
 import {validRestartAck} from './player-restart.js';
 import {acceptPersistEvent} from './persist-contracts.js';
 import {validAssetRequest} from './persist-assets.js';
+import {validMatchEvent} from './turn-match.js';
 export function gamePolicy(base){
  if(!trustedEntry(base+'index.html',{preview:base.includes('/game-bundle/preview/')}))throw new Error('This game URL is not trusted.');
  return ["default-src 'none'",`script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: ${base} https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`,`style-src 'unsafe-inline' ${base}`,`img-src ${base} data: blob:`,`media-src ${base} data: blob:`,`font-src ${base} data:`,`connect-src ${base} blob:`,`worker-src ${base} blob:`,`manifest-src ${base}`,"object-src 'none'","frame-src 'none'","form-action 'none'",`base-uri ${base}`].join('; ');
@@ -15,6 +16,7 @@ export function acceptPlayerEvent(source,frame,data,{persistent=false}={}){
  if(data==='slop-player-loaded-v1')return persistent?null:{type:'ready',source:'document'};
  try {const event=JSON.parse(data);if(!event||Array.isArray(event)||typeof event!=='object')return null;
   if(event.type?.startsWith('persist-'))return acceptPersistEvent(event)||validAssetRequest(event)?event:null;
+  if(event.type?.startsWith('match-'))return validMatchEvent(event)?event:null;
  const types=['restart-ack','ready','score','finished','gameOver','over','loadError','webGameError','webCaptureResult','webCaptureError','webInteraction','webScroll','webEscape','webPointerLock','webPointerError'];
  if(!types.includes(event.type))return null;
  if(event.type==='webPointerLock'&&typeof event.locked!=='boolean')return null;

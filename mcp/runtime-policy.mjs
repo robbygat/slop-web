@@ -2,8 +2,10 @@
 export const MCP_RUNTIME_SHA256='cf80d35f8be857d6e092460b362aaf0bd7238f34085d20c15ae376e994922d2f';
 export const MCP_PERSISTENT_RUNTIME_SHA256='dc6d666cc482ea568e9d752f9bcfd3eda02486ffca100724ac883d197a03c2f6';
 export const MCP_PERSISTENT_RUNTIME_BYTES=452194;
+export const MCP_MULTIPLAYER_RUNTIME_SHA256="c98852985abbe1a35182a4eaf3d350ded668b6089d264ed14020ac552a50e733";
+export const MCP_MULTIPLAYER_RUNTIME_BYTES=16923;
 export const MCP_RUNTIME_ERROR='Ask your coding app to call slop_game_template, keep its slop.js unchanged, and send a new revision that loads it before your game code.';
-function persistentBootOrder(html){
+function persistentBootOrder(html,runtimeMarker='persistent-v1'){
  // Classic, synchronous SDK first. Deferred/module/async SDK tags cannot
  // promise availability when the following classic game script executes.
  const tokens=/<!--[\s\S]*?(?:-->|$)|<(script|style|textarea|title|noscript)\b(?:[^>"']|"[^"]*"|'[^']*')*>[\s\S]*?<\/\1\s*>|<\/?[A-Za-z][A-Za-z0-9:-]*\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
@@ -20,7 +22,7 @@ function persistentBootOrder(html){
    const key=attr[1].toLowerCase();if(!attrs.has(key))attrs.set(key,attr[2]??attr[3]??attr[4]??'');
   }
   if(opening[1].toLowerCase()==='meta'){
-   if(attrs.get('name')?.toLowerCase()==='slop-runtime'&&attrs.get('content')==='persistent-v1')marker=true;
+   if(attrs.get('name')?.toLowerCase()==='slop-runtime'&&attrs.get('content')===runtimeMarker)marker=true;
    continue;
   }
   const type=(attrs.get('type')||'').trim().toLowerCase();
@@ -34,19 +36,21 @@ function persistentBootOrder(html){
 }
 // The boolean comes only from decoded source admission/re-attestation, never
 // from the caller's JSON flag or the catalog alone. Arcade remains unchanged.
-export function mcpRuntimeProblem(manifest,html,persistent=false){
+/** @param {unknown} multiplayer */
+export function mcpRuntimeProblem(manifest,html,persistent=false,multiplayer=null){
+ if(persistent&&multiplayer)return MCP_RUNTIME_ERROR;
  const runtime=manifest?.find(file=>file.path==='1.0.0/slop.js');
- const marker=persistent?'persistent-v1':'creator-v1';
- if(runtime?.sha256!==(persistent?MCP_PERSISTENT_RUNTIME_SHA256:MCP_RUNTIME_SHA256)||runtime.bytes!==(persistent?MCP_PERSISTENT_RUNTIME_BYTES:9612)||typeof html!=='string')return MCP_RUNTIME_ERROR;
+ const marker=persistent?'persistent-v1':multiplayer?'multiplayer-v1':'creator-v1';
+ if(runtime?.sha256!==(persistent?MCP_PERSISTENT_RUNTIME_SHA256:multiplayer?MCP_MULTIPLAYER_RUNTIME_SHA256:MCP_RUNTIME_SHA256)||runtime.bytes!==(persistent?MCP_PERSISTENT_RUNTIME_BYTES:multiplayer?MCP_MULTIPLAYER_RUNTIME_BYTES:9612)||typeof html!=='string')return MCP_RUNTIME_ERROR;
  const source=html.replace(/<!--[\s\S]*?(?:-->|$)/g,'').replace(/<template\b[\s\S]*?<\/template\s*>/gi,'');
- let meta=false,script=false;
+ let meta=0,script=false;
  for(const match of source.matchAll(/<(meta|script)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/gi)){
   const attributes=new Map();
   for(const attr of match[2].matchAll(/([^\s=\/>]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)){
    const key=attr[1].toLowerCase();if(!attributes.has(key))attributes.set(key,attr[2]??attr[3]??attr[4]);
   }
-  if(match[1].toLowerCase()==='meta'&&attributes.get('name')?.toLowerCase()==='slop-runtime'&&attributes.get('content')===marker)meta=true;
+  if(match[1].toLowerCase()==='meta'&&attributes.get('name')?.toLowerCase()==='slop-runtime'){if(attributes.get('content')!==marker)return MCP_RUNTIME_ERROR;meta++;}
   if(match[1].toLowerCase()==='script'&&['slop.js','./slop.js'].includes(attributes.get('src'))&&['','module','text/javascript','application/javascript'].includes(attributes.get('type')||''))script=true;
  }
- return meta&&script&&(!persistent||persistentBootOrder(html))?null:MCP_RUNTIME_ERROR;
+ return meta===1&&script&&(!(persistent||multiplayer)||persistentBootOrder(html,marker))?null:MCP_RUNTIME_ERROR;
 }

@@ -12,8 +12,8 @@ import {mcpRuntimeProblem} from './runtime-policy.mjs';
 const PATH = /^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:html|js|css|json|svg|txt)$/;
 const runtimeDigests=new Map();
 
-async function canonicalRuntimeDigest(persistent) {
-  const name=persistent?'persistent-v1':'creator-v1';
+async function canonicalRuntimeDigest(persistent,multiplayer) {
+  const name=persistent?'persistent-v1':multiplayer?'multiplayer-v1':'creator-v1';
   if(!runtimeDigests.has(name))runtimeDigests.set(name,createHash('sha256').update(await readFile(new URL(`./runtime/${name}.js`,import.meta.url))).digest('hex'));
   return runtimeDigests.get(name);
 }
@@ -36,6 +36,7 @@ export async function checkBundle(files, { target_platform } = {}) {
   const problems = [], warnings = [];
   let checked;try{checked=inspectBundle(files);}catch(error){problems.push(error.message);}
   const persistent=!!checked?.persistent;
+  const multiplayer=checked?.multiplayer;
   if(checked)files=checked.files;
   const entries = Object.entries(files ?? {});
   let total = 0;
@@ -59,11 +60,11 @@ export async function checkBundle(files, { target_platform } = {}) {
   if (!html) problems.push("index.html is required.");
   if (typeof files?.["slop.js"] !== "string") {
     problems.push("slop.js is missing. Copy it unchanged from slop_game_template.");
-  } else if (createHash("sha256").update(files["slop.js"]).digest("hex") !== await canonicalRuntimeDigest(persistent)) {
+  } else if (createHash("sha256").update(files["slop.js"]).digest("hex") !== await canonicalRuntimeDigest(persistent,multiplayer)) {
     problems.push("slop.js was changed. The website refuses to publish unless it is the exact slop.js from slop_game_template.");
   }
   if (html) {
-    const marker=persistent?'persistent-v1':'creator-v1';
+    const marker=persistent?'persistent-v1':multiplayer?'multiplayer-v1':'creator-v1';
     if (metaContents(html, "slop-runtime").length!==1||metaContents(html, "slop-runtime")[0]!==marker) {
       problems.push(`index.html needs exactly one <meta name="slop-runtime" content="${marker}">.`);
     }
@@ -73,9 +74,9 @@ export async function checkBundle(files, { target_platform } = {}) {
     } else if (targets[0] && target_platform && targets[0] !== target_platform) {
       problems.push(`index.html says slop-target "${targets[0]}" but target_platform is "${target_platform}"; publishing rejects conflicting targets.`);
     }
-    if(persistent){
+    if(persistent||multiplayer){
       const runtime=typeof files['slop.js']==='string'?files['slop.js']:'';
-      const problem=mcpRuntimeProblem([{path:'1.0.0/slop.js',bytes:Buffer.byteLength(runtime),sha256:createHash('sha256').update(runtime).digest('hex')}],html,true);
+      const problem=mcpRuntimeProblem([{path:'1.0.0/slop.js',bytes:Buffer.byteLength(runtime),sha256:createHash('sha256').update(runtime).digest('hex')}],html,persistent,multiplayer);
       if(problem)problems.push(problem);
     }else{
     const scripts = [...html.matchAll(/<script\b([^>]*)>/gi)].map((m) => /\bsrc\s*=\s*["']([^"']+)["']/i.exec(m[1])?.[1] ?? null);

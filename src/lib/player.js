@@ -6,7 +6,7 @@ import {installLegacyKeyboard,legacyControlSpec,auditedCursorStyle} from './play
 import {persistentAssetCache} from './persist-assets.js';
 import {preparePersistentDocument} from './persist-document.js';
 export {gamePolicy,acceptPlayerEvent} from './player-contracts.js';
-export async function loadDocument(url,{signal,preview=false,persistent=false,manifest}={}){
+export async function loadDocument(url,{signal,preview=false,persistent=false,manifest,matchExpected=false}={}){
  if(!trustedEntry(url,{preview}))throw new Error('This game URL is not trusted.');
  const useCache=persistent&&!preview;
  const cached=useCache?await persistentAssetCache.get({entry:url,path:'index.html',manifest,signal}):null;
@@ -27,7 +27,7 @@ export async function loadDocument(url,{signal,preview=false,persistent=false,ma
  const policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';policy.content=csp;
  const baseEl=doc.createElement('base');baseEl.href=base;
  const referrer=doc.createElement('meta');referrer.name='referrer';referrer.content='no-referrer';
- const boot=doc.createElement('script');boot.textContent=`${preview?'window.__slopPreviewCapture=true;\n':''}Object.defineProperty(window,'__slopPersistAssets',{value:Object.freeze({base:${JSON.stringify(base)}}),writable:false,configurable:false});\n(${installGameStorage.toString()})();\n(${installLegacyKeyboard.toString()})(${JSON.stringify(legacyControlSpec(url))});\n${bootstrap}`;
+ const boot=doc.createElement('script');boot.textContent=`${preview?'window.__slopPreviewCapture=true;\n':''}${matchExpected?"Object.defineProperty(window,'__slopMatchExpected',{value:true,writable:false,configurable:false});\n":''}Object.defineProperty(window,'__slopPersistAssets',{value:Object.freeze({base:${JSON.stringify(base)}}),writable:false,configurable:false});\n(${installGameStorage.toString()})();\n(${installLegacyKeyboard.toString()})(${JSON.stringify(legacyControlSpec(url))});\n${bootstrap}`;
  // Worlds' GLB helper requires the host's exact r128 engine. Keep it in an
  // independently cached platform chunk, not an authored network request or
  // a replacement for the unchanged Arcade creator-v1 loader.
