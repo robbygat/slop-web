@@ -7,7 +7,27 @@ const base={protocol:'turns-v1',code:'ROOM1234',game_id:game.id,game_slug:game.s
 const action={revision:1,seat:0,action_id:'shot_0001',action:{angle:45,power:.5}};
 test('room URLs use the immutable release and reject identity/path/log mismatches',()=>{
  const snapshot=matchSnapshot(base,game);assert.equal(matchEntry(snapshot),`https://api.slop.game/storage/v1/object/public/games/${base.release_path}/1.0.0/index.html`);
- for(const change of [{game_id:'other'},{game_slug:'other'},{release_path:'tankfall'},{release_digest:'b'.repeat(64)},{revision:1},{revision:1,actions:[{...action,seat:1}]}])assert.throws(()=>matchSnapshot({...base,...change},game),/Invalid match/);
+ for(const change of [{game_id:'other'},{game_slug:'other'},{release_path:'tankfall'},{release_digest:'b'.repeat(63)},{revision:1},{revision:1,actions:[{...action,seat:1}]}])assert.throws(()=>matchSnapshot({...base,...change},game),/Invalid match/);
+});
+
+test('published release identifiers are independent of the bundle digest',async()=>{
+ const initial={...base,status:'waiting',players:[true,false],release_path:`releases/${'b'.repeat(64)}/${game.slug}`};
+ const match=createTurnMatch({game,initial,currentScope:()=>1,rpc:async()=>({...initial,status:'active',players:[true,true]})});
+ assert.equal(match.snapshot().status,'waiting');
+ assert.equal(match.entry(),`https://api.slop.game/storage/v1/object/public/games/${initial.release_path}/1.0.0/index.html`);
+ await match.refresh();assert.equal(match.snapshot().status,'active');match.close();
+});
+
+test('snapshot paths remain safe and scoped to the exact game',()=>{
+ for(const release_path of [`releases/${'b'.repeat(64)}/other-game`,`releases/${'b'.repeat(63)}/${game.slug}`,`releases/${'b'.repeat(64)}/${game.slug}/../other`,`https://evil.example/${game.slug}`,`releases/${'b'.repeat(64)}/${game.slug}?override=1`]){
+  assert.throws(()=>matchSnapshot({...base,release_path},game),/Invalid match/);
+ }
+});
+
+test('refresh cannot replace a pinned release path even with the same digest',async()=>{
+ const match=createTurnMatch({game,initial:base,currentScope:()=>1,rpc:async()=>({...base,release_path:`releases/${'b'.repeat(64)}/${game.slug}`})});
+ await assert.rejects(match.refresh(),/Match identity changed/);
+ assert.equal(match.snapshot().releasePath,base.release_path);match.close();
 });
 test('game messages require the current frame and a bounded turn envelope',()=>{
  const frame={},event={type:'match-submit',requestId:'m1',actionId:'shot_0001',expectedRevision:0,epoch:1,action:{angle:45,power:.5}};

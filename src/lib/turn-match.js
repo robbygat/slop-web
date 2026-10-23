@@ -2,8 +2,11 @@ import {GAMES} from './contracts.js';
 
 export const isTurnGame=game=>game?.multiplayer_protocol==='turns-v1';
 export function matchSnapshot(raw,game){
+ // Publication assigns a random release identifier independently of the
+ // content digest. The authenticated room pins both values separately.
+ const release=typeof raw?.release_path==='string'?/^releases\/[a-f0-9]{64}\/([A-Za-z0-9][A-Za-z0-9_-]{0,119})$/.exec(raw.release_path):null;
  if(!raw||raw.protocol!=='turns-v1'||raw.game_id!==game.id||raw.game_slug!==game.slug||!/^[A-Z0-9]{6,12}$/.test(raw.code)||
-    !/^[a-f0-9]{64}$/.test(raw.release_digest)||raw.release_path!==`releases/${raw.release_digest}/${game.slug}`||
+    !/^[a-f0-9]{64}$/.test(raw.release_digest)||!release||release[1]!==game.slug||
     !Number.isSafeInteger(raw.epoch)||raw.epoch<1||!Number.isSafeInteger(raw.revision)||raw.revision<0||raw.revision>256||
     ![0,1].includes(raw.seat)||!['waiting','active','complete'].includes(raw.status)||!Array.isArray(raw.actions)||raw.actions.length!==raw.revision||
     raw.actions.some((action,index)=>action.revision!==index+1||action.seat!==index%2||!action.action||typeof action.action!=='object'))throw new Error('Invalid match snapshot.');
@@ -27,7 +30,7 @@ export function createTurnMatch({game,initial,rpc,currentScope,onError=()=>{},po
  const guard=()=>{if(!current())throw Object.assign(new Error('Account or player changed.'),{code:'account_changed'});};
  function accept(raw){
   guard();const next=matchSnapshot(raw,game);
-  if(next.room!==snapshot.room||next.seat!==snapshot.seat||next.releaseDigest!==snapshot.releaseDigest)throw new Error('Match identity changed.');
+  if(next.room!==snapshot.room||next.seat!==snapshot.seat||next.releaseDigest!==snapshot.releaseDigest||next.releasePath!==snapshot.releasePath)throw new Error('Match identity changed.');
   if(next.epoch<snapshot.epoch||next.epoch===snapshot.epoch&&next.revision<snapshot.revision)return snapshot;
   snapshot=next;listeners.forEach(fn=>fn(snapshot));return snapshot;
  }
