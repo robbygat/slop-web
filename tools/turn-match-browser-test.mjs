@@ -9,7 +9,8 @@ const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const {default:puppeteer}=await import(process.env.PUPPETEER_MODULE?pathToFileURL(resolve(process.env.PUPPETEER_MODULE)).href:'puppeteer-core');
 const runtime=await readFile(resolve(root,'mcp/runtime/multiplayer-v1.js'),'utf8');
 const game={id:'tankfall',slug:'tankfall'},digest='a'.repeat(64);
-let state={protocol:'turns-v1',code:'TEST1234',game_id:game.id,game_slug:game.slug,release_digest:digest,release_path:'releases/'+digest+'/'+game.slug,epoch:1,revision:0,seed:'browser',status:'active',turn:0,players:[true,true],actions:[],rematch_votes:[false,false]};
+// Production uses an independent random release ID, not the bundle digest.
+let state={protocol:'turns-v1',code:'TEST1234',game_id:game.id,game_slug:game.slug,release_digest:digest,release_path:'releases/'+'b'.repeat(64)+'/'+game.slug,epoch:1,revision:0,seed:'browser',status:'active',turn:0,players:[true,true],actions:[],rematch_votes:[false,false]};
 let calls=0;
 const snapshot=seat=>structuredClone({...state,seat});
 async function rpc(seat,name,args){
