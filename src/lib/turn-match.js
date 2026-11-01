@@ -32,7 +32,8 @@ export function createTurnMatch({game,initial,rpc,currentScope,onError=()=>{},po
   guard();const next=matchSnapshot(raw,game);
   if(next.room!==snapshot.room||next.seat!==snapshot.seat||next.releaseDigest!==snapshot.releaseDigest||next.releasePath!==snapshot.releasePath)throw new Error('Match identity changed.');
   if(next.epoch<snapshot.epoch||next.epoch===snapshot.epoch&&next.revision<snapshot.revision)return snapshot;
-  snapshot=next;listeners.forEach(fn=>fn(snapshot));return snapshot;
+  // A successful poll can recover the connection without advancing the turn.
+  snapshot=next;onError(null);listeners.forEach(fn=>fn(snapshot));return snapshot;
  }
  async function refresh(){
   guard();if(refreshing)return refreshing;

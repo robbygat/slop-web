@@ -49,3 +49,45 @@ test('polling cannot rewind accepted revisions and both-vote rematch changes epo
  await match.refresh();next=base;await match.refresh();assert.equal(match.snapshot().revision,1);
  next={...base,epoch:2};await match.rematch();assert.equal(match.snapshot().epoch,2);assert.equal(match.snapshot().revision,0);match.close();
 });
+
+test('polling recovers from a connection failure even when the room revision is unchanged',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ const failure=new Error('Connection interrupted'),errors=[];let calls=0;
+ const match=createTurnMatch({game,initial:base,currentScope:()=>1,pollMs:10,onError:error=>errors.push(error),rpc:async()=>{
+  calls++;if(calls===1)throw failure;
+  return calls===2?base:{...base,revision:1,turn:1,actions:[action]};
+ }});t.after(()=>match.close());match.start();
+ const poll=async()=>{t.mock.timers.tick(10);await new Promise(resolve=>setImmediate(resolve));};
+ await poll();assert.deepEqual(errors,[failure]);
+ await poll();assert.deepEqual(errors,[failure,null]);assert.equal(match.snapshot().revision,0);
+ await poll();assert.equal(calls,3);assert.equal(match.snapshot().revision,1);assert.equal(errors.at(-1),null);
+});
+
+test('wrong-room and stale responses cannot dismiss a current connection error',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ const initial={...base,revision:1,turn:1,actions:[action]},failure=new Error('Connection interrupted'),errors=[];let calls=0;
+ const match=createTurnMatch({game,initial,currentScope:()=>1,pollMs:10,onError:error=>errors.push(error),rpc:async()=>{
+  calls++;if(calls===1)throw failure;
+  if(calls===2)return {...initial,code:'OTHER123'};
+  return calls===3?base:initial;
+ }});t.after(()=>match.close());match.start();
+ const poll=async()=>{t.mock.timers.tick(10);await new Promise(resolve=>setImmediate(resolve));};
+ await poll();await poll();assert.equal(errors.length,2);assert.match(errors[1].message,/Match identity changed/);
+ await poll();assert.equal(errors.length,2);assert.equal(match.snapshot().revision,1);
+ await poll();assert.equal(errors.at(-1),null);assert.equal(match.snapshot().room,base.code);
+});
+
+test('delayed recovery cannot dismiss errors after the account changes or player closes',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ for(const stop of ['account','close']){
+  const failure=new Error('Connection interrupted'),errors=[];let scope=1,calls=0,resolve;
+  const match=createTurnMatch({game,initial:base,currentScope:()=>scope,pollMs:10,onError:error=>errors.push(error),rpc:()=>{
+   calls++;return calls===1?Promise.reject(failure):new Promise(done=>{resolve=done;});
+  }});t.after(()=>match.close());match.start();
+  const poll=async()=>{t.mock.timers.tick(10);await new Promise(done=>setImmediate(done));};
+  await poll();await poll();assert.deepEqual(errors,[failure]);
+  if(stop==='account')scope=2;else match.close();
+  resolve(base);await new Promise(done=>setImmediate(done));await poll();
+  assert.deepEqual(errors,[failure]);assert.equal(calls,2);match.close();
+ }
+});
